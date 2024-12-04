@@ -34,7 +34,7 @@ if [ "x$TRUST_USE_EXTERNAL_MED" = "x" ]; then
   cd $build_root
   
   echo "Un-packing ..."
-  tar xzf $archive
+  tar xzf $archive --no-same-owner
   if ! [ $? -eq 0 ]; then
     echo "MED installation: archive '$archive' could not be found or could not be extracted!!!"
     exit -1

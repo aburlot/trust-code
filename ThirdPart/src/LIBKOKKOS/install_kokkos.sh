@@ -21,7 +21,7 @@ if [ ! -f $KOKKOS_ROOT_DIR/lib64/libkokkos.a ]; then
       mkdir -p $build_dir
 
       cd $build_dir
-      tar xzf $archive || exit -1
+      tar xzf $archive --no-same-owner || exit -1
       src_dir=$build_dir/`ls $build_dir | grep kokkos`
 
       # Set this flag to 1 to have Kokkos compiled/linked in Debug mode for $exec_debug or when developping on GPU:
