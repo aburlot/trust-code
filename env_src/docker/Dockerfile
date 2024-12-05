@@ -14,8 +14,9 @@
 FROM fedora:latest
 RUN dnf -y install patch g++ gfortran
 RUN dnf -y install libX11-devel mesa-libGLU-devel texlive-scheme-full
-RUN dnf -y install bc diffutils util-linux tcl tk hostname libX11-devel unzip
+RUN dnf -y install file bc diffutils util-linux tcl tk hostname libX11-devel unzip
 RUN dnf -y install openmpi openmpi-devel
 ENV USER=root
 # Build during run:
-CMD [ "cd /tmp;./configure  && make" ]
+ENTRYPOINT [ "/bin/sh" , "-c", "cd /tmp;./configure -force_system_mpi -without-pdflatex && make" ]
+
