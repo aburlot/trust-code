@@ -1,0 +1,15 @@
+Installation de docker rootless:
+
+ToDo
+
+Lancement: docker.sh
+
+Premier container:
+build	: Construit OS
+run	: Construit TRUST sur cet OS
+
+Deuxieme container:
+build	: Construit OS minimaliste + binaire TRUST
+
+C'est ce container qui est envoye sur CCRT et utilise par PCOCC
+

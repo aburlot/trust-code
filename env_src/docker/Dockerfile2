@@ -1,0 +1,6 @@
+ARG MY_OS
+FROM ${MY_OS}
+COPY TRUST_mpi_opt /TRUST_mpi_opt
+RUN dnf -y install gcc gcc-c++ gcc-gfortran
+ENTRYPOINT [ "/TRUST_mpi_opt" ]
+
