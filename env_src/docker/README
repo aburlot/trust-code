@@ -1,8 +1,17 @@
 Installation de docker rootless:
 
-ToDo
+curl -fsSL https://get.docker.com/rootless | sh
+mkdir -p ~/.config/docker
+mkdir -p /volatile/formation/$USER/docker
 
-Lancement: docker.sh
+# stockage des images sur le volatile
+echo "{\"data-root\": \"/volatile/formation/$USER/docker\"}" > ~/.config/docker/daemon.json
+systemctl --user enable --now docker
+
+echo "export PATH=${HOME}/bin:\$PATH" >> ~/.bashrc
+echo "export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock" >> ~/.bashrc
+
+Lancement: ./docker.sh
 
 Premier container:
 build	: Construit OS
