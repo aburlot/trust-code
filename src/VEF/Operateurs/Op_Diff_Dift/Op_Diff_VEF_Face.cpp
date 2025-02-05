@@ -31,6 +31,7 @@
 #include <Device.h>
 #include <Echange_couplage_thermique.h>
 #include <Champ_front_calc_interne.h>
+#include <Robin_VEF.h>
 
 Implemente_instanciable_sans_constructeur(Op_Diff_VEF_Face,"Op_Diff_VEF_P1NC",Op_Diff_VEF_base);
 
@@ -369,10 +370,11 @@ void Op_Diff_VEF_Face::ajouter_cas_vectoriel(const DoubleTab& inconnue,
   Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0,0}, {nb_faces,2}) , kern_ajouter);
   end_gpu_timer(__KERNEL_NAME__);
 
-  // Update flux_bords on symmetry:
+
   const int nb_bords=domaine_VEF.nb_front_Cl();
   for (int n_bord=0; n_bord<nb_bords; n_bord++)
     {
+      // Update flux_bords on symmetry:
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
       if (sub_type(Symetrie,la_cl.valeur()))
         {
@@ -385,6 +387,68 @@ void Op_Diff_VEF_Face::ajouter_cas_vectoriel(const DoubleTab& inconnue,
             flux_bords(face, 0) = 0.;
           });
           end_gpu_timer(__KERNEL_NAME__);
+        }
+
+      else if (sub_type(Robin_VEF, la_cl.valeur()))
+        {
+          const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
+          const Robin_VEF& la_cl_robin = ref_cast(Robin_VEF,la_cl.valeur());
+          int marq = phi_psi_diffuse(equation());
+          const DoubleVect& porosite_face = equation().milieu().porosite_face();
+          double scale_factor_is_one = 1.;
+          double inv_alpha = 1./la_cl_robin.get_alpha_cl() ;
+          double inv_beta =  1./la_cl_robin.get_beta_cl();
+          double inv_alpha_minus_inv_beta = 1./la_cl_robin.get_alpha_cl() - 1./la_cl_robin.get_beta_cl();
+          DoubleTab normal_vector;
+          int ndeb = le_bord.num_premiere_face();
+          int nfin = ndeb +le_bord.nb_faces();
+          for (int face=ndeb; face<nfin; face++)
+            {
+              int id_face_bord = face -ndeb;
+              double face_surface = domaine_VEF.face_surfaces(face);
+              normal_vector = domaine_VEF.normalized_boundaries_outward_vector(face, scale_factor_is_one);
+
+              for (int nc1=0; nc1<nb_comp; nc1++)
+                {
+                  double flux_robin_uu = 0. ;
+                  double flux_robin_rhs = 0.;
+                  double flux_tot ;
+
+                  // forward term for velocity
+                  for (int nc2 = 0; nc2<nb_comp; nc2++)
+                    {
+                      const double normal2 = normal_vector(nc1)*normal_vector(nc2);
+                      flux_robin_uu += (inv_beta*(nc1==nc2) + inv_alpha_minus_inv_beta*normal2)* (face_surface);
+                    }
+                  flux_robin_uu *= inconnue(face,nc1);
+
+                  // rhs for robin bc
+                  double val;
+                  if (dimension == 2)
+                    {
+                      // add normal component rhs
+                      val = inv_alpha * normal_vector(nc1) * la_cl_robin.flux_normal_imp(id_face_bord);
+
+                      // add tangential component rhs
+                      double tgte = (2*nc1-1)*normal_vector(1-nc1);
+                      val += inv_beta * la_cl_robin.flux_tangentiel_imp(id_face_bord, 0)*tgte;
+                    }
+                  else
+                    {
+                      // add normal component rhs
+                      val = inv_alpha * normal_vector(nc1) * la_cl_robin.flux_normal_imp(id_face_bord);
+
+                      // add tangential component rhs
+                      val += inv_beta * la_cl_robin.flux_tangentiel_imp(id_face_bord, nc1) ;
+                    }
+                  flux_robin_rhs = val*face_surface;
+                  flux_tot = (flux_robin_rhs - flux_robin_uu)* (marq ? porosite_face(face) : 1);
+                  resu(face,nc1) +=  flux_tot;
+                  tab_flux_bords(face,nc1) +=  flux_tot;
+
+
+                }
+            }
         }
     }
 }
@@ -782,7 +846,6 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
     else if (type_face == 1) // faces bord non perio
       {
         int elem1 = face_voisins(fac,0);
-
         for (int i = 0; i < nb_faces_elem; i++)
           {
             int j = elem_faces(elem1,i);
@@ -887,6 +950,43 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
             {
               tab_h_impose(face) = la_cl_paroi.h_imp(face-ndeb);
               tab_derivee_flux_exterieur_imposee(face) = la_cl_paroi.derivee_flux_exterieur_imposee(face-ndeb);
+            }
+        }
+      else if (sub_type(Robin_VEF, la_cl.valeur()))
+        {
+          const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
+          const Robin_VEF& la_cl_robin = ref_cast(Robin_VEF,la_cl.valeur());
+          double inv_alpha_minus_inv_beta = 1./la_cl_robin.get_alpha_cl() - 1./la_cl_robin.get_beta_cl();
+          double inv_beta  = 1./la_cl_robin.get_beta_cl();
+          double scale_factor_is_one = 1. ;
+          DoubleTab normal_vector ;
+          int ndeb = le_bord.num_premiere_face();
+          int nfin = ndeb + le_bord.nb_faces();
+          for (int face = ndeb; face < nfin; face++)
+            {
+              double face_surface = domaine_VEF.face_surfaces(face);
+              normal_vector = domaine_VEF.normalized_boundaries_outward_vector(face, scale_factor_is_one);
+              //int elem  = face_voisins(face, 0) ;
+              for (int nc1 = 0; nc1 < nb_comp; nc1++)
+                {
+                  const int i = face * nb_comp + nc1;
+
+                  // diagonal term
+                  double val = (inv_beta + inv_alpha_minus_inv_beta*normal_vector(nc1)*normal_vector(nc1))*face_surface;
+                  double robin_contribution=  val * (marq ? porosite_face(face) : 1) ;
+                  matrice(i,i) += robin_contribution  ;
+
+                  // extradiagonal term
+                  for (int nc2 = 0; nc2<nc1; nc2++)
+                    {
+                      const int j = face * nb_comp + nc2;
+                      const double normal2 = normal_vector(nc1)*normal_vector(nc2);
+                      val = inv_alpha_minus_inv_beta*normal2* (face_surface);
+                      robin_contribution=  val * (marq ? porosite_face(face) : 1) ;
+                      matrice(i, j) += robin_contribution;
+                      matrice(j ,i) += robin_contribution;
+                    }
+                }
             }
         }
     }

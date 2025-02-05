@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,6 +20,8 @@
 #include <Neumann_sortie_libre.h>
 #include <Matrice_Bloc.h>
 #include <Milieu_base.h>
+#include <Robin_VEF.h>
+
 
 Implemente_instanciable(Assembleur_P_VEF,"Assembleur_P_VEF",Assembleur_base);
 
@@ -142,6 +144,7 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
   les_coeff_pression.resize(le_dom_cl.nb_faces_Cl());
   int n1 = le_dom.domaine().nb_elem_tot();
   int n2 = le_dom.domaine().nb_elem();
+
   int elem1,elem2;
   double val;
   int i;
@@ -353,6 +356,10 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
       // On ne traite que les faces internes virtuelles ou non
       if (!le_dom_VEF->est_une_face_virt_bord(num_face) && elem1 != -1 && elem2 != -1)
         {
+          /*Cerr << "face " << num_face << finl;
+          Cerr << "Traitement face interne "<<finl;
+          Cerr << "elem1 " << elem1 << finl;
+          Cerr << "elem2 " << elem2 << finl;*/
           if(dimension==2)
             {
               val = (face_normales(num_face,0)*face_normales(num_face,0)*inverse_quantitee_entrelacee(num_face,0)
@@ -364,6 +371,8 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
                      +face_normales(num_face,1)*face_normales(num_face,1)*inverse_quantitee_entrelacee(num_face,1)
                      +face_normales(num_face,2)*face_normales(num_face,2)*inverse_quantitee_entrelacee(num_face,2));
             }
+          //Cerr << "val " << val << finl;
+          //Cerr << "\n" << finl;
           //if(num_face<premiere_face_std)
           // val*=volumes_entrelaces(num_face)/volumes_entrelaces_Cl(num_face);
 
@@ -428,7 +437,7 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
     {
 
       // Le traitement depend du type de la condition aux limites :
-      //  - Si condition de Neumann_sortie_libre
+      //  - Si condition de Neumann_sortie_libre ou Robin_VEF
       //  il faut calculer le coefficient sur la face et le prendre
       //  en compte dans le terme diagonal associe a l'element voisin.
       // - Si face de Cl avec une autre condition aux limites pas de
@@ -437,7 +446,7 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
       const Cond_lim& la_cl = les_cl[i];
       const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
       int nb_faces_bord_tot = le_bord.nb_faces_tot();
-      if (sub_type(Neumann_sortie_libre,la_cl.valeur()) )
+      if (sub_type(Neumann_sortie_libre,la_cl.valeur()) ||sub_type(Robin_VEF, la_cl.valeur()))
         {
           has_P_ref=1;
           MBrr.set_est_definie(1);
@@ -449,6 +458,7 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
                 {
                   val = ( face_normales(num_face,0)*face_normales(num_face,0)*inverse_quantitee_entrelacee(num_face,0)
                           +face_normales(num_face,1)*face_normales(num_face,1)*inverse_quantitee_entrelacee(num_face,1));
+
                 }
               else
                 {
@@ -456,20 +466,17 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
                           +face_normales(num_face,1)*face_normales(num_face,1)*inverse_quantitee_entrelacee(num_face,1)
                           +face_normales(num_face,2)*face_normales(num_face,2)*inverse_quantitee_entrelacee(num_face,2));
                 }
-              //if(num_face<premiere_face_std)
-              //  val*=volumes_entrelaces(num_face)/volumes_entrelaces_Cl(num_face);
-
               int elem=face_voisins(num_face,0);
-              if(elem<n2)
-                coeffRR[tab1RR[elem]-1] += val;
-              else
-                coeffVV[tab1VV[elem-n2]-1] += val;
+              if(elem<n2) coeffRR[tab1RR[elem]-1] += val;
+              else coeffVV[tab1VV[elem-n2]-1] = val;
+
+
               // On stocke les coefficients de pression sur les faces reelles
               if (num_face<les_coeff_pression.size_array())
                 les_coeff_pression[num_face] = val;
             }
-        }
 
+        }
       else if (sub_type(Periodique,la_cl.valeur()) )
         {
           const Periodique& la_cl_perio = ref_cast(Periodique,la_cl.valeur());
@@ -608,6 +615,21 @@ int Assembleur_P_VEF::modifier_secmem(DoubleTab& secmem)
               secmem[face_voisins(num_face,0)] += coef;
             }
         }
+
+      /*if ((sub_type(Robin_VEF,la_cl_base)) )
+        {
+          // [vkr/oswr] we should modify the value of increment_pression_bord in order to respect the oswr algorithm
+          double Pstar_OSWR, coef;
+          const Robin_VEF& la_cl_robin = ref_cast(Robin_VEF, la_cl_base);
+          for (int num_face=ndeb; num_face<nfin; num_face++)
+            {
+              Pstar_OSWR = la_cl_robin.increment_pression_bord(num_face);
+              coef = les_coeff_pression[num_face]*Pstar_OSWR+100;
+              Cerr << "PASSAGE PAR GET RESOUDRE INCR PRESSION" <<finl;
+              secmem[face_voisins(num_face,0)] += coef;
+            }
+        }*/
+
       else if ( champ_front.instationnaire() && get_resoudre_en_u() )
         {
           const DoubleTab& Gpt = champ_front.derivee_en_temps();
@@ -632,6 +654,12 @@ int Assembleur_P_VEF::modifier_solution(DoubleTab& pression)
 {
   // Projection :
   double press_0;
+
+  // if st robin
+  // modif
+
+
+
   if(!has_P_ref)
     {
       // On prend la pression minimale comme pression de reference
@@ -682,7 +710,7 @@ int Assembleur_P_VEF::modifier_matrice(Matrice& matrice)
               element_referent=i;
             }
         }
-      //Cerr << "On modifie la ligne (element) " << element_referent << finl;
+      Cerr << "On modifie la ligne (element) " << element_referent << finl;
       A00RR(element_referent,element_referent)*=2;
       matrice_modifiee=1;
     }

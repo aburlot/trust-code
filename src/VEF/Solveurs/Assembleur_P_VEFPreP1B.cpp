@@ -32,6 +32,7 @@
 #include <Solv_Petsc.h>
 #include <Solv_AMG.h>
 #include <Matrice_Petsc.h>
+#include <Robin_VEF.h>
 
 Implemente_instanciable(Assembleur_P_VEFPreP1B,"Assembleur_P_VEFPreP1B",Assembleur_P_VEF);
 
@@ -846,7 +847,7 @@ int Assembleur_P_VEFPreP1B::modifier_matrice(Matrice& la_matrice)
   const Domaine_VEF& domaine_VEF = domaine_Vef();
   // Recherche s'il y'a une pression de reference, et si oui la matrice n'est pas modifiee
   for(int i=0; i<les_cl.size(); i++)
-    if (sub_type(Neumann_sortie_libre,les_cl[i].valeur()))
+    if (sub_type(Neumann_sortie_libre,les_cl[i].valeur()) ||sub_type(Robin_VEF, les_cl[i].valeur()))
       {
         has_P_ref=1;
         if (domaine_VEF.get_alphaA())

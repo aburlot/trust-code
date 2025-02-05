@@ -29,6 +29,7 @@
 #include <Domaine.h>
 #include <Device.h>
 #include <Debog.h>
+#include <Robin_VEF.h>
 
 Implemente_instanciable(Op_Grad_VEF_P1B_Face, "Op_Grad_VEFPreP1B_P1NC|Op_Grad_VEF_P1NC", Operateur_Grad_base);
 
@@ -246,7 +247,9 @@ DoubleTab& Op_Grad_VEF_P1B_Face::ajouter_elem(const DoubleTab& pre, DoubleTab& t
   int nb_elem_tot = domaine.nb_elem_tot();
   CDoubleArrView porosite_face = equation().milieu().porosite_face().view_ro();
   CDoubleTabView face_normales = domaine_VEF.face_normales().view_ro();
+
   // Si pas de support P1, on impose Neumann sur P0
+
   if (domaine_VEF.get_alphaS() == 0)
     {
       const Domaine_Cl_VEF& domaine_Cl_VEF = la_zcl_vef.valeur();
@@ -273,6 +276,24 @@ DoubleTab& Op_Grad_VEF_P1B_Face::ajouter_elem(const DoubleTab& pre, DoubleTab& t
               });
               end_gpu_timer(__KERNEL_NAME__);
             }
+          if (sub_type(Robin_VEF, la_cl.valeur()))
+            {
+              const Front_VF& le_bord = ref_cast(Front_VF, la_cl->frontiere_dis());
+              const DoubleTab& tab_face_normales = domaine_VEF.face_normales();
+              const DoubleVect& tab_porosite_face = equation().milieu().porosite_face();
+              const IntTab& tab_face_voisins = domaine_VEF.face_voisins();
+              //CDoubleArrView pre = tab_pre.view_ro();
+              int num1 = le_bord.num_premiere_face();
+              int num2 = num1 + le_bord.nb_faces();
+              for (int face = num1 ; face < num2; face++) // loop on edges with Robin bc
+                {
+                  int elem = tab_face_voisins(face,0);
+                  double Pstar_OSWR = pre(elem,0);//la_cl_robin.increment_pression_bord(face);// // TODO : [VKR] get the value of dPstar considering OSWR algorithm
+                  double diff = Pstar_OSWR*0;
+                  for (int comp = 0; comp < dimension; comp++)
+                    tab_grad(face, comp) += diff * tab_face_normales(face, comp) * tab_porosite_face(face) ;
+                }
+            }
         }
     }
 
@@ -295,6 +316,7 @@ DoubleTab& Op_Grad_VEF_P1B_Face::ajouter_elem(const DoubleTab& pre, DoubleTab& t
           {
             double val = pe * signe * face_normales(face, comp) * porosite_face(face);
             Kokkos::atomic_sub(&grad(face, comp), val);
+
           }
       }
   };
