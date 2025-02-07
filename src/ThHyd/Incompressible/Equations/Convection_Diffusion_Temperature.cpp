@@ -808,7 +808,7 @@ void Convection_Diffusion_Temperature::calcul_indic_pena_global(IntTab& indicatr
   for ( int w = 0 ; w<ref_penalisation_L2_FTD.size() ; ++w)
     {
       Transport_Interfaces_base& nom_eq = ref_cast(Transport_Interfaces_base,ref_penalisation_L2_FTD[w].valeur());
-      const DoubleTab& indicatrice = nom_eq.get_update_indicatrice().valeurs();
+      const DoubleTab& indicatrice = nom_eq.get_indicatrice().valeurs();
       // fonction characteristique (0 ou 1) pour l'ensemble des ibc
       for (int k_elem =0 ; k_elem <nb_elem; ++k_elem)
         {
@@ -935,7 +935,7 @@ DoubleTab& Convection_Diffusion_Temperature::penalisation_L2(DoubleTab& u)
           Cerr << " Nombre d'elements stockes au dans l'iconnue " <<inc.size() <<finl;
           Process::exit();
         }
-      const DoubleTab& indicatrice = nom_eq.get_update_indicatrice().valeurs();
+      const DoubleTab& indicatrice = nom_eq.get_indicatrice().valeurs();
 
       DoubleTrav pena_loc(indicatrice);
       // Determination du terme de penalisation pour l ibc courante
@@ -1088,7 +1088,7 @@ void Convection_Diffusion_Temperature::ecrire_fichier_pena_th(DoubleTab& u_old, 
       for ( int i = 0 ; i < ref_penalisation_L2_FTD.size() ; ++i) //boucle sur le nombre d'ibc
         {
           Transport_Interfaces_base& nom_eq = ref_cast(Transport_Interfaces_base,ref_penalisation_L2_FTD[i].valeur());
-          const DoubleTab& indicatrice = nom_eq.get_update_indicatrice().valeurs();
+          const DoubleTab& indicatrice = nom_eq.get_indicatrice().valeurs();
           double Flux_pena= 0.;
           double Flux_pena_old= 0.;
           double Flux_temp_interne= 0.;

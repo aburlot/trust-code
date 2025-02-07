@@ -47,7 +47,9 @@ public:
   // Recupere le tag du maillage de l'interface
   virtual int get_mesh_tag() const = 0;
   // Recupere le champ de l'indicatrice
-  virtual const Champ_base& get_update_indicatrice() =0;
+  // TODO : Why virtual here? Why not getting the daughter version from Transport_Interfaces_FT_Disc directly here?
+  virtual const Champ_base& get_indicatrice() =0;
+  virtual void update_indicatrice() =0;
 
 
   //Effectue l integration de trajectoire de particules ponctuelles
