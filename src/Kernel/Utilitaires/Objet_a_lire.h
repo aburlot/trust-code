@@ -29,7 +29,7 @@ class Objet_a_lire :public Objet_U
   Declare_instanciable(Objet_a_lire);
 public:
   enum Type { INTEGER = 0, TRUSTID, DOUBLE, OBJECT, FLAG, NON_STD, DERIV, ArrOfInt_size_imp,
-              ArrOfDouble_size_imp, PARAM, BOOLEAN_FLAG
+              ArrOfDouble_size_imp, PARAM
             };
 
   enum Nature { OPTIONAL = 0, REQUIRED = 1 };
@@ -50,7 +50,6 @@ public:
   }
 
   Param& create_param(const char*);
-  void set_flag(int*);
   void set_flag(bool*);
   void set_non_std(Objet_U*);
   ptrParam& add_dict(const char*,int, const char* =0);
@@ -76,8 +75,7 @@ protected:
   Objet_U *obj_a_lire, *objet_lu;
   ArrOfInt *arrofint_a_lire;
   ArrOfDouble *arrofdouble_a_lire;
-  int *flag_a_lire;
-  bool *boolean_flag_a_lire;
+  bool *flag_a_lire;
   Motcles dictionnaire_noms;
   ArrOfInt dictionnaire_valeurs;
   LIST(ptrParam) dictionnaire_params;

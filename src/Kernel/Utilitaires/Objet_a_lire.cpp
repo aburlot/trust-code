@@ -20,7 +20,7 @@
 Implemente_instanciable_sans_constructeur(Objet_a_lire,"Objet_a_lire",Objet_U);
 
 Objet_a_lire::Objet_a_lire() : int_a_lire(nullptr), tid_a_lire(nullptr), double_a_lire(nullptr), obj_a_lire(nullptr), objet_lu(nullptr),
-  arrofint_a_lire(nullptr), arrofdouble_a_lire(nullptr), flag_a_lire(nullptr), boolean_flag_a_lire(nullptr) { }
+  arrofint_a_lire(nullptr), arrofdouble_a_lire(nullptr), flag_a_lire(nullptr) { }
 
 Entree& Objet_a_lire::readOn(Entree& is)
 {
@@ -68,19 +68,12 @@ void Objet_a_lire::set_arrofdouble(ArrOfDouble *quoi)
   type = ArrOfDouble_size_imp;
 }
 
-void Objet_a_lire::set_flag(int *quoi)
-{
-  flag_a_lire = quoi;
-  // initialisation du flag a 0
-  *flag_a_lire = 0;
-  type = FLAG;
-}
 void Objet_a_lire::set_flag(bool *quoi)
 {
-  boolean_flag_a_lire = quoi;
+  flag_a_lire = quoi;
   // initialisation du flag a false
-  *boolean_flag_a_lire = false;
-  type = BOOLEAN_FLAG;
+  *flag_a_lire = false;
+  type = FLAG;
 }
 
 void Objet_a_lire::set_non_std(Objet_U *quoi)
@@ -164,7 +157,7 @@ void Objet_a_lire::set_nature(Objet_a_lire::Nature n)
 
 bool Objet_a_lire::is_type_simple() const
 {
-  return ((type == INTEGER) || (type == DOUBLE) || (type == FLAG) || (type == BOOLEAN_FLAG));
+  return ((type == INTEGER) || (type == DOUBLE) || (type == FLAG));
 }
 
 double Objet_a_lire::get_value() const
@@ -177,8 +170,6 @@ double Objet_a_lire::get_value() const
       return (*double_a_lire);
     case FLAG:
       return (*flag_a_lire);
-    case BOOLEAN_FLAG:
-      return (*boolean_flag_a_lire);
     default:
       Cerr << "get_value not coded for this case" << finl;
       Process::exit();
@@ -227,10 +218,7 @@ void Objet_a_lire::read(Motcle const& motcle, Entree& is)
       is >> (*obj_a_lire);
       break;
     case FLAG:
-      (*flag_a_lire) = 1;
-      break;
-    case BOOLEAN_FLAG:
-      (*boolean_flag_a_lire) = true;
+      (*flag_a_lire) = true;
       break;
     case NON_STD:
       ret = (*objet_lu).lire_motcle_non_standard(motcle, is);
