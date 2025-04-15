@@ -3192,6 +3192,8 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
       Mat Aperm;
       MatOrderingType ordering = MATORDERINGRCM;
       MatGetOrdering(MatricePetsc_, ordering, &rowperm, &colperm);
+      ISInvertPermutation(rowperm, PETSC_DECIDE, &inv_rowperm);
+      ISInvertPermutation(colperm, PETSC_DECIDE, &inv_colperm);
       MatPermute(MatricePetsc_, rowperm, colperm, &Aperm);
       MatDestroy(&MatricePetsc_);
       MatricePetsc_ = Aperm;
@@ -3261,6 +3263,7 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
               const int k1 = tab1[i + 1] - 1;
               for (int k = k0; k < k1; k++)
                 {
+                  if (coeff[k] == 0 and reorder_matrix_ ) continue;
                   coeff_tmp[ncol] = coeff[k];
                   tab2_tmp[ncol] = renum_array[tab2[k] - 1];
                   ncol++;
@@ -3298,6 +3301,15 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
       MatAssemblyEnd(MatricePetsc, MAT_FINAL_ASSEMBLY);
     }
 
+  if (!nouveau_stencil_ && reorder_matrix_)
+    {
+      Mat Aperm;
+
+      MatPermute(MatricePetsc_, rowperm, colperm, &Aperm);
+      MatDestroy(&MatricePetsc_);
+      MatricePetsc_ = Aperm;
+    }
+
 #ifndef NDEBUG
   if (mataij_)
     {
@@ -3327,6 +3339,15 @@ bool Solv_Petsc::detect_new_stencil(const Matrice_Morse& mat_morse)
   // If stencil is set constant for matrix, we leave
   if (mat_morse.constant_stencil())
     return false;
+
+  if (reorder_matrix_)
+    {
+      Mat Aperm;
+
+      MatPermute(MatricePetsc_, inv_rowperm, inv_colperm, &Aperm);
+      MatDestroy(&MatricePetsc_);
+      MatricePetsc_ = Aperm;
+    }
 
   // Est ce un nouveau stencil ?
   Perf_counters::time_point start = statistics().start_clock();
