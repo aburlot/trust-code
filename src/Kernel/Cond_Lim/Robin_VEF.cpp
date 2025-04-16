@@ -50,7 +50,7 @@ Entree& Robin_VEF::readOn( Entree& is )
 
   if (alpha_robin_cl_<=0 || beta_robin_cl_<=0)
     {
-      Cerr << "Error of Robin boundary conditions : Alpha and Beta parameters should not be zero  " << finl;
+      Cerr << "Error of Robin boundary conditions : Alpha and Beta parameters should be positive  " << finl;
       exit() ;
     }
 

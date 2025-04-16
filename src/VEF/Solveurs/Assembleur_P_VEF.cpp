@@ -446,7 +446,7 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
       const Cond_lim& la_cl = les_cl[i];
       const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
       int nb_faces_bord_tot = le_bord.nb_faces_tot();
-      if (sub_type(Neumann_sortie_libre,la_cl.valeur()) ||sub_type(Robin_VEF, la_cl.valeur()))
+      if (sub_type(Neumann_sortie_libre,la_cl.valeur()) || sub_type(Robin_VEF,la_cl.valeur())  )
         {
           has_P_ref=1;
           MBrr.set_est_definie(1);
@@ -458,7 +458,6 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
                 {
                   val = ( face_normales(num_face,0)*face_normales(num_face,0)*inverse_quantitee_entrelacee(num_face,0)
                           +face_normales(num_face,1)*face_normales(num_face,1)*inverse_quantitee_entrelacee(num_face,1));
-
                 }
               else
                 {
@@ -466,16 +465,18 @@ int Assembleur_P_VEF::remplir(Matrice& la_matrice, const DoubleTab& inverse_quan
                           +face_normales(num_face,1)*face_normales(num_face,1)*inverse_quantitee_entrelacee(num_face,1)
                           +face_normales(num_face,2)*face_normales(num_face,2)*inverse_quantitee_entrelacee(num_face,2));
                 }
+              //if(num_face<premiere_face_std)
+              //  val*=volumes_entrelaces(num_face)/volumes_entrelaces_Cl(num_face);
+
               int elem=face_voisins(num_face,0);
-              if(elem<n2) coeffRR[tab1RR[elem]-1] += val;
-              else coeffVV[tab1VV[elem-n2]-1] = val;
-
-
+              if(elem<n2)
+                coeffRR[tab1RR[elem]-1] += val;
+              else
+                coeffVV[tab1VV[elem-n2]-1] += val;
               // On stocke les coefficients de pression sur les faces reelles
               if (num_face<les_coeff_pression.size_array())
                 les_coeff_pression[num_face] = val;
             }
-
         }
       else if (sub_type(Periodique,la_cl.valeur()) )
         {
@@ -654,12 +655,6 @@ int Assembleur_P_VEF::modifier_solution(DoubleTab& pression)
 {
   // Projection :
   double press_0;
-
-  // if st robin
-  // modif
-
-
-
   if(!has_P_ref)
     {
       // On prend la pression minimale comme pression de reference

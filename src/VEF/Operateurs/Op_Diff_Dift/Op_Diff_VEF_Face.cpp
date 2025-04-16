@@ -402,6 +402,9 @@ void Op_Diff_VEF_Face::ajouter_cas_vectoriel(const DoubleTab& inconnue,
           DoubleTab normal_vector;
           int ndeb = le_bord.num_premiere_face();
           int nfin = ndeb +le_bord.nb_faces();
+#ifdef TRUST_USE_GPU
+          Cerr << "Warning not tested on GPU" << finl;
+#endif
           for (int face=ndeb; face<nfin; face++)
             {
               int id_face_bord = face -ndeb;
@@ -962,6 +965,7 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
           DoubleTab normal_vector ;
           int ndeb = le_bord.num_premiere_face();
           int nfin = ndeb + le_bord.nb_faces();
+          const DoubleVect& tab_porosite_face = equation().milieu().porosite_face();
           for (int face = ndeb; face < nfin; face++)
             {
               double face_surface = domaine_VEF.face_surfaces(face);
@@ -973,8 +977,8 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
 
                   // diagonal term
                   double val = (inv_beta + inv_alpha_minus_inv_beta*normal_vector(nc1)*normal_vector(nc1))*face_surface;
-                  double robin_contribution=  val * (marq ? porosite_face(face) : 1) ;
-                  matrice(i,i) += robin_contribution  ;
+                  double robin_contribution=  val * (marq ? tab_porosite_face(face) : 1) ;
+                  tab_matrice(i,i) += robin_contribution  ;
 
                   // extradiagonal term
                   for (int nc2 = 0; nc2<nc1; nc2++)
@@ -982,9 +986,9 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
                       const int j = face * nb_comp + nc2;
                       const double normal2 = normal_vector(nc1)*normal_vector(nc2);
                       val = inv_alpha_minus_inv_beta*normal2* (face_surface);
-                      robin_contribution=  val * (marq ? porosite_face(face) : 1) ;
-                      matrice(i, j) += robin_contribution;
-                      matrice(j ,i) += robin_contribution;
+                      robin_contribution=  val * (marq ? tab_porosite_face(face) : 1) ;
+                      tab_matrice(i, j) += robin_contribution;
+                      tab_matrice(j ,i) += robin_contribution;
                     }
                 }
             }

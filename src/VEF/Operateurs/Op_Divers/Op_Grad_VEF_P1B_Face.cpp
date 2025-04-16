@@ -237,7 +237,7 @@ DoubleTab& Op_Grad_VEF_P1B_Face::modifier_grad_pour_Cl(DoubleTab& tab_grad) cons
   return tab_grad;
 }
 
-DoubleTab& Op_Grad_VEF_P1B_Face::ajouter_elem(const DoubleTab& pre, DoubleTab& tab_grad) const
+DoubleTab& Op_Grad_VEF_P1B_Face::ajouter_elem(const DoubleTab& tab_pre, DoubleTab& tab_grad) const
 {
   const Domaine_VEF& domaine_VEF = domaine_vef();
   assert(domaine_VEF.get_alphaE());
@@ -276,30 +276,57 @@ DoubleTab& Op_Grad_VEF_P1B_Face::ajouter_elem(const DoubleTab& pre, DoubleTab& t
               });
               end_gpu_timer(__KERNEL_NAME__);
             }
+
           if (sub_type(Robin_VEF, la_cl.valeur()))
             {
+#ifdef TRUST_USE_GPU
+              Cerr << "Warning not tested on GPU" << finl;
+#endif
               const Front_VF& le_bord = ref_cast(Front_VF, la_cl->frontiere_dis());
-              const DoubleTab& tab_face_normales = domaine_VEF.face_normales();
-              const DoubleVect& tab_porosite_face = equation().milieu().porosite_face();
-              const IntTab& tab_face_voisins = domaine_VEF.face_voisins();
-              //CDoubleArrView pre = tab_pre.view_ro();
               int num1 = le_bord.num_premiere_face();
               int num2 = num1 + le_bord.nb_faces();
-              for (int face = num1 ; face < num2; face++) // loop on edges with Robin bc
-                {
-                  int elem = tab_face_voisins(face,0);
-                  double Pstar_OSWR = pre(elem,0);//la_cl_robin.increment_pression_bord(face);// // TODO : [VKR] get the value of dPstar considering OSWR algorithm
-                  double diff = Pstar_OSWR*0;
-                  for (int comp = 0; comp < dimension; comp++)
-                    tab_grad(face, comp) += diff * tab_face_normales(face, comp) * tab_porosite_face(face) ;
-                }
+              DoubleTabView grad = tab_grad.view_rw();
+              CDoubleTabView pre = tab_pre.view_ro();
+              CIntTabView face_voisins = domaine_VEF.face_voisins().view_ro();
+              Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(num1, num2), KOKKOS_LAMBDA(const int face)
+              {
+                int elem = face_voisins(face,0);
+                double Pstar_OSWR = pre(elem,0);//la_cl_robin.increment_pression_bord(face);// // TODO : [VKR] get the value of dPstar considering OSWR algorithm
+                double diff = Pstar_OSWR*0;
+                for (int comp = 0; comp < dim; comp++)
+                  grad(face, comp) += diff * face_normales(face, comp) * porosite_face(face);
+              });
+              end_gpu_timer(__KERNEL_NAME__);
             }
+
+
+
+          /*
+                    if (sub_type(Robin_VEF, la_cl.valeur()))
+                      {
+                        const Front_VF& le_bord = ref_cast(Front_VF, la_cl->frontiere_dis());
+                        const DoubleTab& tab_face_normales = domaine_VEF.face_normales();
+                        const DoubleVect& tab_porosite_face = equation().milieu().porosite_face();
+                        const IntTab& tab_face_voisins = domaine_VEF.face_voisins();
+                        //CDoubleArrView pre = tab_pre.view_ro();
+                        int num1 = le_bord.num_premiere_face();
+                        int num2 = num1 + le_bord.nb_faces();
+                        for (int face = num1 ; face < num2; face++) // loop on edges with Robin bc
+                          {
+                            int elem = tab_face_voisins(face,0);
+                            double Pstar_OSWR = tab_pre(elem,0);//la_cl_robin.increment_pression_bord(face);// // TODO : [VKR] get the value of dPstar considering OSWR algorithm
+                            double diff = Pstar_OSWR*0;
+                            for (int comp = 0; comp < dimension; comp++)
+                              tab_grad(face, comp) += diff * tab_face_normales(face, comp) * tab_porosite_face(face) ;
+                          }
+                      }
+                      */
         }
     }
 
   CIntTabView face_voisins = domaine_VEF.face_voisins().view_ro();
   CIntTabView elem_faces_v = elem_faces.view_ro();
-  CDoubleTabView pre_v = pre.view_ro();
+  CDoubleTabView pre = tab_pre.view_ro();
   DoubleTabView grad = tab_grad.view_rw();
   int dim = Objet_U::dimension;
 
@@ -308,7 +335,7 @@ DoubleTab& Op_Grad_VEF_P1B_Face::ajouter_elem(const DoubleTab& pre, DoubleTab& t
   {
     for (int indice = 0; indice < nfe; indice++)
       {
-        double pe = pre_v(elem, 0);
+        double pe = pre(elem, 0);
         int face = elem_faces_v(elem, indice);
         double signe = 1;
         if (elem != face_voisins(face, 0)) signe = -1;
