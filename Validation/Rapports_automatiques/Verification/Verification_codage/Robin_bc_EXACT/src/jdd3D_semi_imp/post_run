@@ -1,0 +1,53 @@
+
+# Fonction pour extraire une valeur unique et l'écrire dans un fichier de sortie
+extract_single_value() {
+  local input_file=$1
+  local output_file=$2
+
+
+  # Extrait la valeur de la dernière ligne, deuxième colonne
+  value=$(tail -n 1 $input_file | awk '{print $2}')
+
+  # Écrit la valeur dans le fichier de sortie
+  echo "$value" > $output_file
+
+}
+
+# Fonction pour extraire les valeurs et les écrire dans un fichier de sortie
+extract_velocity_values() {
+  local input_file=$1
+  local output_file=$2
+
+
+  # Extrait les valeurs de la dernière ligne, à partir de la deuxième colonne
+  values=$(tail -n 1 $input_file | awk '{for (i=2; i<=NF; i++) printf "%s ", $i; print ""}')
+
+  # Écrit les valeurs dans le fichier de sortie
+  echo "$values" > $output_file
+
+  echo "Les valeurs ont été écrites dans $output_file."
+}
+
+# Fichiers d'entrée pour la pression
+file_pressure_min="jdd_PRESSURE_MIN.son"
+file_pressure_max="jdd_PRESSURE_MAX.son"
+
+# Fichiers de sortie pour la pression
+output_pmin="pmin"
+output_pmax="pmax"
+
+# Extrait les valeurs pour les fichiers de pression
+extract_single_value $file_pressure_min $output_pmin
+extract_single_value $file_pressure_max $output_pmax
+
+# Fichiers d'entrée pour la vitesse
+file_velocity_min="jdd_VELOCITY_MIN.son"
+file_velocity_max="jdd_VELOCITY_MAX.son"
+
+# Fichiers de sortie pour la vitesse
+output_vmin="vmin"
+output_vmax="vmax"
+
+# Extrait les valeurs pour les fichiers de vitesse
+extract_velocity_values $file_velocity_min $output_vmin
+extract_velocity_values $file_velocity_max $output_vmax

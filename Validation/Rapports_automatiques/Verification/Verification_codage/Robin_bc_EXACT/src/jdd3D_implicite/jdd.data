@@ -1,0 +1,153 @@
+# test FCVAB with Robin border condition #
+# AUTHOR : KRAEMER VALENTIN #
+# LAST MODIFICATION : 31/7/24 #
+# PARALLEL OK  #
+
+Dimension 3
+Pb_hydraulique pb
+
+Domaine dom
+
+# BEGIN MESH #
+Mailler dom
+{
+	Pave Cavite
+	{
+		Origine 0 0 0
+		Nombre_de_noeuds 6 6 6 
+		Longueurs 1 1 1
+		}
+		{
+		Bord Gauche	X = 0	0 <= Y <= 1	0 <= Z <= 1
+		Bord Droite	X = 1	0 <= Y <= 1	0 <= Z <= 1
+		Bord Bas	Y = 0	0 <= X <= 1	0 <= Z <= 1
+		Bord Haut	Y = 1	0 <= X <= 1	0 <= Z <= 1
+		Bord Devant	Z = 0	0 <= X <= 1	0 <= Y <= 1
+		Bord Derriere	Z = 1	0 <= X <= 1	0 <= Y <= 1
+		}
+}
+Tetraedriser_homogene dom
+VerifierCoin dom { } 
+# END MESH #
+
+
+# BEGIN SCATTER
+Scatter DOM.Zones dom
+END SCATTER #
+
+VEFPreP1b dis Read dis { P0 }
+# Lire dis { P0 } #
+
+Schema_Euler_implicite sch
+Lire sch
+{
+	tinit 0
+	nb_pas_dt_max 3
+	dt_min 1e-6
+	dt_max 1e-3
+	dt_impr 1e1
+	facsec 1
+	facsec_max 500
+	solveur implicite { solveur gmres { diag nb_it_max 3 seuil 1e-12 impr } }
+	precision_impr 8
+	seuil_statio 1e-6
+}
+
+
+Associer pb dom
+Associer pb sch
+
+Discretiser pb dis
+
+Lire pb
+{
+   
+   fluide_incompressible {
+    	mu champ_uniforme 1 1
+    	rho champ_uniforme 1 1
+   }
+   
+   	Navier_Stokes_standard
+	{
+		projection_initiale	0
+		methode_calcul_pression_initiale	sans_rien
+		Solveur_pression	PETSC Cholesky { }
+		Convection		{ negligeable }
+		Diffusion		{ }
+		Conditions_initiales	{
+					vitesse champ_fonc_xyz dom 3 0 0 0
+					pression champ_uniforme 1 0.01
+					}
+		Conditions_limites	{
+					Gauche		frontiere_ouverte_vitesse_imposee champ_front_fonc_xyz 3 0 0 0
+					Droite		frontiere_ouverte_vitesse_imposee champ_front_fonc_xyz 3 0 0 0
+					Devant	
+					frontiere_ouverte_vitesse_imposee champ_front_fonc_xyz 3 0 0 0
+					Derriere
+					frontiere_ouverte_vitesse_imposee champ_front_fonc_xyz 3 0 0 0
+					Bas	frontiere_ouverte_vitesse_imposee champ_front_fonc_xyz 3 0 0 0
+					Haut	Robin_VEF {
+         alpha 25
+         beta 10
+         champ_front_normal_et_tangentiel_robin champ_front_fonc_xyz 4 -0.25 0 0 0       
+}
+					}
+		Sources			{
+					Source_Qdm champ_fonc_xyz dom 3 0 0 0
+					}
+	}
+	Postraitement 
+	{	
+		Definition_champs
+		{
+			pressure_max    reduction_0D    {
+						methode max
+						source interpolation    {
+						    localisation elem
+						    source refChamp { Pb_champ pb pression }
+						}
+					    }
+			 pressure_min    reduction_0D    {
+				methode min
+				source interpolation    {
+				    localisation elem
+				    source refChamp { Pb_champ pb pression }
+				}
+			    }
+			    
+			velocity_max    reduction_0D    {
+						methode max
+						source interpolation    {
+						    localisation faces
+						    source refChamp { Pb_champ pb vitesse }
+						}
+					    }
+			 velocity_min    reduction_0D    {
+				methode min
+				source interpolation    {
+				    localisation faces
+				    source refChamp { Pb_champ pb vitesse }
+				}
+			    }
+		}
+				
+		Probes 
+		{
+			pressure_max pressure_max Periode 0.5 Point 1 0.5 0.5 0.5
+			pressure_min pressure_min Periode 0.5 Point 1 0.5 0.5 0.5
+			velocity_max velocity_max Periode 0.5 Point 1 0.5 0.5 0.5
+			velocity_min velocity_min Periode 0.5 Point 1 0.5 0.5 0.5
+		}
+
+		Format lml
+		fields dt_post 1.3
+		{
+			pression elem
+			vitesse elem
+		}
+	}
+}
+
+Resoudre pb
+Fin
+ 
