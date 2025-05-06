@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2023, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -95,7 +95,7 @@ int Option_VDF::lire_motcle_non_standard(const Motcle& mot_cle, Entree& is)
     }
   else if (mot_cle == "all_options" || mot_cle == "toutes_les_options") /* for experts only ;) */
     {
-      if (traitement_coins == 1 || traitement_coins == 1 || coeff_P_neumann == 2.)
+      if (traitement_coins == 1 || traitement_coins == 1 ) //|| coeff_P_neumann == 2.)
         {
           Cerr << "Error in Option_VDF::" << __func__ << " !!!!!!!!!!!!" << finl;
           Cerr << "You are using the keyword all_options|toutes_les_options to activate all options, but your are explicitly specifing other options ..." << finl;

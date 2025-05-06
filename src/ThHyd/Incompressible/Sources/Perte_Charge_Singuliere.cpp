@@ -82,16 +82,30 @@ Entree& Perte_Charge_Singuliere::lire_donnees(Entree& is)
   if (motlu == "regul")
     {
       regul_ = 1;
-      Nom eps_str, deb_str;
+      Nom obsolete(""), alpha_str(""), deb_str;
       Param param("regul");
       param.ajouter("K0", &K_, Param::REQUIRED);
       param.ajouter("deb", &deb_str, Param::REQUIRED);
-      param.ajouter("eps", &eps_str, Param::REQUIRED);
+      param.ajouter("eps", &obsolete);
+      param.ajouter("alpha", &alpha_str);
       param.lire_avec_accolades(is);
-      deb_cible_.setNbVar(1), eps_.setNbVar(1);
-      deb_cible_.setString(deb_str), eps_.setString(eps_str);
-      deb_cible_.addVar("t"), eps_.addVar("t");
-      deb_cible_.parseString(), eps_.parseString();
+      if (obsolete != "")
+        {
+          Cerr << "Erreur syntaxe!" << finl;
+          Cerr << "La formule de regulation de debit passant de:" << finl;
+          Cerr << "K_ *= min(max(|debit|/deb_cible)^2,(1-eps)^dt),(1+eps)^dt);" << finl;
+          Cerr << "a:" << finl;
+          Cerr << "K_ += dt*alpha*(debit-debit_cible);" << finl;
+          Cerr << "Le mot cle eps (valeur comprise entre 0 et 1) n'est plus valide." << finl;
+          Cerr << "L'amplitude de la regulation du debit doit etre specifiee par le mot cle alpha. Si vous aviez une valeur non nulle pour eps, par ex 0.5, remplacer par alpha 10" << finl;
+          Cerr << "et eps 0 doit etre remplace par alpha 0" << finl;
+          Process::exit();
+        }
+      if (alpha_str=="") Process::exit("alpha doit etre specifie pour la regulation.");
+      deb_cible_.setNbVar(1), alpha_.setNbVar(1);
+      deb_cible_.setString(deb_str), alpha_.setString(alpha_str);
+      deb_cible_.addVar("t"), alpha_.addVar("t");
+      deb_cible_.parseString(), alpha_.parseString();
     }
   else if (motlu == "coeff")
     {
@@ -405,12 +419,12 @@ void Perte_Charge_Singuliere::update_K(const Equation_base& eqn, double deb, Dou
 {
   if (!regul_) return;
   double t = eqn.probleme().schema_temps().temps_courant(), dt = eqn.probleme().schema_temps().pas_de_temps();
-  deb_cible_.setVar(0, t), eps_.setVar(0, t);
+  deb_cible_.setVar(0, t), alpha_.setVar(0, t);
   double deb_cible = deb_cible_.eval();
   if (std::abs(deb_cible) > 1e-10)
     {
-      const double eps = eps_.eval(), error = (deb - deb_cible) / deb_cible;
-      K_ += dt * eps * error;
+      const double alpha = alpha_.eval(), error = (deb - deb_cible) / deb_cible;
+      K_ += dt * alpha * error;
     }
 
   //pour le fichier de suivi : seulement sur le maitre, car Source_base::imprimer() fait une somme sur les procs

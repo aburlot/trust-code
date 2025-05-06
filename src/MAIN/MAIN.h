@@ -15,4 +15,4 @@
 
 
 class mon_main;
-int main_TRUST(int argc, char** argv,mon_main*& main_process, bool force_mpi=0);
+int main_TRUST(int argc, char** argv,mon_main*& main_process, bool force_mpi=0, bool ieee=true);

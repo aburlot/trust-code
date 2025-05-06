@@ -68,7 +68,7 @@ void usage()
 #define DEFAULT_CHECK_ENABLED 1
 #endif
 
-int main_TRUST(int argc, char** argv,mon_main*& main_process,bool force_mpi)
+int main_TRUST(int argc, char** argv,mon_main*& main_process,bool force_mpi, bool ieee)
 {
 #ifdef VTRACE
   //VT_USER_END("Initialization");
@@ -90,7 +90,7 @@ int main_TRUST(int argc, char** argv,mon_main*& main_process,bool force_mpi)
 
   Nom log_directory = "";
   bool helptrust = false;
-  bool ieee = true;  // true => use of feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  // itrue => use of feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 // Crashes bizarres sur compilateurs clang++, fcc, nvc++ donc on desactive:
 #if defined(_COMPILE_AVEC_CLANG) || defined (_COMPILE_AVEC_FCC) || defined(__NVCOMPILER)
   ieee = false;
