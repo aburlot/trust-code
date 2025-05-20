@@ -89,6 +89,7 @@ public:
   virtual DoubleTab& valeur_aux(const DoubleTab& positions, DoubleTab& valeurs) const;
   virtual DoubleVect& valeur_aux_compo(const DoubleTab& positions, DoubleVect& valeurs, int ncomp) const;
   virtual DoubleTab& valeur_aux_elems(const DoubleTab& positions, const IntVect& les_polys, DoubleTab& valeurs) const;
+  virtual DoubleTab& valeur_aux_elems_passe(const DoubleTab& positions, const IntVect& les_polys, DoubleTab& tab_valeurs) const {Process::exit("Must be override"); throw;};
   virtual DoubleVect& valeur_aux_elems_compo(const DoubleTab& positions, const IntVect& les_polys, DoubleVect& valeurs, int ncomp) const;
   virtual DoubleTab& valeur_aux_elems_smooth(const DoubleTab& positions, const IntVect& les_polys, DoubleTab& valeurs);
   virtual DoubleVect& valeur_aux_elems_compo_smooth(const DoubleTab& positions, const IntVect& les_polys, DoubleVect& valeurs, int ncomp);

@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2023, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -41,7 +41,6 @@ public:
 
 protected:
   void init_fcl() const;
-  virtual DoubleTab& valeur_aux_elems_passe(const DoubleTab& positions, const IntVect& les_polys, DoubleTab& tab_valeurs) const = 0;
   mutable IntTab fcl_; // fcl_(f, .) = { type de CL, num de la CL, indice de la face dans la CL }
   mutable int fcl_init_ = 0;
 };
