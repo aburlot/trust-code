@@ -1,20 +1,12 @@
 #!/bin/bash
+# Only install for Nvidia GPU for the moment
+[ "$TRUST_USE_CUDA" != 1 ] && exit 0
+archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-kernels-4.6.01.tar.gz
 
-if [ "$TRUST_USE_GPU" = 1 ] || [ "$TRUST_USE_KOKKOS_SIMD" = 1 ]
-then
-   # Kokkos pour SIMD ou GPU (C++17):
-   #archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.2.00.tar.gz
-   #archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.4.01.tar.gz
-   archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.6.01.tar.gz
-else
-   # Kokkos Serial (C++14)
-   archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-3.7.02.tgz
-fi
-
-build_dir=$TRUST_ROOT/build/kokkos
+build_dir=$TRUST_ROOT/build/kokkos-kernels
 KOKKOS_ROOT_DIR=$TRUST_ROOT/lib/src/LIBKOKKOS
 # Log file of the process:
-log_file=$TRUST_ROOT/kokkos_compile.log
+log_file=$TRUST_ROOT/kokkos-kernels_compile.log
 
 if [ ! -f $KOKKOS_ROOT_DIR/lib64/libkokkos.a ]; then
     echo "# Installing `basename $archive` ..."
@@ -27,12 +19,12 @@ if [ ! -f $KOKKOS_ROOT_DIR/lib64/libkokkos.a ]; then
       src_dir=$build_dir/`ls $build_dir | grep kokkos`
 
       # Set this flag to 1 to have Kokkos compiled/linked in Debug mode for $exec_debug or when developping on GPU:
-      if [ $HOST = $TRUST_HOST_ADMIN ] || [ "$TRUST_USE_KOKKOS_SIMD" = 1 ]
-      then
-         build_debug=1
-      else
-         build_debug=$TRUST_ENABLE_KOKKOS_DEBUG
-      fi
+      #if [ $HOST = $TRUST_HOST_ADMIN ] || [ "$TRUST_USE_KOKKOS_SIMD" = 1 ]
+      #then
+      #   build_debug=1
+      #else
+      #   build_debug=$TRUST_ENABLE_KOKKOS_DEBUG
+      #fi
       BUILD_TYPES="Release `[ "$build_debug" = "1" ] && echo Debug`"
       for CMAKE_BUILD_TYPE in $BUILD_TYPES
       do
@@ -50,8 +42,6 @@ if [ ! -f $KOKKOS_ROOT_DIR/lib64/libkokkos.a ]; then
            # Optimisations pour Serial (important pour F5,C3D)
            CMAKE_OPT="$CMAKE_OPT -DKokkos_ENABLE_ATOMICS_BYPASS=ON" # Serial build (skips mutexes to remediate performance regression)
            CMAKE_OPT="$CMAKE_OPT -DKokkos_ENABLE_LIBDL=OFF" # Disable Kokkos tools (profiling and fence) so 2 hacks useless:
-           #sed -i '/bool profileLibraryLoaded() {/,/}/c\bool profileLibraryLoaded() \/* Disabled \*/ { return false; }' $src_dir/core/src/impl/Kokkos_Profiling.cpp || exit -1 # Disable profiling
-           #sed -i '/Kokkos::Tools::Experimental::Impl::profile_fence_event<Kokkos::Serial>(/,/Kokkos::memory_fence();/d' $src_dir/core/src/Serial/Kokkos_Serial.hpp || exit -1 # Disable fence for serial without thread
         fi
         CMAKE_OPT="$CMAKE_OPT -DCMAKE_CXX_FLAGS=-fPIC"
         # ARCH:
@@ -66,9 +56,6 @@ if [ ! -f $KOKKOS_ROOT_DIR/lib64/libkokkos.a ]; then
            if [ "$TRUST_CUDA_CC" = 70 ]
            then
               CMAKE_OPT="$CMAKE_OPT -DKokkos_ARCH_VOLTA$TRUST_CUDA_CC=ON"
-           elif [ "$TRUST_CUDA_CC" = 75 ]
-           then
-              CMAKE_OPT="$CMAKE_OPT -DKokkos_ARCH_TURING$TRUST_CUDA_CC=ON"
            elif [ "$TRUST_CUDA_CC" = 80 ] || [ "$TRUST_CUDA_CC" = 86 ]
            then
               CMAKE_OPT="$CMAKE_OPT -DKokkos_ARCH_AMPERE$TRUST_CUDA_CC=ON"

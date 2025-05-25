@@ -1,3 +1,4 @@
+XX/XX/25 (TRUST) GPU          : Add kokkos-kernels package (math kernels on GPU) + update Kokkos from 4.5.0 to 4.6.01
 -------------------------------------------------------------
 Developer notes version 1.9.7_beta : Changes since version 1.9.6 :
 -------------------------------------------------------------
