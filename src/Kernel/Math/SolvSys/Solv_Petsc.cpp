@@ -2788,15 +2788,15 @@ void Solv_Petsc::Create_vectors(const DoubleVect& b)
   // Set type:
 #ifdef PETSC_HAVE_CUDA
   if (gpu_)
-    VecSetType(SecondMembrePetsc_, (Process::is_sequential() ? VECSEQCUDA : VECMPICUDA));
+    VecSetType(SecondMembrePetsc_, VECCUDA);
   else
 #endif
 #ifdef PETSC_HAVE_HIP
     if (gpu_)
-      VecSetType(SecondMembrePetsc_, (Process::is_sequential() ? VECSEQHIP : VECMPIHIP));
+      VecSetType(SecondMembrePetsc_, VECHIP);
     else
 #endif
-      VecSetType(SecondMembrePetsc_, (Process::is_sequential() ? VECSEQ : VECMPI));
+      VecSetType(SecondMembrePetsc_, VECSTANDARD);
   VecSetOptionsPrefix(SecondMembrePetsc_, option_prefix_);
   VecSetFromOptions(SecondMembrePetsc_);
   // Build b
@@ -2999,22 +2999,22 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   if (mataij == 0)
     {
       // On utilise SBAIJ pour une matrice symetrique (plus rapide que AIJ)
-      MatSetType(MatricePetsc, (Process::is_sequential() ? MATSEQSBAIJ : MATMPISBAIJ));
+      MatSetType(MatricePetsc, MATSBAIJ);
     }
   else
     {
       // On utilise AIJ car je n'arrive pas a faire marcher avec BAIJ
 #ifdef PETSC_HAVE_CUDA
       if (gpu_)
-        MatSetType(MatricePetsc, (Process::is_sequential() ? MATSEQAIJCUSPARSE : MATMPIAIJCUSPARSE));
+        MatSetType(MatricePetsc, MATAIJCUSPARSE);
       else
 #endif
 #ifdef PETSC_HAVE_HIP
         if (gpu_)
-          MatSetType(MatricePetsc, (Process::is_sequential() ? MATSEQAIJHIPSPARSE : MATMPIAIJHIPSPARSE));
+          MatSetType(MatricePetsc, MATAIJHIPSPARSE);
         else
 #endif
-          MatSetType(MatricePetsc, (Process::is_sequential() ? MATSEQAIJ : MATMPIAIJ));
+          MatSetType(MatricePetsc, MATAIJ);
     }
   // Surcharge eventuelle par ligne de commande avec -mat_type:
   // Example: now possible to change aijcusparse to aijviennacl via CLI
