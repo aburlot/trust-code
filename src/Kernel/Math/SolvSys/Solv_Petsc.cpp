@@ -2309,14 +2309,24 @@ void Solv_Petsc::Update_vectors(const DoubleVect& secmem, DoubleVect& solution)
     {
       // We update PETSc vectors with the arrays on device:
       Update_lhs_rhs<Kokkos::DefaultExecutionSpace>(secmem, solution);
+      if (getenv("PETSC_USE_KOKKOS")!=nullptr)
+        {
+#ifdef PETSC_HAVE_KOKKOS
+          VecKokkosPlaceArray(SecondMembrePetsc_, addrOnDevice(rhs_));
+          VecKokkosPlaceArray(SolutionPetsc_, addrOnDevice(lhs_));
+#endif
+        }
+      else
+        {
 #ifdef PETSC_HAVE_CUDA
-      VecCUDAPlaceArray(SecondMembrePetsc_, addrOnDevice(rhs_));
-      VecCUDAPlaceArray(SolutionPetsc_, addrOnDevice(lhs_));
+          VecCUDAPlaceArray(SecondMembrePetsc_, addrOnDevice(rhs_));
+          VecCUDAPlaceArray(SolutionPetsc_, addrOnDevice(lhs_));
 #endif
 #ifdef PETSC_HAVE_HIP
-      VecHIPPlaceArray(SecondMembrePetsc_, addrOnDevice(rhs_));
-      VecHIPPlaceArray(SolutionPetsc_, addrOnDevice(lhs_));
+          VecHIPPlaceArray(SecondMembrePetsc_, addrOnDevice(rhs_));
+          VecHIPPlaceArray(SolutionPetsc_, addrOnDevice(lhs_));
 #endif
+        }
       if (reorder_matrix_) Process::exit("reorder_matrix option is not supported yet on GPU");
       if (different_partition_) Process::exit("different_partition option is not supported yet on GPU");
     }
@@ -2363,14 +2373,24 @@ void Solv_Petsc::Update_solution(DoubleVect& solution)
   if (gpu_ && DataOnDevice && !isViennaCLVector()) // solution is on the device to SolutionPetsc_ -> solution update without copy
     {
       Solv_Externe::Update_solution<Kokkos::DefaultExecutionSpace>(solution);
+      if (getenv("PETSC_USE_KOKKOS")!=nullptr)
+        {
+#ifdef PETSC_HAVE_KOKKOS
+          VecKokkosResetArray(SecondMembrePetsc_);
+          VecKokkosResetArray(SolutionPetsc_);
+#endif
+        }
+      else
+        {
 #ifdef PETSC_HAVE_CUDA
-      VecCUDAResetArray(SecondMembrePetsc_);
-      VecCUDAResetArray(SolutionPetsc_);
+          VecCUDAResetArray(SecondMembrePetsc_);
+          VecCUDAResetArray(SolutionPetsc_);
 #endif
 #ifdef PETSC_HAVE_HIP
-      VecHIPResetArray(SecondMembrePetsc_);
-      VecHIPResetArray(SolutionPetsc_);
+          VecHIPResetArray(SecondMembrePetsc_);
+          VecHIPResetArray(SolutionPetsc_);
 #endif
+        }
     }
   else
     {
@@ -2786,17 +2806,22 @@ void Solv_Petsc::Create_vectors(const DoubleVect& b)
     VecSetSizes(SecondMembrePetsc_, nb_rows_, PETSC_DECIDE);
 
   // Set type:
-#ifdef PETSC_HAVE_CUDA
+  VecType vtype = VECSTANDARD;
+#ifdef TRUST_USE_GPU
   if (gpu_)
-    VecSetType(SecondMembrePetsc_, VECCUDA);
-  else
+    {
+      if (getenv("PETSC_USE_KOKKOS")!=nullptr)
+        vtype = VECKOKKOS;
+      else
+#ifdef PETSC_HAVE_CUDA
+        vtype = VECCUDA;
 #endif
 #ifdef PETSC_HAVE_HIP
-    if (gpu_)
-      VecSetType(SecondMembrePetsc_, VECHIP);
-    else
+      vtype = VECHIP;
 #endif
-      VecSetType(SecondMembrePetsc_, VECSTANDARD);
+    }
+#endif
+  VecSetType(SecondMembrePetsc_, vtype);
   VecSetOptionsPrefix(SecondMembrePetsc_, option_prefix_);
   VecSetFromOptions(SecondMembrePetsc_);
   // Build b
@@ -3004,17 +3029,22 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   else
     {
       // On utilise AIJ car je n'arrive pas a faire marcher avec BAIJ
-#ifdef PETSC_HAVE_CUDA
+      MatType mtype = MATAIJ;
+#ifdef TRUST_USE_GPU
       if (gpu_)
-        MatSetType(MatricePetsc, MATAIJCUSPARSE);
-      else
+        {
+          if (getenv("PETSC_USE_KOKKOS")!=nullptr)
+            mtype = MATAIJKOKKOS;
+          else
+#ifdef PETSC_HAVE_CUDA
+            mtype = MATAIJCUSPARSE;
 #endif
 #ifdef PETSC_HAVE_HIP
-        if (gpu_)
-          MatSetType(MatricePetsc, MATAIJHIPSPARSE);
-        else
+          mtype = MATAIJHIPSPARSE;
 #endif
-          MatSetType(MatricePetsc, MATAIJ);
+        }
+#endif
+      MatSetType(MatricePetsc, mtype);
     }
   // Surcharge eventuelle par ligne de commande avec -mat_type:
   // Example: now possible to change aijcusparse to aijviennacl via CLI
