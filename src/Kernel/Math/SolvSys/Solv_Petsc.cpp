@@ -276,8 +276,7 @@ void Solv_Petsc::create_solver(Entree& entree)
       petsc_TU+=nom_du_cas();
       petsc_TU+="_petsc.TU";
 #ifdef TRUST_USE_GPU
-      if (instance==1) PetscLogGpuTime(); // May slow down calculation
-      //add_option("log_view_gpu_time",""); 	// Pas pris en compte...
+      //if (instance==1) PetscLogGpuTime(); // Slow down calculation ! Use -log_view_gpu_time
 #endif
       add_option("log_view",petsc_TU); 	// Monitor performances at the end of the calculation
       PetscLogDefaultBegin(); 		// Necessary cause if not Event logs not printed in petsc_TU file ... I don't know why...
@@ -1610,8 +1609,8 @@ void Solv_Petsc::create_solver(Entree& entree)
       add_amgx_option("s:store_res_history","1");
       add_amgx_option("s:monitor_residual","1");
       add_amgx_option("s:max_iters","10000"); // 100 par defaut trop bas...
-      if (Process::nproc()<=4)
-        add_amgx_option("determinism_flag","1", "15% slower but enabled for NR tests");
+      //if (Process::nproc()<=4)
+      //  add_amgx_option("determinism_flag","1", "15% slower but enabled for NR tests");
 #ifdef MPIX_CUDA_AWARE_SUPPORT
       if (getenv("AMGX_USE_MPI_GPU_AWARE")) add_amgx_option("communicator","MPI_DIRECT","Enable GPU direct with MPI Cuda-Aware. No gain for the moment.");
 #endif
