@@ -885,7 +885,7 @@ then
    export PATH=`dirname $nsys`:$PATH
    trace="--stats=true "
    trace=$trace" --cuda-graph-trace node "
-   trace=$trace"--trace=cuda,nvtx" && [ $NB_PROCS -gt 1 ] && trace=$trace",mpi --mpi-impl=`basename $MPI_ROOT`"
+   trace=$trace"--trace=cuda,nvtx" && [ $NB_PROCS -gt 1 ] && trace=$trace",mpi --mpi-impl=`basename $MPI_ROOT | awk -F- '{print $1}'`"
    # Droit elevation disponible:
    sudo -n ls 1>/dev/null 2>&1
    if [ $? = 0 ]
@@ -1183,7 +1183,7 @@ then
    ##############
    GPU_DIRECT=.gpu_direct
    rm -f $GPU_DIRECT
-   if [ "$TRUST_MPI_GPU_AWARE" = 1 ] # On active par defaut si MPI est GPU Aware
+   if [ "$TRUST_MPI_GPU_AWARE" = 1 ] && [ "$TRUST_USE_MPI_GPU_AWARE" != 0 ] # On active par defaut si MPI est GPU Aware
    then
       echo "# Enabling GPU support for MPI" > $GPU_DIRECT
       echo "export TRUST_USE_MPI_GPU_AWARE=1" >> $GPU_DIRECT
