@@ -1318,6 +1318,10 @@ export FI_CXI_DEFAULT_CQ_SIZE=393216" >> $GPU_DIRECT
 else
    # Pas de gestionnaire, example PC:
    [ "$cpus_per_task" != "" ]         && [ "$HOST" != "jean-zay" ] && echo "Number of core per task option not supported yet on $HOST. Contact TRUST support" && exit -1
+   if [ "$TRUST_USE_GPU" = 1 ]
+   then
+      PETSC_OPTIONS=$PETSC_OPTIONS" -use_gpu_aware_mpi 0"
+   fi
    if [ "$TRUST_DISABLE_MPI" = 1 ]
    then
       run="$nsight $gdb $exec $NOM $PETSC_OPTIONS $quiet"
