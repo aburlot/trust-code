@@ -64,12 +64,12 @@ double Neumann::flux_impose(int i, int j) const
  *
  * @return const DoubleTab& Reference to the updated imposed flux array.
  */
-const DoubleTab& Neumann::flux_impose(bool nb_faces_tot) const
+const DoubleTab& Neumann::flux_impose(bool with_virtual_faces) const
 {
   const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());
   // ToDo factorize in Champ_front_base::valeurs_face()
   int size;
-  if (nb_faces_tot)
+  if (with_virtual_faces)
     size = le_champ_front->valeurs().dimension(0) == 1 ? le_bord.nb_faces_tot() : le_champ_front->valeurs().dimension_tot(0);
   else
     size = le_champ_front->valeurs().dimension(0) == 1 ? le_bord.nb_faces() : le_champ_front->valeurs().dimension(0);
@@ -79,7 +79,7 @@ const DoubleTab& Neumann::flux_impose(bool nb_faces_tot) const
       bool update = le_champ_front->instationnaire();
       if (flux_impose_.dimension(0) != size)
         {
-          int nb_comp = le_champ_front->valeurs().size() == 1 ? 1 : le_champ_front->valeurs().dimension(1);
+          int nb_comp = le_champ_front->valeurs().nb_dim() == 1 ? 1 : le_champ_front->valeurs().dimension(1);
           flux_impose_.resize(size, nb_comp);
           update = true;
         }
