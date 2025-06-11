@@ -78,7 +78,7 @@ Read pb
             wall        paroi_fixe
         }
         Modele_turbulence K_epsilon {
-            Transport_K_Epsilon {
+            Transport_equation Transport_K_Epsilon {
                 Diffusion { }
                 Convection { Amont }
                 boundary_conditions {
