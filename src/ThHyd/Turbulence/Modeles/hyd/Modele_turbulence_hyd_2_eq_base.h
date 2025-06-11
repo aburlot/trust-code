@@ -17,9 +17,11 @@
 #define Modele_turbulence_hyd_2_eq_base_included
 
 #include <Modele_turbulence_hyd_base.h>
+#include <Transport_2eq_base.h>
+#include <TRUST_Ref.h>
 
 class Equation_base;
-
+class Transport_2eq_base;
 /*! @brief Classe Modele_turbulence_hyd_2_eq_base Classe de base des modeles de type RANS a deux equations
  *
  * @sa Modele_turbulence_hyd_base
@@ -29,6 +31,7 @@ class Modele_turbulence_hyd_2_eq_base: public Modele_turbulence_hyd_base
   Declare_base(Modele_turbulence_hyd_2_eq_base);
 public:
   void set_param(Param& ) override;
+  int lire_motcle_non_standard(const Motcle&, Entree&) override;
   virtual void verifie_loi_paroi();
   int reprendre_generique(Entree& is);
 
@@ -43,8 +46,14 @@ public:
   inline double get_OMEGA_MAX() const { return OMEGA_MAX_; }
   inline double get_K_MIN() const { return K_MIN_; }
   inline int get_lquiet() const { return lquiet_; }
+  virtual inline Transport_2eq_base& get_set_eq_transport() { return ptr_eq_transport_.valeur(); }
+  virtual const Transport_2eq_base& get_eq_transport() const;
+  Champ_Inc_base& get_set_unknown();
+  const Champ_Inc_base& get_unknown() const;
+  virtual void controler()=0;
 
 protected:
+  OWN_PTR(Transport_2eq_base) ptr_eq_transport_;
   double Prandtl_K_ = 1., Prandtl_Eps_ = 1.3, Prandtl_Omega_ = 2.;
   double K_MIN_ = 1.e-20, EPS_MIN_ = 1.e-20, EPS_MAX_ = 1.e+10, OMEGA_MIN_ = 1.e-20, OMEGA_MAX_ = 1.e+10;
   bool lquiet_ = false;

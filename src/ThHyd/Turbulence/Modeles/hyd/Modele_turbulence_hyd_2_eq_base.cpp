@@ -27,8 +27,25 @@ Entree& Modele_turbulence_hyd_2_eq_base::readOn(Entree& is) { return Modele_turb
 void Modele_turbulence_hyd_2_eq_base::set_param(Param& param)
 {
   Modele_turbulence_hyd_base::set_param(param);
+  param.ajouter_non_std("Transport_equation", (this)); // cannot be REQUIRED because of Bicephale models
   param.ajouter("k_min", &K_MIN_); // XD_ADD_P floattant Lower limitation of k (default value 1.e-10).
   param.ajouter_flag("quiet", &lquiet_); // XD_ADD_P flag To disable printing of information about K and Epsilon/Omega.
+}
+
+int Modele_turbulence_hyd_2_eq_base::lire_motcle_non_standard(const Motcle& mot, Entree& is)
+{
+  if (mot == "transport_equation")
+    {
+      Motcle typ_eq;
+      is>> typ_eq;
+      Nom name_transport_eq=typ_eq;
+      ptr_eq_transport_.typer(name_transport_eq);
+      get_set_eq_transport().associer_modele_turbulence(*this);
+      is >> get_set_eq_transport();
+    }
+  else
+    return Modele_turbulence_hyd_base::lire_motcle_non_standard(mot, is);
+  return 1;
 }
 
 void Modele_turbulence_hyd_2_eq_base::verifie_loi_paroi()
@@ -59,4 +76,21 @@ int Modele_turbulence_hyd_2_eq_base::reprendre_generique(Entree& is)
   is >> dbidon;
   tab_bidon.jump(is);
   return 1;
+}
+
+const Transport_2eq_base& Modele_turbulence_hyd_2_eq_base::get_eq_transport() const
+{
+  const Transport_2eq_base& eq_transport = ptr_eq_transport_.valeur();
+  return eq_transport;
+}
+
+Champ_Inc_base& Modele_turbulence_hyd_2_eq_base::get_set_unknown()
+{
+  return get_set_eq_transport().inconnue();
+}
+
+const Champ_Inc_base& Modele_turbulence_hyd_2_eq_base::get_unknown() const
+{
+  const Champ_Inc_base& unkwown = get_eq_transport().inconnue();
+  return unkwown;
 }
