@@ -64,7 +64,7 @@ template <typename _TYPE_>
 void Debog_Pb::verifier_partie(const TRUSTVect<_TYPE_>& reference, const TRUSTVect<_TYPE_>& arr, TRUSTVect<_TYPE_> *arr_ref)
 {
   const MD_Vector_base& md = arr.get_md_vector().valeur();
-  if (sub_type(MD_Vector_std, md))
+  if (sub_type(MD_Vector_std, md) || sub_type(MD_Vector_seq, md))
     {
       verifier_partie_std(reference, arr, arr_ref);
     }
