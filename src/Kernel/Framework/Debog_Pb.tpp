@@ -406,7 +406,7 @@ Debog_Pb::verifier(const char *const msg, _TYPE_ x, _TYPE_ *ref_value)
           if (delta >= seuil_absolu_ && delta / adim >= seuil_relatif_)
             {
               err = (_TYPE_)delta;
-              detailed_log_file_ << " ECART (double) reference=" << y << " calcul=" << x << " relative error=" << delta << " (adim=" << adim << ")" << finl;
+              detailed_log_file_ << " ECART (double) reference=" << y << " calcul=" << x << " relative error=" << delta / adim << " (adim=" << adim << ")" << finl;
             }
         }
       else // int
@@ -415,13 +415,14 @@ Debog_Pb::verifier(const char *const msg, _TYPE_ x, _TYPE_ *ref_value)
           if (err) detailed_log_file_ << " ECART (int) reference=" << y << " calcul=" << x << finl;
         }
 
-      err = static_cast<int>(mp_sum(err));  // always within 'int' range
+      //err = static_cast<int>(mp_sum(err));  // always within 'int' range
+      err = Process::mp_max(err);
       if (Process::je_suis_maitre())
         {
           const char *ok = (err > 0.) ? " ERROR       " : " OK           ";
           if (IS_DOUBLE)
             {
-              log_file_ << ok << " : comparing double: reference=" << y << " deltamax=" << err << finl;
+              log_file_ << ok << " : comparing double: reference=" << y << " absolute error=" << err << finl;
               if (err > 0.) error_function();
             }
           else // int
