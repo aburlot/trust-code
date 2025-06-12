@@ -165,12 +165,12 @@ void Debog_Pb::verifier_partie_std(const TRUSTVect<_TYPE_>& reference, const TRU
       if (step == 0)
         {
           n = renum.size();
-          message = " (item reel)";
+          message = "on real item:";
         }
       else
         {
           n = renum.size_totale();
-          message = " (item virtuel)";
+          message = "on virtual item:";
         }
       _TYPE_ max_err = 0;
       const _TYPE_ *arr_ptr = arr.addr();
@@ -195,10 +195,8 @@ void Debog_Pb::verifier_partie_std(const TRUSTVect<_TYPE_>& reference, const TRU
                         outbounds = 1;
                       if (delta > seuil_relatif_)
                         {
-                          detailed_log_file_ << " ECART reference[" << i2 + j << "]=" << y << " calcul[" << i1 + j
-                                             << "]=" << x;
-                          detailed_log_file_ << " relative error=" << delta << " (adim=" << adim << ")" << message
-                                             << finl;
+                          detailed_log_file_ << " DIFF " << message << " reference[" << i2 + j << "]=" << y << " \tcurrent[" << i1 + j
+                                             << "]=" << x << " \trelative error=" << delta << finl;
                         }
                     }
                   else   // int
@@ -206,8 +204,8 @@ void Debog_Pb::verifier_partie_std(const TRUSTVect<_TYPE_>& reference, const TRU
                       // For integers, values must match exactly !
                       if (x != y)
                         {
-                          detailed_log_file_ << " ECART reference[" << i2 + j << "]=" << y << " calcul[" << i1 + j
-                                             << "]=" << x << message << finl;
+                          detailed_log_file_ << " DIFF " << message << " reference[" << i2 + j << "]=" << y << " \tcurrent[" << i1 + j
+                                             << "]=" << x << finl;
                           max_err = 1;
                         }
                     }
@@ -406,13 +404,13 @@ Debog_Pb::verifier(const char *const msg, _TYPE_ x, _TYPE_ *ref_value)
           if (delta >= seuil_absolu_ && delta / adim >= seuil_relatif_)
             {
               err = (_TYPE_)delta;
-              detailed_log_file_ << " ECART (double) reference=" << y << " calcul=" << x << " relative error=" << delta / adim << " (adim=" << adim << ")" << finl;
+              detailed_log_file_ << " DIFF (double) reference=" << y << " \tcurrent=" << x << " \trelative error=" << delta / adim << " \t(max ref value=" << adim << ")" << finl;
             }
         }
       else // int
         {
           err = ((x - y) != 0);
-          if (err) detailed_log_file_ << " ECART (int) reference=" << y << " calcul=" << x << finl;
+          if (err) detailed_log_file_ << " DIFF (int) reference=" << y << " \tcurrent=" << x << finl;
         }
 
       //err = static_cast<int>(mp_sum(err));  // always within 'int' range
