@@ -66,6 +66,9 @@ if [ ! -f $KOKKOS_ROOT_DIR/lib64/libkokkos.a ]; then
            if [ "$TRUST_CUDA_CC" = 70 ]
            then
               CMAKE_OPT="$CMAKE_OPT -DKokkos_ARCH_VOLTA$TRUST_CUDA_CC=ON"
+           elif [ "$TRUST_CUDA_CC" = 75 ]
+           then
+              CMAKE_OPT="$CMAKE_OPT -DKokkos_ARCH_TURING$TRUST_CUDA_CC=ON"
            elif [ "$TRUST_CUDA_CC" = 80 ] || [ "$TRUST_CUDA_CC" = 86 ]
            then
               CMAKE_OPT="$CMAKE_OPT -DKokkos_ARCH_AMPERE$TRUST_CUDA_CC=ON"
