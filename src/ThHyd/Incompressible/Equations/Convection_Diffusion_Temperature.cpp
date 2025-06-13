@@ -33,7 +33,7 @@ extern Stat_Counter_Id source_counter_;
 
 Implemente_instanciable(Convection_Diffusion_Temperature,"Convection_Diffusion_Temperature",Convection_Diffusion_Temperature_base);
 // XD convection_diffusion_temperature eqn_base convection_diffusion_temperature -1 Energy equation (temperature diffusion convection).
-// XD attr penalisation_l2_ftd penalisation_l2_ftd penalisation_l2_ftd 1 to activate or not (the default is Direct Forcing method) the Penalized Direct Forcing method to impose the specified temperature on the solid-fluid interface.
+// XD attr penalisation_l2_ftd bloc_lecture penalisation_l2_ftd 1 to activate or not (the default is Direct Forcing method) the Penalized Direct Forcing method to impose the specified temperature on the solid-fluid interface.
 
 Sortie& Convection_Diffusion_Temperature::printOn(Sortie& is) const { return Convection_Diffusion_Temperature_base::printOn(is); }
 

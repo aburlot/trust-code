@@ -24,10 +24,6 @@
 #include <Nom.h>
 
 Implemente_instanciable(Navier_Stokes_IBM, "Navier_Stokes_IBM", Navier_Stokes_std);
-
-// XD penalisation_l2_ftd_lec objet_lecture nul 0 not_set
-// XD penalisation_l2_ftd listobj pp 1 penalisation_l2_ftd_lec 0 not_set
-
 // XD navier_stokes_ibm navier_stokes_standard navier_stokes_ibm -1 IBM Navier-Stokes equations.
 // XD attr correction_matrice_projection_initiale entier correction_matrice_projection_initiale 1 (IBM advanced) fix matrix of initial projection for PDF
 // XD attr correction_calcul_pression_initiale entier correction_calcul_pression_initiale 1 (IBM advanced) fix initial pressure computation for PDF

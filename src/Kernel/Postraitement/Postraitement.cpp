@@ -444,7 +444,14 @@ static EChaineJDD get_file_content_for_bloc(const Nom& associated_word, Entree& 
 void Postraitement::set_param(Param& param)
 {
 // XD postraitement postraitement_base postraitement -1 An object of post-processing (without name).
-//  attr interfaces champs_posts interfaces 1 Keyword to read all the caracteristics of the interfaces. Different kind of interfaces exist as well as different interface intitialisations.
+// XD attr t_debut_statistiques floattant t_debut_statistiques 1 not_set (for IJK)
+// XD attr nb_pas_dt_post_stats_plans floattant nb_pas_dt_post_stats_plans 1 not_set (for IJK)
+// XD attr nb_pas_dt_post_stats_bulles floattant nb_pas_dt_post_stats_bulles 1 not_set (for IJK)
+// XD attr expression_vx_ana chaine expression_vx_ana 1 not_set (for IJK)
+// XD attr expression_vy_ana chaine expression_vy_ana 1 not_set (for IJK)
+// XD attr expression_vz_ana chaine expression_vz_ana 1 not_set (for IJK)
+// XD attr expression_p_ana chaine expression_p_ana 1 not_set (for IJK)
+// XD attr interfaces interface_posts interfaces 1 Keyword to read all the caracteristics of the interfaces. Different kind of interfaces exist as well as different interface intitialisations.
   param.ajouter("Fichier",&nom_fich_); // XD_ADD_P chaine Name of file.
   param.ajouter("Format",&format_); // XD_ADD_P chaine(into=["lml","lata","single_lata","lata_v2","med","med_major","cgns"]) This optional parameter specifies the format of the output file. The basename used for the output file is the basename of the data file. For the fmt parameter, choices are lml or lata. A short description of each format can be found below. The default value is lml.
   param.ajouter_non_std("dt_post",(this)); // XD_ADD_P chaine Field\'s write frequency (as a time period) - can also be specified after the 'field' keyword.
@@ -493,6 +500,11 @@ void Postraitement::set_param(Param& param)
 // XD   attr champ chaine champ 0 Name of the post-processed field.
 // XD   attr localisation chaine(into=["elem","som","faces"]) localisation 1 Localisation of post-processed field values: The two available values are elem, som, or faces (LATA format only) used respectively to select field values at mesh centres (CHAMPMAILLE type field in the lml file) or at mesh nodes (CHAMPPOINT type field in the lml file). If no selection is made, localisation is set to som by default.
 // XD champs_a_post listobj nul -1 champ_a_post 0 Fields to be post-processed.
+
+// XD interface_posts objet_lecture nul 0 not set
+// XD   attr nom_interf chaine nom_interf 1 name of the interface to post process
+// XD   attr blocs champs_a_post blocs 0 Post-processed fields.
+
 
 // XD champs_posts objet_lecture nul 0 Field\'s write mode.
 // XD   attr format chaine(into=["binaire","formatte"]) format 1 Type of file.

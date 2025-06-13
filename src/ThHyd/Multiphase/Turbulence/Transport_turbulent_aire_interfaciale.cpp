@@ -33,7 +33,7 @@ Entree& Transport_turbulent_aire_interfaciale::readOn(Entree& is)
 {
   Param param(que_suis_je());
   param.ajouter("CstDiff", &cst_diff);// XD_ADD_P floattant Kataoka diffusion model constant. By default it is se to 0.236.
-  param.ajouter("ng2", &n_g2); // XD_ADD_P flag not_set
+  param.ajouter("ng2", &n_g2); // XD_ADD_P floattant not_set
   param.lire_avec_accolades_depuis(is);
   return is;
 }
