@@ -24,6 +24,10 @@ class TestCase(unittest.TestCase, UnitUtils):
     MODULE_NAME = None #: Static variable - set in main() below
     SINGLE_JDD = None  #: Only set when testing a single dataset
 
+    def __init__(self):
+        import re
+        self.skip_re = re.compile(r"""\s+TRUSTIFY\s+NOT\s+""")
+
     def get_all_data_names(self):
         """ Retrieve all .data file names from the places where we find a .lml.gz file """
         import glob
@@ -74,6 +78,9 @@ class TestCase(unittest.TestCase, UnitUtils):
 
         with open(data_nam) as f:
             data_ex = f.read()
+            if self.skip_re.search(data_ex):
+                logger.info("Dataset was not checked (we found the tag 'TRUSTIFY NOT' in it)")
+                return 2
         try:
             # Parse the TRUST data set provided in arg
             if verbose:
@@ -101,7 +108,7 @@ class TestCase(unittest.TestCase, UnitUtils):
               logger.info("   -> This might come from a duplicated instruction in your dataset...")
               raise TrustifyException
             if verbose: logger.info(" --> OK")
-            return True
+            return 1
         except TrustifyException as e:
             if os.getenv("TRUSTIFY_DEBUG") == "1":
                 raise e from None
@@ -109,7 +116,7 @@ class TestCase(unittest.TestCase, UnitUtils):
                 print(e)
             if not TestCase.SINGLE_JDD is None:
                 sys.exit(-1)
-            return False
+            return 0
 
     def test_all(self):
         """ Test all TRUST data files! """
@@ -122,21 +129,24 @@ class TestCase(unittest.TestCase, UnitUtils):
 
         # Let's go for all the tests now:
         ok = True
-        cnt, cnt_ok = 0, 0
+        cnt, cnt_ok, cnt_skip = 0, 0, 0
         for i, e in enumerate(all_data):
             cnt = cnt+1
             print("Testing data set %s ..."  % e, end='')
-            if self.single_test(e):
+            if (res := self.single_test(e)) == 1:
                 print("OK")
                 cnt_ok += 1
+            elif res == 2:
+                print("SKIPPED")
+                cnt_skip += 1
             else:
-                print("")
                 ok = False
         print("")
+        msg = f"Summary: {cnt_ok}/{cnt} test(s) passed successfully ({cnt_skip} were skipped)."
         if ok:
-            logger.info(f"Summary: {cnt_ok}/{cnt} test(s) passed successfully.")
+            logger.info(msg)
         else:
-            logger.warning(f"Summary: {cnt_ok}/{cnt} test(s) passed successfully.")
+            logger.warning(msg)
         print("")
         return ok
 
