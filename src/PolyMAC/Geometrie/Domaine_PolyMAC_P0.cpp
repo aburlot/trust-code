@@ -76,7 +76,44 @@ void Domaine_PolyMAC_P0::discretiser()
   mdv_ch_face.copy(mdc_ch_face);
 }
 
-//stencil face/face : fsten_f([fsten_d(f, 0), fsten_d(f + 1, 0)[)
+/*! @brief Initializes the face stencils for gradient computation
+ *
+ * This method builds the connectivity stencils required for face-based gradient calculations
+ * in the PolyMAC P0 discretization scheme. It establishes the relationship between faces
+ * and all elements/boundary faces that are connected through shared vertices.
+ *
+ * The stencil for each face includes:
+ * - All elements connected to the face through any of its vertices
+ * - All boundary faces connected to the face through shared vertices
+ * - The face's direct neighboring elements
+ *
+ * @note This method is called lazily - it only performs initialization if stencils
+ *       haven't been built yet (checked via fsten_d.size())
+ *
+ * @note The method populates two main data structures:
+ *       - fsten_d: Index array for stencil boundaries
+ *       - fsten_eb: Flat array containing all stencil elements/boundary faces
+ *
+ * @details Algorithm overview:
+ *          1. Build vertex-to-element connectivity (som_eb)
+ *          2. Add boundary faces to vertex connectivity
+ *          3. For each face, collect all elements/boundary faces connected via vertices
+ *          4. Store results in compressed sparse format
+ *
+ * @post After execution:
+ *       - fsten_d(f) gives the starting index in fsten_eb for face f's stencil
+ *       - fsten_d(f+1) gives the ending index (exclusive) for face f's stencil
+ *       - fsten_eb contains the actual element/boundary face indices
+ *       - Boundary faces are represented as (ne_tot + face_index)
+ *
+ * @note Memory is optimized using CRIMP() to reduce storage overhead
+ *
+ * @note Only processes faces that have at least one valid neighbor:
+ *       - Internal faces: both neighbors must be valid
+ *       - Boundary faces: at least one neighbor must be valid
+ *
+ * @see fgrad() which uses these stencils for gradient computation
+ */
 void Domaine_PolyMAC_P0::init_stencils() const
 {
   if (fsten_d.size())
@@ -131,18 +168,49 @@ void Domaine_PolyMAC_P0::init_stencils() const
   CRIMP(fsten_eb);
 }
 
-//pour u.n champ T aux elements, interpole [n_f.grad T]_f (si nu_grad = 0) ou [n_f.nu.grad T]_f
-//en preservant exactement les champs verifiant [nu grad T]_e = cte.
-//Entrees : N             : nombre de composantes
-//          is_p          : 1 si on traite le champ de pression (inversion Neumann / Dirichlet)
-//          cls           : conditions aux limites
-//          fcl(f, 0/1/2) : donnes sur les CLs (type de CL, indice de CL, indice dans la CL) (cf. Champ_{P0,Face}_PolyMAC_P0)
-//          nu(e, n, ..)  : diffusivite aux elements (optionnel)
-//          som_ext       : liste de sommets a ne pas traiter (ex. : traitement direct des Echange_Contact dans Op_Diff_PolyMAC_P0_Elem)
-//          virt          : 1 si on veut aussi le flux aux faces virtuelles
-//          full_stencil  : 1 si on veut le stencil complet (pour dimensionner())
-//Sorties : phif_d(f, 0/1)                       : indices dans phif_{e,c} / phif_{pe,pc} du flux a f dans [phif_d(f, 0/1), phif_d(f + 1, 0/1)[
-//          phif_e(i), phif_c(i, n, c)           : indices/coefficients locaux (pas d'Echange_contact) et diagonaux (composantes independantes)
+/*! @brief Computes field gradient interpolation at faces while preserving constant fields
+ *
+ * This method computes the interpolation [n_f.grad T]_f (if nu_grad = 0) or [n_f.nu.grad T]_f
+ * while exactly preserving fields satisfying [nu grad T]_e = constant.
+ * It uses MPFA (Multi-Point Flux Approximation) methods with three strategies:
+ *       - Attempt 0: Standard MPFA-O
+ *       - Attempt 1: MPFA-eta: variant of MPFA-O where auxiliary variables are not in the barycenter of the face
+ *       - Attempt 2: Symmetric MPFA if previous attempts fail (coercive but not always consistent, especially on complex meshes)
+ *
+ * @param N             Number of field components
+ * @param is_p          Pressure field indicator (1 for pressure, 0 otherwise)
+ *                      Controls Neumann/Dirichlet inversion for boundary conditions
+ * @param cls           Domain boundary conditions
+ * @param fcl           Boundary condition data
+ *                      fcl(f, 0/1/2): (BC type, BC index, index within BC)
+ *                      See Champ_{P0,Face}_PolyMAC_P0 for format
+ * @param nu            Element diffusivity (optional, can be nullptr)
+ *                      Array nu(e, n, ..) for element e and component n
+ * @param som_ext       List of vertices to exclude from processing (optional)
+ *                      Example: direct treatment of Echange_Contact in Op_Diff_PolyMAC_P0_Elem
+ * @param virt          Virtual faces indicator (1 to include, 0 otherwise)
+ * @param full_stencil  Complete stencil indicator (1 for full dimensioning)
+ *
+ * @param[out] phif_d   Start/end indices in phif_{e,c} / phif_{pe,pc}
+ *                      phif_d(f, 0/1): flux indices at face f in interval
+ *                      [phif_d(f, 0/1), phif_d(f + 1, 0/1)[
+ * @param[out] phif_e   Element indices in stencil for each contribution
+ *                      phif_e(i): element index for i-th contribution
+ * @param[out] phif_c   Stencil coefficients
+ *                      phif_c(i, n, c): coefficient for element i, component n, contribution c
+ *                      Contains local indices/coefficients (without Echange_contact)
+ *                      and diagonal terms (independent components)
+ *
+ * @note The method checks positivity of bilinear form eigenvalues to ensure scheme stability and choose the MPFA method accordingly
+ *
+ * @note The method returns also a percentage of which MPFA method is used. Be careful of the validity of the solution if the percentage of MPFA-sym is high
+ *
+ * @note Special handling for different boundary condition types:
+ *       - Dirichlet/Neumann
+ *       - Imposed global/external friction
+ *       - Imposed global/external exchange
+ *
+ */
 void Domaine_PolyMAC_P0::fgrad(int N, int is_p, const Conds_lim& cls, const IntTab& fcl, const DoubleTab *nu, const IntTab *som_ext,
                                int virt, int full_stencil, IntTab& phif_d, IntTab& phif_e, DoubleTab& phif_c) const
 {

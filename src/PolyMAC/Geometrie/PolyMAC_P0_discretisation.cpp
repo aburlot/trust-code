@@ -36,6 +36,26 @@ Entree& PolyMAC_P0_discretisation::readOn(Entree& s) { return s; }
 
 Sortie& PolyMAC_P0_discretisation::printOn(Sortie& s) const { return s; }
 
+/**
+ * @brief Creates a velocity gradient field for PolyMAC P0 discretization
+ *
+ * This method creates and initializes a gradient field of the velocity field,
+ * computing the tensor ∇u where u is the velocity field. The resulting field
+ * contains all components of the velocity gradient tensor.
+ *
+ * @param z           Discretized domain (must be Domaine_PolyMAC_P0)
+ * @param zcl         Discretized boundary conditions domain (must be Domaine_Cl_PolyMAC)
+ * @param ch_vitesse  Velocity field (must be Champ_Face_PolyMAC_P0)
+ * @param[out] ch     Output gradient field (will be typed as grad_Champ_Face_PolyMAC_P0)
+ *
+ * @details The gradient field components are named according to spatial dimension:
+ *          - 2D: dU_phase, dV_phase for each phase
+ *          - 3D: dU_phase, dV_phase, dW_phase for each phase
+ *
+ *          Where phase corresponds to each line component of the velocity field.
+ *
+ * @see grad_Champ_Face_PolyMAC_P0 for the actual gradient field implementation
+ */
 void PolyMAC_P0_discretisation::grad_u(const Domaine_dis_base& z, const Domaine_Cl_dis_base& zcl, const Champ_Inc_base& ch_vitesse, OWN_PTR(Champ_Fonc_base) &ch) const
 {
   const Champ_Face_PolyMAC_P0& vit = ref_cast(Champ_Face_PolyMAC_P0, ch_vitesse);
@@ -73,6 +93,21 @@ void PolyMAC_P0_discretisation::grad_u(const Domaine_dis_base& z, const Domaine_
   ch_grad_u.changer_temps(-1); // so it is calculated at time 0
 }
 
+/**
+ * @brief Creates a shear rate field for PolyMAC P0 discretization
+ *
+ * This method creates and initializes a field representing the shear rate magnitude,
+ * which is derived from the velocity gradient tensor. The shear rate is computed
+ * as the magnitude of the strain rate tensor.
+ *
+ * @param z           Discretized domain (must be Domaine_PolyMAC_P0)
+ * @param zcl         Discretized boundary conditions domain
+ * @param ch_vitesse  Velocity field (must be Champ_Face_PolyMAC_P0)
+ * @param[out] ch     Output shear rate field (will be typed as Champ_Fonc_Elem_PolyMAC_P0_TC)
+ *
+ * @details The shear rate field contains one scalar component per phase,
+ *          named "Taux_cisaillement_phase" where phase is the phase index.
+ */
 void PolyMAC_P0_discretisation::taux_cisaillement(const Domaine_dis_base& z, const Domaine_Cl_dis_base& zcl, const Champ_Inc_base& ch_vitesse, OWN_PTR(Champ_Fonc_base) &ch) const
 {
   const Champ_Face_PolyMAC_P0& vit = ref_cast(Champ_Face_PolyMAC_P0, ch_vitesse);
@@ -98,6 +133,27 @@ void PolyMAC_P0_discretisation::taux_cisaillement(const Domaine_dis_base& z, con
   ch_grad_u.changer_temps(-1); // so it is calculated at time 0
 }
 
+/**
+ * @brief Creates a vorticity field for PolyMAC P0 discretization
+ *
+ * This method creates and initializes a vorticity field, which represents
+ * the curl of the velocity field (∇ × u). The field structure depends on
+ * the spatial dimension.
+ *
+ * @param sch         Time scheme (used for temporal integration context)
+ * @param ch_vitesse  Velocity field (must be Champ_Face_PolyMAC_P0)
+ * @param[out] ch     Output vorticity field (will be typed as Champ_Fonc_Elem_PolyMAC_P0_rot)
+ *
+ * @details Vorticity field structure by dimension:
+ *          - 2D: Scalar field with N components (one per phase)
+ *                Represents the z-component of curl(u)
+ *          - 3D: Vector field with 3×N components
+ *                Represents full curl(u) = (ωx, ωy, ωz) for each phase
+ *
+ * @note Component naming convention:
+ *       - Single phase (N=1): "vorticitex", "vorticitey", "vorticitez" for 3D
+ *       - Multiple phases: "vorticite_0", "vorticite_1", etc. with offset indexing
+ */
 void PolyMAC_P0_discretisation::creer_champ_vorticite(const Schema_Temps_base& sch, const Champ_Inc_base& ch_vitesse, OWN_PTR(Champ_Fonc_base) &ch) const
 {
   const Champ_Face_PolyMAC_P0& vit = ref_cast(Champ_Face_PolyMAC_P0, ch_vitesse);
@@ -147,6 +203,21 @@ void PolyMAC_P0_discretisation::creer_champ_vorticite(const Schema_Temps_base& s
   ch_rot_u.changer_temps(-1); // so it is calculated at time 0
 }
 
+/**
+ * @brief Creates a residue field for equation solving diagnostics
+ *
+ * This method creates a field to store the residue of an equation system,
+ * which is useful for monitoring convergence and numerical solution quality.
+ * The residue represents the difference between the left and right hand sides
+ * of the discretized equation.
+ *
+ * @param z        Discretized domain
+ * @param ch_inco  Unknown field for which the residue is computed
+ * @param[out] champ Output residue field
+ *
+ * @note For non-face fields, the method delegates to the parent class
+ *       PolyMAC_P0P1NC_discretisation::residu()
+ */
 void PolyMAC_P0_discretisation::residu(const Domaine_dis_base& z, const Champ_Inc_base& ch_inco, OWN_PTR(Champ_Fonc_base) &champ) const
 {
   Nom ch_name(ch_inco.le_nom());

@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2023, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -41,7 +41,21 @@ static inline DoubleTab transp(DoubleTab a)
   return r;
 }
 
-/* minimise ||M.x - b||_2, met le noyau de M dans P et retourne le residu */
+/*! @brief Solves the least squares problem ||M.x - b||_2, placing the kernel of M into P and returning the residual.
+ *
+ * This function uses Singular Value Decomposition (SVD) to solve the least squares problem for the equation M.x = b.
+ * It decomposes the matrix M into its constituent parts using the LAPACK routine DGESVD, which is a Fortran subroutine
+ * for computing the SVD of a general rectangular matrix. The kernel of M (null space) is placed into matrix P.
+ *
+ * @param M The input matrix of the linear system.
+ * @param b The right-hand side vector of the linear system.
+ * @param eps The threshold for considering singular values as zero.
+ * @param P Pointer to a matrix where the kernel of M will be stored.
+ * @param x The solution vector that minimizes the least squares problem.
+ * @param S Vector to store the singular values of M.
+ *
+ * @return The residual of the least squares solution, i.e., the Euclidean norm of (M.x - b).
+ */
 static inline double kersol(const DoubleTab& M, DoubleTab& b, double eps, DoubleTab *P, DoubleTab& x, DoubleTab& S)
 {
   int i, nk, m = M.dimension(0), n = M.dimension(1), k = std::min(m, n), l = std::max(m, n), w = 5 * l, info, iP, jP;
@@ -63,7 +77,14 @@ static inline double kersol(const DoubleTab& M, DoubleTab& b, double eps, Double
   return sqrt(res2);
 }
 
-/* compaction d'un tableau */
+/*! @def CRIMP(a)
+ * @brief Compacts a multi-dimensional array by resizing it.
+ *
+ * This macro adjusts the size of a multi-dimensional array `a` by incrementing and then decrementing its first dimension.
+ * It handles arrays with 1, 2, or 3 dimensions.
+ *
+ * @param a The array to be compacted.
+ */
 #define CRIMP(a) a.nb_dim() > 2 ? a.resize(a.dimension(0) + 1, a.dimension(1), a.dimension(2)) : a.nb_dim() > 1 ? a.resize(a.dimension(0) + 1, a.dimension(1)) : a.resize(a.dimension(0) + 1), \
         a.nb_dim() > 2 ? a.resize(a.dimension(0) - 1, a.dimension(1), a.dimension(2)) : a.nb_dim() > 1 ? a.resize(a.dimension(0) - 1, a.dimension(1)) : a.resize(a.dimension(0) - 1)
 #endif

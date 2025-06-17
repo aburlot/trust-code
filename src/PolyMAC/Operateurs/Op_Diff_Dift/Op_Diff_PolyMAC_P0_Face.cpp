@@ -101,7 +101,15 @@ double Op_Diff_PolyMAC_P0_Face::calculer_dt_stab() const
     }
   return Process::mp_min(dt);
 }
-
+/*! @brief Dimensions the blocks of matrices for the PolyMAC P0 face diffusion operator
+ *
+ * This method is responsible for dimensioning the matrix blocks used in the diffusion
+ * operation for the PolyMAC P0 face discretization scheme. It calculates the stencil
+ * for the diffusion operator and allocates the necessary memory for the matrix.
+ *
+ * @param matrices A map of matrices where the matrix for the unknown field will be stored.
+ * @param semi_impl A map indicating semi-implicit fields.
+ */
 void Op_Diff_PolyMAC_P0_Face::dimensionner_blocs(matrices_t matrices, const tabs_t& semi_impl) const
 {
   const Champ_Face_PolyMAC_P0& ch = ref_cast(Champ_Face_PolyMAC_P0, equation().inconnue());
@@ -221,6 +229,18 @@ void Op_Diff_PolyMAC_P0_Face::dimensionner_blocs(matrices_t matrices, const tabs
     mat = mat2;
 }
 
+
+/*! @brief Adds blocks to the matrices for the PolyMAC P0 face diffusion operator.
+ *
+ * This method adds the diffusion contributions to the matrix and the secondary memory.
+ * It handles both internal and boundary faces, and updates the matrix and secondary
+ * memory based on the diffusion coefficients and the stencil computed in the
+ * dimensioning step.
+ *
+ * @param matrices A map of matrices where the matrix for the unknown field will be stored.
+ * @param secmem Secondary memory array to store additional contributions.
+ * @param semi_impl A map indicating semi-implicit fields.
+ */
 void Op_Diff_PolyMAC_P0_Face::ajouter_blocs(matrices_t matrices, DoubleTab& secmem, const tabs_t& semi_impl) const
 {
   statistiques().begin_count(diffusion_counter_);

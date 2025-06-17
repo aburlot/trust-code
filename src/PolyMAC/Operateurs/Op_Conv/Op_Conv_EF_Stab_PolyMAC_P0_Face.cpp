@@ -60,6 +60,22 @@ void Op_Conv_EF_Stab_PolyMAC_P0_Face::completer()
   ref_cast(Champ_Face_PolyMAC_P0, vitesse_.valeur()).init_auxiliary_variables();
 }
 
+/*! @brief Computes the stability time step for the convection operator.
+ *
+ * This method calculates the maximum allowable time step based on the CFL stability condition
+ * for the convection operator. The computation considers incoming fluxes through
+ * each face of every element and determines the most restrictive time step constraint across the
+ * entire domain. For multiphase flows, elements with negligible phase presence are excluded from
+ * the time step calculation.
+ *
+ * @return The global minimum stability time step across all MPI processes
+ *
+ * @note Only incoming convective fluxes are considered in the stability analysis.
+ * @note For multiphase problems, elements with phase fraction below 1e-3 are ignored.
+ * @note In axisymmetric calculations, boundary faces with specific conditions may be excluded.
+ * @note The final time step is synchronized across all MPI processes using the minimum value.
+ * @note Flux contributions account for face porosity and surface area weighting.
+ */
 double Op_Conv_EF_Stab_PolyMAC_P0_Face::calculer_dt_stab() const
 {
   double dt = 1e10;
@@ -102,6 +118,21 @@ double Op_Conv_EF_Stab_PolyMAC_P0_Face::calculer_dt_stab() const
   return Process::mp_min(dt);
 }
 
+/*! @brief Dimensions the matrix blocks for the PolyMAC P0 Face convection operator with EF stabilization.
+ *
+ * This method constructs the sparsity pattern and allocates memory for the system matrix by analyzing
+ * face-element connectivity and establishing the stencil relationships between degrees of freedom.
+ * The resulting matrix structure accounts for face-face and element-element contributions based on
+ * the PolyMAC P0 Face discretization scheme.
+ *
+ * @param matrices Map containing the system matrices indexed by unknown field names
+ * @param semi_impl Map of semi-implicit terms indexed by unknown field names
+ *
+ * @note The method returns early if no diagonal block exists or if semi-implicit treatment is requested.
+ * @note For multiphase problems with added mass correlation, cross-coupling terms between phases are included.
+ * @note The stencil construction handles face equivalence relationships and boundary conditions appropriately.
+ * @note Duplicate entries in the stencil are automatically removed before matrix allocation.
+ */
 void Op_Conv_EF_Stab_PolyMAC_P0_Face::dimensionner_blocs(matrices_t matrices, const tabs_t& semi_impl) const
 {
   const Domaine_Poly_base& domaine = le_dom_poly_.valeur();
@@ -181,8 +212,24 @@ void Op_Conv_EF_Stab_PolyMAC_P0_Face::dimensionner_blocs(matrices_t matrices, co
   mat.nb_colonnes() ? mat += mat2 : mat = mat2;
 }
 
-// ajoute la contribution de la convection au second membre resu
-// renvoie resu
+/*! @brief Adds convection contributions to the system matrix and right-hand side vector.
+ *
+ * This method implements the convection operator with EF stabilization for PolyMAC P0 Face discretization.
+ * It computes face-based convection fluxes using upwind stabilization and assembles the corresponding
+ * matrix coefficients and source terms. The method handles both face-face and element-element contributions,
+ * accounting for face equivalence relationships and boundary conditions.
+ *
+ * @param matrices Map containing the system matrices indexed by unknown field names
+ * @param secmem Right-hand side vector to be updated with convection contributions
+ * @param semi_impl Map of semi-implicit field values indexed by field names
+ *
+ * @note The convection flux computation uses a blended upwind scheme with stabilization parameter alpha_.
+ * @note For multiphase flows, added mass correlations are included in the mass matrix contributions.
+ * @note The method distinguishes between compressible and incompressible flow formulations.
+ * @note Dirichlet boundary conditions are enforced through direct substitution in the source term.
+ * @note Face equivalence relationships are handled to maintain consistency across mesh interfaces.
+ * @note Performance statistics are automatically tracked during execution.
+ */
 void Op_Conv_EF_Stab_PolyMAC_P0_Face::ajouter_blocs(matrices_t matrices, DoubleTab& secmem, const tabs_t& semi_impl) const
 {
   statistiques().begin_count(convection_counter_);

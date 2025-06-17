@@ -168,6 +168,16 @@ void Op_Diff_PolyMAC_P0_Elem::init_op_ext() const
     }
 }
 
+/*! @brief Dimensions the matrix blocks for the linear system
+ *
+ * Allocates and sizes the sparse matrix structure for the diffusion operator.
+ * The method:
+ * - Determines the matrix stencil based on the discretization scheme
+ * - Accounts for variable diffusivity when computing the stencil
+ *
+ * @param matrices Map of matrices to be dimensioned
+ * @param semi_impl Map of semi-implicit fields
+ */
 void Op_Diff_PolyMAC_P0_Elem::dimensionner_blocs(matrices_t matrices, const tabs_t& semi_impl) const
 {
   init_op_ext();
@@ -244,6 +254,20 @@ void Op_Diff_PolyMAC_P0_Elem::dimensionner_blocs(matrices_t matrices, const tabs
        << mp_somme_vect_as_double(tpfa) * 100. / (N * face_t) << "% TPFA " << finl;
 }
 
+/*! @brief Assembles the diffusion contribution to the linear system
+ *
+ * This is the core method that computes and adds the diffusion terms to both
+ * the matrix and the right-hand side vector. The method:
+ * - Computes diffusive fluxes across all faces using the phi_f coefficients
+ * - Handles various boundary conditions (Dirichlet, Neumann, heat exchange)
+ * - Assembles matrix coefficients for implicit treatment
+ * - Updates the right-hand side with explicit contributions
+ * - Stores boundary fluxes for post-processing
+ *
+ * @param matrices Map of matrices to be filled
+ * @param secmem Right-hand side vector to update
+ * @param semi_impl Map of semi-implicit fields
+ */
 void Op_Diff_PolyMAC_P0_Elem::ajouter_blocs(matrices_t matrices, DoubleTab& secmem, const tabs_t& semi_impl) const
 {
   statistiques().begin_count(diffusion_counter_);

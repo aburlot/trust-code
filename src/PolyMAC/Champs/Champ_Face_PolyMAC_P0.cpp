@@ -132,7 +132,17 @@ Champ_base& Champ_Face_PolyMAC_P0::affecter_(const Champ_base& ch)
   return *this;
 }
 
-
+/**
+ * @brief Interpolates face-based velocity to element centers using a first-order method.
+ *
+ * Computes the element-based velocity components by performing a weighted average
+ * of neighboring face velocities, projected onto the vector from face center to element center.
+ *
+ * This method uses a first-order accurate stencil and does not include boundary corrections.
+ *
+ * @param[out] val Output field containing element-centered velocity components
+ *                 in the last D * number_of_elements entries.
+ */
 void Champ_Face_PolyMAC_P0::update_ve(DoubleTab& val) const
 {
   const Domaine_PolyMAC_P0& domaine = domaine_PolyMAC_P0();
@@ -166,6 +176,18 @@ void Champ_Face_PolyMAC_P0::update_ve(DoubleTab& val) const
     }
 }
 
+/**
+ * @brief Initializes second-order interpolation coefficients from faces to element centers.
+ *
+ * This routine computes the interpolation stencil and weights for reconstructing
+ * the velocity at element centers with second-order accuracy.
+ *
+ * - Builds a least-squares system to correct the first-order estimate.
+ * - Handles internal and boundary faces (Neumann, Dirichlet).
+ * - Uses extended connectivity (neighboring elements via shared vertices).
+ *
+ * Resulting coefficients are stored internally for later use in update_ve2().
+ */
 void Champ_Face_PolyMAC_P0::init_ve2() const
 {
   const Domaine_PolyMAC_P0& domaine = domaine_PolyMAC_P0();
@@ -351,7 +373,16 @@ void Champ_Face_PolyMAC_P0::init_ve2() const
   CRIMP(ve2bc);
 }
 
-/* met en coherence les composantes aux elements avec les vitesses aux faces : interpole sur phi * v */
+/**
+ * @brief Applies the second-order interpolation from face velocities to element centers.
+ *
+ * Uses coefficients computed by init_ve2() to interpolate the face-based velocity field
+ * into element-centered values. Supports both internal faces and Dirichlet boundary conditions.
+ *
+ * @param[out] val Interpolated velocity at element centers.
+ *                 The last D * number_of_elements entries are updated.
+ * @param[in] incr If non-zero, Dirichlet boundary contributions are ignored (for incremental updates).
+ */
 void Champ_Face_PolyMAC_P0::update_ve2(DoubleTab& val, int incr) const
 {
   const Domaine_PolyMAC_P0& domaine = domaine_PolyMAC_P0();
