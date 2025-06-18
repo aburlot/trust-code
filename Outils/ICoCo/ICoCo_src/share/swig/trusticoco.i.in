@@ -35,6 +35,7 @@
 // Turn vector of strings into Python list of strings
 %include "std_vector.i"
 %template(VecString) std::vector<std::string>;
+%template(VecDouble) std::vector<double>;
 
 // Manage exceptions properly:
 %include "icocoexceptions.i"
