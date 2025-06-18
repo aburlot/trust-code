@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -107,6 +107,15 @@ public :
   int getOutputIntValue(const std::string& name) const override;
   double getOutputDoubleValue(const std::string& name) const override;
   void setInputDoubleValue(const std::string& name, const double& val) override;
+
+  //
+  // Get output point values : double
+  //
+  void getOutputPointValues(const std::string& name,
+                            const std::vector<double>& x,
+                            const std::vector<double>& y,
+                            const std::vector<double>& z,
+                            std::vector<double>& vals, int compo = -1);
 
   // I/O for strings:
   void setInputStringValue(const std::string& name, const std::string& val) override;

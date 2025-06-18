@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -473,6 +473,15 @@ int ProblemTrio::getOutputIntValue(const std::string& name) const
   // In 64b the ScalarRegister will become long, but the final ICoCo interface will be int.
   // Hopefully soon we will have a clean 64-bits version...
   return (int)pb->getOutputIntValue(nom);
+}
+
+void ProblemTrio::getOutputPointValues(const std::string& name,
+                                       const std::vector<double>& x,
+                                       const std::vector<double>& y,
+                                       const std::vector<double>& z,
+                                       std::vector<double>& vals, int compo)
+{
+  pb->getOutputPointValues(Nom(name), x, y, z, vals, compo);
 }
 
 vector<string> ProblemTrio::getOutputFieldsNames() const

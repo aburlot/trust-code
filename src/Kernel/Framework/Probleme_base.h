@@ -170,6 +170,12 @@ public:
   void abortTimeStep() override { abortTimeStep_impl(*this); }
   void resetTime(double time) override;
 
+  void getOutputPointValues(const Nom& name,
+                            const std::vector<double>& x,
+                            const std::vector<double>& y,
+                            const std::vector<double>& z,
+                            std::vector<double>& vals, int compo) override;
+
   // interface IterativeUnsteadyProblem
   bool iterateTimeStep(bool& converged) override { return iterateTimeStep_impl(*this, converged); }
 

@@ -71,6 +71,16 @@ public :
   virtual int getOutputIntValue(const Nom& name) const;
   virtual bool checkOutputIntEntry(const Nom& name) const;
 
+  virtual void getOutputPointValues(const Nom& name,
+                                    const std::vector<double>& x,
+                                    const std::vector<double>& y,
+                                    const std::vector<double>& z,
+                                    std::vector<double>& vals, int compo)
+  {
+    Cerr << "Probleme_U::" << __func__ << " must be overloaded in " << que_suis_je() << finl;
+    Process::exit();
+  }
+
   virtual void setInputDoubleValue(const Nom& name, const double val);
 
   virtual void setInputStringValue(const std::string& name, const std::string& val) { str_params_[name] = val; }

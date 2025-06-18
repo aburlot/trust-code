@@ -20,8 +20,9 @@
 #include <Probleme_base.h>
 #include <Synonyme_info.h>
 #include <Postraitement.h>
-#include <Debog.h>
 #include <Perf_counters.h>
+#include <EChaine.h>
+#include <Debog.h>
 
 Implemente_base_sans_destructeur(Probleme_base,"Probleme_base",Probleme_U);
 
@@ -1236,4 +1237,124 @@ Entree& Probleme_base::lire_correlations(Entree& is)
       Correlation_base::typer_lire_correlation(correlations_[mot.getString()], *this, mot, is);
 
   return is;
+}
+
+void Probleme_base::getOutputPointValues(const Nom& name,
+                                         const std::vector<double>& x,
+                                         const std::vector<double>& y,
+                                         const std::vector<double>& z,
+                                         std::vector<double>& vals, int compo)
+{
+  if (Process::is_parallel())
+    Process::exit("Probleme_base::getOutputPointValues not implemented in // !! \n");
+
+  int dim = 2;
+  const int size_x = static_cast<int>(x.size());
+  const int size_y = static_cast<int>(y.size());
+  const int size_z = static_cast<int>(z.size());
+  const int size_vals = static_cast<int>(vals.size());
+
+  if (size_z > 0) dim = 3;
+
+  if (dim != Objet_U::dimension)
+    Process::exit("Error in Probleme_base::getOutputPointValues => vectors x, y and z are not coherent with the space dimension !!!");
+
+  if (size_x != size_y)
+    Process::exit("Error in Probleme_base::getOutputPointValues => vectors x and y must have same dimensions !!!");
+
+  if (dim > 2 && (size_x != size_z))
+    Process::exit("Error in Probleme_base::getOutputPointValues => vectors x, y and z must have same dimensions !!!");
+
+  if (size_vals == 0)
+    vals.resize(size_x);
+  else
+    {
+      if (size_vals != size_x)
+        Process::exit("Error in Probleme_base::getOutputPointValues => vectors x, y/z and vals must have same dimensions !!!");
+    }
+
+  DoubleTrav les_positions; // TODO FIXME : attribute ?
+  les_positions.resize(size_x, Objet_U::dimension);
+
+  for (int i = 0; i < size_x; i++)
+    {
+      les_positions(i, 0) = x[i];
+      les_positions(i, 1) = y[i];
+      if (dim > 2) les_positions(i, 2) = z[i];
+    }
+
+  IntVect elem; // TODO FIXME : attribute ?
+
+  if(elem.size() != size_x)
+    elem.resize(size_x);
+
+  le_domaine_->chercher_elements(les_positions, elem, 1);
+
+  // Check if some probes are outside the domain:
+  ArrOfDouble tmp(size_x);
+  for (int i = 0; i < size_x; i++)
+    tmp[i] = elem[i];
+  mp_max_for_each_item(tmp);
+  for (int i = 0; i < size_x; i++)
+    if (tmp[i] == -1)
+      {
+        Cerr << "Error in Probleme_base::getOutputPointValues => The point number " << i + 1 << " is outside the computational domain !!! " << finl;
+        Process::exit();
+      }
+
+  // TODO FIXME : reste histoire de som/grav ... a factorizer avec Sonde::initialiser()
+
+  if (has_champ(Motcle(name)))
+    {
+      OBS_PTR(Champ_base) champ_ref = get_champ(Motcle(name));
+      const DoubleTab& ch_vals = champ_ref->valeurs();
+
+      DoubleTrav valeurs_locales;
+      valeurs_locales.resize(size_x, ch_vals.line_size());
+
+      if (compo == -1)
+        {
+          assert(ch_vals.line_size() == 1);
+          champ_ref->valeur_aux_elems(les_positions, elem, valeurs_locales);
+        }
+      else
+        {
+          assert(ch_vals.line_size() < compo);
+          champ_ref->valeur_aux_elems_compo(les_positions, elem, valeurs_locales, compo);
+        }
+
+      for (int i = 0; i < size_x; i++)
+        vals[i] = (compo == -1) ? valeurs_locales(i) : valeurs_locales(i, compo);
+    }
+  else /* from post like ICoCo*/
+    {
+      OBS_PTR(Champ_Generique_base) ref_ch = findOutputField(name);
+
+      if (ref_ch.est_nul())
+        {
+          Cerr << "Error in Probleme_base::getOutputPointValues => No output fields of name " << name << finl;
+          Process::exit();
+        }
+
+      OWN_PTR(Champ_base) espace_stockage;
+      const Champ_base& ma_source = ref_ch->get_champ(espace_stockage);
+      const DoubleTab& ch_vals = ma_source.valeurs();
+
+      DoubleTrav valeurs_locales;
+      valeurs_locales.resize(size_x, ch_vals.line_size());
+
+      if (compo == -1)
+        {
+          assert(ch_vals.line_size() == 1);
+          ma_source.valeur_aux_elems(les_positions, elem, valeurs_locales);
+        }
+      else
+        {
+          assert(ch_vals.line_size() < compo);
+          ma_source.valeur_aux_elems_compo(les_positions, elem, valeurs_locales, compo);
+        }
+
+      for (int i = 0; i < size_x; i++)
+        vals[i] = (compo == -1) ? valeurs_locales(i) : valeurs_locales(i, compo);
+    }
 }
