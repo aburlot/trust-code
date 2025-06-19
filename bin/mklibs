@@ -225,6 +225,15 @@ if [ "`ls ${TRUST_ROCALUTION}/lib/librocalution.* 2>/dev/null`" != "" ]; then
 fi
 
 ######
+# cuDSS
+######
+if [ "$TRUST_USE_CUDA" = 1 ] ; then
+    CUDSS_ROOT="\$ENV{TRUST_ROOT}/lib/src/LIBCUDSS"
+    ALL_P=$ALL_P" $CUDSS_ROOT/lib"
+    ALL_L=$ALL_L" cudss_static"
+fi
+
+######
 # OSQP
 ######
 if [ -f ${TRUST_OSQP_ROOT}/lib/libosqp.a ]; then

@@ -380,6 +380,7 @@ include_directories(SYSTEM
     ${MPI_INCLUDE} 
     ${TRUST_ROOT}/lib/src/LIBAMGX/AmgXWrapper/include 
     ${TRUST_ROOT}/lib/src/LIBAMGX/AmgX/include 
+    ${TRUST_ROOT}/lib/src/LIBCUDSS/include 
     ${CUDA_INC_PATH} 
     ${PETSC_ROOT}/${TRUST_ARCH}${OPT}/include 
     ${TRUST_ROOT}/lib/src/LIBROCALUTION/include 
