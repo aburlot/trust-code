@@ -62,14 +62,26 @@ Solv_cuDSS::Solv_cuDSS(const Solv_cuDSS& org)
 Solv_cuDSS::~Solv_cuDSS()
 {
 #ifdef cuDSS_
-// ToDo
+
+  if (A_is_built)
+	  cudssMatrixDestroy(A);
+
+  if (b_is_built)
+	  cudssMatrixDestroy(b);
+
+  if (x_is_built)
+	  cudssMatrixDestroy(x);
+
+  if (data_is_built)
+	  cudssDataDestroy(handle, solverData);
+  cudssConfigDestroy(solverConfig);
+  cudssDestroy(handle);
 #endif
 }
 
 void Solv_cuDSS::initialize()
 {
 #ifdef cuDSS_
-// ToDo
 #endif
 }
 
@@ -77,9 +89,10 @@ void Solv_cuDSS::initialize()
 void Solv_cuDSS::create_solver(Entree& entree)
 {
 #ifdef cuDSS_
+
   cudssAlgType_t reorder_alg;
   reorder_alg = CUDSS_ALG_DEFAULT;
-  cerr << &reorder_alg << endl;
+
   lecture(entree);
   EChaine is(get_chaine_lue());
   Motcle accolade_ouverte("{"), accolade_fermee("}");
@@ -93,7 +106,7 @@ void Solv_cuDSS::create_solver(Entree& entree)
       exit();
     }
   // Lecture des parametres du solver (LU non symetric, cholesky symmetric)
-  // LU|Cholesky { algo name [impr] } 
+  // LU|Cholesky { algo name [impr] }
   is >> motlu;
   while (motlu!=accolade_fermee)
     {
@@ -113,69 +126,91 @@ void Solv_cuDSS::create_solver(Entree& entree)
       is >> motlu;
     }
 
-  // Creation des solveurs cuDSS
-  // ToDo
+
+
+  /* Create handle */
+  cudssCreate(&handle);
+
+  /* Create config */
+  cudssConfigCreate(&solverConfig);
+
+  reorder_alg=CUDSS_ALG_DEFAULT;
+  mtype=CUDSS_MTYPE_GENERAL;
+  mview=CUDSS_MVIEW_FULL;
+
+  cudssConfigSet(solverConfig, CUDSS_CONFIG_REORDERING_ALG,
+                 &reorder_alg, sizeof(cudssAlgType_t));
+
+  cudssDataCreate(handle, &solverData);
+
+#else
+  Process::exit("Sorry, cuDSS solvers not available with this build.");
 #endif
 }
 
 
-int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& b, DoubleVect& x)
+int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect, DoubleVect& xvect)
 {
 #ifdef cuDSS_
   if (nouvelle_matrice())
     {
-      // Conversion matrice stockage symetrique vers matrice stockage general:
+
+      /* conversion matric base to csr */
       Matrice_Morse csr;
-      if (renum_.size_array()==0) construit_renum(b);
       construit_matrice_morse_intermediaire(a, csr);
-      if (nb_rows_<20)
-        {
-          Journal() << "Provisoire sm b=" << finl;
-          b.ecrit(Journal());
-          Journal() << "Provisoire matrice csr=" << finl;
-          csr.imprimer_formatte(Journal());
-        }
+      /* create cudss matrixfrom pointers */
+      Create_objects(csr, bvect, xvect);
 
-      //if (nouveau_stencil_)
-      Create_objects(csr);
-    }
-  else
-    {
-      // ToDo
+      /* Symbolic factorization */
+      cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData,
+                   A, x, b);
+
+      /* Factorization */
+      cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
+                   solverData, A, x, b);
     }
 
-  // Build rhs and initial solution:
-  // ToDo
-  /*
-  int size=b.size_array();
-  if (rhs_.size_array()==0)
-    {
-      // Allocation initiale
-      // ToDo
-    }
-  */
-
-  // Solve A x = rhs
-  statistiques().begin_count(gpu_library_counter_);
-  // ToDo
-  statistiques().end_count(gpu_library_counter_);
-
-  // Recupere la solution
-  // ToDo
-
-  x.echange_espace_virtuel();
-
-  fixer_nouvelle_matrice(0);
-  return 1;
+  /* Solving */
+  cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
+               A, x, b);
+  return 0;
 #else
   Process::exit("Sorry, cuDSS solvers not available with this build.");
   return -1;
 #endif
 }
 
-void Solv_cuDSS::Create_objects(const Matrice_Morse& csr)
+void Solv_cuDSS::Create_objects(const Matrice_Morse& csr, const DoubleVect& bvect, DoubleVect& xvect)
 {
 #ifdef cuDSS_
-  // ToDo
+  if (Process::is_parallel())
+    {
+      Process::exit("Sorry, cuDSS is a sequential solver.");
+    }
+
+  /* get dimensions and nnz */
+  n=csr.get_tab1().size();
+  nnz=csr.get_coeff().size();
+
+  /* get pointers */
+  csr_offsets_d = const_cast<int*>(csr.get_tab1().view_ro<1>().data());
+  csr_columns_d = const_cast<int*>(csr.get_tab2().view_ro<1>().data());
+  csr_values_d  = const_cast<double*>(csr.get_coeff().view_ro<1>().data());
+  x_values_d = const_cast<double*>(xvect.view_rw<1>().data());
+  b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
+
+  /* create matrix */
+  cudssMatrixCreateCsr(&A, n, n, nnz, csr_offsets_d, nullptr,
+                       csr_columns_d, csr_values_d, CUDA_R_32I, CUDA_R_64F, mtype, mview,
+                       base);
+
+  /* create rhs and vector */
+  cudssMatrixCreateDn(&b, n, nrhs, n, b_values_d, CUDA_R_64F,
+                      CUDSS_LAYOUT_COL_MAJOR);
+  cudssMatrixCreateDn(&x, n, nrhs, n, x_values_d, CUDA_R_64F,
+                      CUDSS_LAYOUT_COL_MAJOR);
 #endif
 }
+
+//Comment différencier la premiere fois ou on cree les objet et les fois dapres ou on change les valeurs ?
+//recreer matrices à chaque fois ?

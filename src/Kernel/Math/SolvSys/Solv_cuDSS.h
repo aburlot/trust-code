@@ -20,6 +20,7 @@
 #include <Motcle.h>
 #include <Device.h>
 #include <cudss.h>
+#include <cuda.h>
 class EChaine;
 
 #define cuDSS_
@@ -41,14 +42,38 @@ public :
 
 private :
   void initialize();
-  void Create_objects(const Matrice_Morse&);
+  void Create_objects(const Matrice_Morse&, const DoubleVect& bvect, DoubleVect& xvect);
+
+  cudaError_t cuda_error = cudaSuccess;
+
+
+  int *csr_offsets_d = nullptr;
+  int *csr_columns_d = nullptr;
+  double *csr_values_d = nullptr;
+  double *x_values_d = nullptr, *b_values_d = nullptr;
+
+  int nrhs=1; //For batched solve
+  int n;
+  int nnz;
+
 #ifdef cuDSS_
-//  GlobalMatrix<double> mat;
-//  bool write_system_;
-//  bool first_solve_ = true;
-//  int precond_verbosity_;
-//  GlobalVector<double> sol, rhs, e;
-//  IntVect local_renum_;
+  cudssStatus_t status = CUDSS_STATUS_SUCCESS;
+  cudssAlgType_t reorder_alg;
+  cudssMatrixType_t mtype;
+  cudssMatrixViewType_t mview;
+  cudssConfig_t solverConfig;
+  cudssData_t solverData;
+  cudssMatrix_t x, b, A;
+  cudssIndexBase_t base = CUDSS_BASE_ZERO;
+  cudssHandle_t handle;
+
+  bool A_is_built = false;
+  bool b_is_built = false;
+  bool x is_built = false;
+  bool handle_is_built = false;
+  bool config_is_built=false;
+  bool data_is_built=false;
+
 #endif
 };
 
