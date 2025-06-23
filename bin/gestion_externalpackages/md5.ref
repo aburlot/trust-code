@@ -270,6 +270,7 @@ ea0931758fc180e3b1950931b9869921  gnuplot/gnuplot-6.0.2.tar.gz
 48384e324cd1cdcfbdb0d2e16ca55327  lapack/OpenBLAS-0.3.25.tar.gz
 853a0c5c0747c5943e7ef4bbb793162d  lapack/OpenBLAS-0.3.29.tar.gz
 44c3869c38c8335c2b9c2a8bb276eb55  lapack/lapack-3.4.1.tgz
+9cc4c74331251c5f9c1f9e867e625cba  libcudss-linux-x86_64-0.6.0.5_cuda12-archive.tar.gz
 b5e558f981326d9ca1bfdb841640721a  make-4.0.tar.gz
 9be6e048224797bf531f94b7a8aaa99d  osqp-0.6.0.tar.gz
 da26c4b43d53a9a6096775245cee847f  petsc/MUMPS_5.5.1.tar.gz
