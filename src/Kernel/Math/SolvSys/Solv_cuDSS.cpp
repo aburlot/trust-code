@@ -63,19 +63,19 @@ Solv_cuDSS::~Solv_cuDSS()
 {
 #ifdef cuDSS_
 
-  if (A_is_built)
-	  cudssMatrixDestroy(A);
+  if (Axb_are_built)
+    {
+      cudssMatrixDestroy(A);
+      cudssMatrixDestroy(b);
+      cudssMatrixDestroy(x);
+    }
 
-  if (b_is_built)
-	  cudssMatrixDestroy(b);
-
-  if (x_is_built)
-	  cudssMatrixDestroy(x);
-
-  if (data_is_built)
-	  cudssDataDestroy(handle, solverData);
-  cudssConfigDestroy(solverConfig);
-  cudssDestroy(handle);
+  if (solver_is_built)
+    {
+      cudssDataDestroy(handle, solverData);
+      cudssConfigDestroy(solverConfig);
+      cudssDestroy(handle);
+    }
 #endif
 }
 
@@ -90,8 +90,7 @@ void Solv_cuDSS::create_solver(Entree& entree)
 {
 #ifdef cuDSS_
 
-  cudssAlgType_t reorder_alg;
-  reorder_alg = CUDSS_ALG_DEFAULT;
+  Cerr <<"[cuDSS] reading jdd and creating solver "<< finl;
 
   lecture(entree);
   EChaine is(get_chaine_lue());
@@ -101,9 +100,22 @@ void Solv_cuDSS::create_solver(Entree& entree)
   is >> motlu; // On lit l'accolade
   if (motlu != accolade_ouverte)
     {
-      Cerr << "Error while reading the parameters of the solver " << solver << " { ... }" << finl;
+      Cerr << "[cuDSS] Error while reading the parameters of the solver " << solver << " { ... }" << finl;
       Cerr << "We expected " << accolade_ouverte << " instead of " << motlu << finl;
       exit();
+    }
+
+  if (solver==(Motcle)"LU")
+    {
+      std::cout<<"[cuDSS] LU is read, matrix is assumed non symmetric"<<std::endl;
+      mtype=CUDSS_MTYPE_GENERAL;
+      mview=CUDSS_MVIEW_FULL;
+    }
+  else if (solver==(Motcle)"Cholesky")
+    {
+      std::cout<<"[cuDSS] Cholesky is read, matrix is assumed symmetric"<<std::endl;
+      mtype=CUDSS_MTYPE_SYMMETRIC;
+      mview=CUDSS_MVIEW_UPPER;
     }
   // Lecture des parametres du solver (LU non symetric, cholesky symmetric)
   // LU|Cholesky { algo name [impr] }
@@ -117,34 +129,45 @@ void Solv_cuDSS::create_solver(Entree& entree)
       else if (motlu==(Motcle)"algo")
         {
           is >> motlu; // Lecture de l'algo
+
+          if (motlu==(Motcle)"0") {  reorder_alg = CUDSS_ALG_DEFAULT;}
+          else if (motlu==(Motcle)"1") {  reorder_alg = CUDSS_ALG_1;}
+          else if (motlu==(Motcle)"2") {  reorder_alg = CUDSS_ALG_2;}
+          else if (motlu==(Motcle)"3") {  reorder_alg = CUDSS_ALG_3;}
+          else if (motlu==(Motcle)"4") {  reorder_alg = CUDSS_ALG_4;}
+          else if (motlu==(Motcle)"5") {  reorder_alg = CUDSS_ALG_5;}
+          else
+            {
+              Cerr << "[cuDSS] algo number "<<motlu<<" unrecognized (0-5) only"<<finl;
+              Process::exit();
+            }
+          Cerr << "[cuDSS] algo number "<<motlu<<" read. "<<finl;
+          Cerr <<"[cuDSS] Note from cuDSS doc: Different values represent different algorithms (for reordering, factorization, etc.) and can lead to significant differences in accuracy and performance. It is currently recommended to use CUDSS_ALG_DEFAULT (0) and only in case accuracy or performance are not sufficient, one can experiment with other values."<<finl;
+
         }
       else
         {
-          Cerr << motlu << " keyword not recognized for cuDSS solver " << solver << finl;
+          Cerr << motlu << "[cuDSS] keyword not recognized for cuDSS solver " << solver << finl;
           Process::exit();
         }
       is >> motlu;
     }
 
 
-
   /* Create handle */
   cudssCreate(&handle);
-
   /* Create config */
   cudssConfigCreate(&solverConfig);
-
-  reorder_alg=CUDSS_ALG_DEFAULT;
-  mtype=CUDSS_MTYPE_GENERAL;
-  mview=CUDSS_MVIEW_FULL;
-
+  /* set options to config */
   cudssConfigSet(solverConfig, CUDSS_CONFIG_REORDERING_ALG,
                  &reorder_alg, sizeof(cudssAlgType_t));
-
+  /* create solver data */
   cudssDataCreate(handle, &solverData);
+  /*log*/
+  solver_is_built = true;
 
 #else
-  Process::exit("Sorry, cuDSS solvers not available with this build.");
+  Process::exit("Sorry, cuDSS solvers not available with this build (create solver).");
 #endif
 }
 
@@ -152,65 +175,139 @@ void Solv_cuDSS::create_solver(Entree& entree)
 int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect, DoubleVect& xvect)
 {
 #ifdef cuDSS_
+
   if (nouvelle_matrice())
     {
 
       /* conversion matric base to csr */
       Matrice_Morse csr;
+      /*build the csr matrix on host*/
       construit_matrice_morse_intermediaire(a, csr);
-      /* create cudss matrixfrom pointers */
-      Create_objects(csr, bvect, xvect);
-
-      /* Symbolic factorization */
+      /* create cudss matrix and size them */
+      Create_objects(csr);
+      /* give the device data / csr pointers to the cudss matrix */
+      set_pointers_A(csr);
+      /* Symbolic factorization x, and b are unused*/
       cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData,
                    A, x, b);
 
-      /* Factorization */
+      /* Factorization x, and b are unused*/
       cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
                    solverData, A, x, b);
     }
 
+  /*some checks*/
+  assert(a.nb_lignes()+1==n);
+  assert(bvect.size_totale()+1==n);
+  assert(xvect.size_totale()+1==n);
+
+  /* give the device data / csr pointers to the cudss x and b */
+  /* does nothing after the first solve*/
+  set_pointers_xb(bvect, xvect);
+
   /* Solving */
   cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
                A, x, b);
+
+  std::cout<<"[cuDSS] Solved with cuDSS !!"<<std::endl;
+
+  first_solve = false;
+
   return 0;
 #else
-  Process::exit("Sorry, cuDSS solvers not available with this build.");
+  Process::exit("Sorry, cuDSS solvers not available with this build (resoudre_systeme).");
   return -1;
 #endif
 }
 
-void Solv_cuDSS::Create_objects(const Matrice_Morse& csr, const DoubleVect& bvect, DoubleVect& xvect)
+void Solv_cuDSS::Create_objects(const Matrice_Morse& csr)
 {
 #ifdef cuDSS_
+
   if (Process::is_parallel())
     {
       Process::exit("Sorry, cuDSS is a sequential solver.");
     }
 
   /* get dimensions and nnz */
-  n=csr.get_tab1().size();
-  nnz=csr.get_coeff().size();
+  /* check that n does not change between solves */
 
-  /* get pointers */
-  csr_offsets_d = const_cast<int*>(csr.get_tab1().view_ro<1>().data());
-  csr_columns_d = const_cast<int*>(csr.get_tab2().view_ro<1>().data());
-  csr_values_d  = const_cast<double*>(csr.get_coeff().view_ro<1>().data());
-  x_values_d = const_cast<double*>(xvect.view_rw<1>().data());
-  b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
+#ifndef NDEBUG
+  int new_n = csr.get_tab1().size();
+  assert(((new_n==n)||(first_solve))); // n should never change between solves
+#endif
 
-  /* create matrix */
-  cudssMatrixCreateCsr(&A, n, n, nnz, csr_offsets_d, nullptr,
-                       csr_columns_d, csr_values_d, CUDA_R_32I, CUDA_R_64F, mtype, mview,
-                       base);
+  n = csr.get_tab1().size();
 
-  /* create rhs and vector */
-  cudssMatrixCreateDn(&b, n, nrhs, n, b_values_d, CUDA_R_64F,
-                      CUDSS_LAYOUT_COL_MAJOR);
-  cudssMatrixCreateDn(&x, n, nrhs, n, x_values_d, CUDA_R_64F,
-                      CUDSS_LAYOUT_COL_MAJOR);
+  int new_nnz = csr.get_coeff().size();
+
+  //Re-build A only if new nnz is different from old one, possible if matrix changes
+  if( new_nnz != nnz)
+    {
+      nnz=new_nnz;
+
+      /* destroy if A is built */
+      if (Axb_are_built)
+        cudssMatrixDestroy(A);
+
+      /* create matrix, we give nullptrs*/
+      cudssMatrixCreateCsr(&A, n, n, nnz, nullptr, nullptr,
+                           nullptr, nullptr, CUDA_R_32I, CUDA_R_64F, mtype, mview,
+                           base);
+    }
+
+  if (first_solve)
+    {
+      /* create rhs and vector we give nullptrs*/
+      // n should never change between solves, no need to resize
+
+      cudssMatrixCreateDn(&b, n, nrhs, n, nullptr, CUDA_R_64F,
+                          CUDSS_LAYOUT_COL_MAJOR);
+      cudssMatrixCreateDn(&x, n, nrhs, n, nullptr, CUDA_R_64F,
+                          CUDSS_LAYOUT_COL_MAJOR);
+    }
+
+  Axb_are_built=true;
 #endif
 }
 
-//Comment différencier la premiere fois ou on cree les objet et les fois dapres ou on change les valeurs ?
-//recreer matrices à chaque fois ?
+void Solv_cuDSS::set_pointers_A(const Matrice_Morse& csr)
+{
+
+  /* get pointers */
+  csr_offsets_d = const_cast<int*>(csr.get_tab2().view_ro<1>().data());
+  csr_columns_d = const_cast<int*>(csr.get_tab1().view_ro<1>().data());
+  csr_values_d = const_cast<double*>(csr.get_coeff().view_ro<1>().data());
+
+  /* give pointers to A*/
+  cudssMatrixSetCsrPointers(A,
+                            csr_offsets_d, /*rowStart*/
+                            csr_offsets_d+1,/*rowEnd*/
+                            csr_columns_d,
+                            csr_values_d);
+}
+
+void Solv_cuDSS::set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect)
+{
+  //The pointers to x and b should never change between calls to resoudre
+  //In debug we check that this is the case
+
+  if (first_solve)
+    {
+      /* get pointers */
+      x_values_d = const_cast<double*>(xvect.view_rw<1>().data());
+      b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
+
+      /* give pointers to vectors*/
+      cudssMatrixSetValues(x, x_values_d);
+      cudssMatrixSetValues(b, b_values_d);
+    }
+#ifndef NDEBUG
+  else
+    {
+      assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));
+      assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
+    }
+#endif
+}
+

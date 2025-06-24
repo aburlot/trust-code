@@ -78,7 +78,7 @@ Lire pb1
 
     Navier_Stokes_turbulent
     {
-        solveur_pression cuDSS LU { algo toto impr }
+        solveur_pression cuDSS LU { algo 0 impr }
         convection { muscl }
         diffusion { }
         conditions_initiales { vitesse Champ_uniforme 3 0. 0. 0. }

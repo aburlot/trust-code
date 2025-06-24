@@ -42,37 +42,35 @@ public :
 
 private :
   void initialize();
-  void Create_objects(const Matrice_Morse&, const DoubleVect& bvect, DoubleVect& xvect);
+  void Create_objects(const Matrice_Morse&);
+  void set_pointers_A(const Matrice_Morse&);
+  void set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect);
 
-  cudaError_t cuda_error = cudaSuccess;
-
-
-  int *csr_offsets_d = nullptr;
-  int *csr_columns_d = nullptr;
-  double *csr_values_d = nullptr;
-  double *x_values_d = nullptr, *b_values_d = nullptr;
 
   int nrhs=1; //For batched solve
-  int n;
-  int nnz;
+  int n=-1;
+  int nnz=-1;
+
+  double * b_values_d=nullptr;
+  double * x_values_d=nullptr;
+  int * csr_offsets_d=nullptr;
+  int * csr_columns_d =nullptr;
+  double * csr_values_d =nullptr;
+
+  bool Axb_are_built = false;
+  bool solver_is_built = false;
+  bool first_solve=true;
 
 #ifdef cuDSS_
-  cudssStatus_t status = CUDSS_STATUS_SUCCESS;
-  cudssAlgType_t reorder_alg;
+
+  cudssAlgType_t reorder_alg; //Can be 0->5. Default / recommended is 0
+  cudssConfig_t solverConfig;
+  cudssHandle_t handle;
+  cudssData_t solverData;
   cudssMatrixType_t mtype;
   cudssMatrixViewType_t mview;
-  cudssConfig_t solverConfig;
-  cudssData_t solverData;
   cudssMatrix_t x, b, A;
   cudssIndexBase_t base = CUDSS_BASE_ZERO;
-  cudssHandle_t handle;
-
-  bool A_is_built = false;
-  bool b_is_built = false;
-  bool x is_built = false;
-  bool handle_is_built = false;
-  bool config_is_built=false;
-  bool data_is_built=false;
 
 #endif
 };
