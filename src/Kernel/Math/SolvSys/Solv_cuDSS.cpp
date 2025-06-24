@@ -27,20 +27,20 @@
 #include <Array_tools.h>
 #include <cuda.h>
 
+
 #define CUDSS_CALL_AND_CHECK(call, status, msg) \
     do { \
         status = call; \
-        std::cout<<call<<std::endl; \
         if (status != CUDSS_STATUS_SUCCESS) { \
             printf("Example FAILED: CUDSS call ended unsuccessfully with status = %d, details: " #msg "\n", status); \
             return -2; \
         } \
     } while(0);
 
+//For functions that return void
 #define CUDSS_CALL_AND_CHECK_VOID(call, status, msg) \
     do { \
         status = call; \
-                std::cout<<call<<std::endl; \
         if (status != CUDSS_STATUS_SUCCESS) { \
             printf("Example FAILED: CUDSS call ended unsuccessfully with status = %d, details: " #msg "\n", status); \
         } \
@@ -59,59 +59,11 @@ Sortie& Solv_cuDSS::printOn(Sortie& s ) const
   return s;
 }
 
-// readOn
-Entree& Solv_cuDSS::readOn(Entree& is)
-{
-  create_solver(is);
-  return is;
-}
-
-Solv_cuDSS::Solv_cuDSS()
-{
-  initialize();
-}
-
-Solv_cuDSS::Solv_cuDSS(const Solv_cuDSS& org)
-{
-  initialize();
-  // on relance la lecture ....
-  EChaine recup(org.get_chaine_lue());
-  readOn(recup);
-}
-
-Solv_cuDSS::~Solv_cuDSS()
+// Read parameters
+Entree& Solv_cuDSS::readOn(Entree& entree)
 {
 #ifdef cuDSS_
-
-  if (Axb_are_built)
-    {
-      cudssMatrixDestroy(A);
-      cudssMatrixDestroy(b);
-      cudssMatrixDestroy(x);
-    }
-
-  if (solver_is_built)
-    {
-      cudssDataDestroy(handle, solverData);
-      cudssConfigDestroy(solverConfig);
-      cudssDestroy(handle);
-    }
-#endif
-}
-
-void Solv_cuDSS::initialize()
-{
-#ifdef cuDSS_
-#endif
-}
-
-// Lecture et creation du solveur
-void Solv_cuDSS::create_solver(Entree& entree)
-{
-#ifdef cuDSS_
-
-  Cerr <<"[cuDSS] reading jdd and creating solver "<< finl;
-
+  Cerr <<"[cuDSS] reading jdd  "<< finl;
   lecture(entree);
   EChaine is(get_chaine_lue());
   Motcle accolade_ouverte("{"), accolade_fermee("}");
@@ -172,9 +124,37 @@ void Solv_cuDSS::create_solver(Entree& entree)
         }
       is >> motlu;
     }
-
 #else
-  Process::exit("Sorry, cuDSS solvers not available with this build (create solver).");
+  Process::exit("Sorry, cuDSS solvers not available with this build (cuDSS readon).");
+#endif
+  return entree;
+}
+
+
+Solv_cuDSS::Solv_cuDSS(const Solv_cuDSS& org)
+{
+  // on relance la lecture .... Necessary for some reasons
+  EChaine recup(org.get_chaine_lue());
+  readOn(recup);
+}
+
+Solv_cuDSS::~Solv_cuDSS()
+{
+#ifdef cuDSS_
+
+  if (Axb_are_built)
+    {
+      cudssMatrixDestroy(A);
+      cudssMatrixDestroy(b);
+      cudssMatrixDestroy(x);
+    }
+
+  if (solver_is_built)
+    {
+      cudssDataDestroy(handle, solverData);
+      cudssConfigDestroy(solverConfig);
+      cudssDestroy(handle);
+    }
 #endif
 }
 
@@ -190,8 +170,18 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
       Matrice_Morse csr;
       /*build the csr matrix on host*/
       construit_matrice_morse_intermediaire(a, csr);
-      /* create cudss matrix and size them */
-      Create_objects(csr);
+
+      /* get dimensions and nnz */
+      /* check that n does not change between solves */
+      int new_n = csr.get_tab1().size()-1;
+      int new_nnz = csr.get_coeff().size();
+#ifndef NDEBUG
+      assert(((new_n==n)||(first_solve))); // n should never change between solves
+#endif
+      n=new_n;
+
+      /* create cudss matrix, vector and solver and size them */
+      Create_objects(new_n, new_nnz);
       /* give the device data / csr pointers to the cudss matrix */
       set_pointers_A(csr);
       /* Symbolic factorization x, and b are unused*/
@@ -203,20 +193,28 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
                                         solverData, A, x, b), status, "cudssExecute for facto");
     }
 
+
+  if (first_solve)
+    {
+      /* give the device data / csr pointers to the cudss vectors x and b */
+      //The pointers to x and b should never change between calls to resoudre
+      set_pointers_xb(bvect, xvect);
+    }
+
   /*some checks*/
   /* sizes should never change */
   assert(a.nb_lignes()==n);
   assert(bvect.size_totale()==n);
   assert(xvect.size_totale()==n);
+  assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));
+  assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
 
-  /* give the device data / csr pointers to the cudss x and b */
-  /* does nothing after the first solve*/
-  set_pointers_xb(bvect, xvect);
 
   /* Solving */
   CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
                                     A, x, b), status, "cudssExecute for solve");
 
+  /*compute error in debug mode */
 #ifndef NDEBUG
   DoubleVect test(bvect);
   test*=-1;
@@ -234,29 +232,20 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 #endif
 }
 
-void Solv_cuDSS::Create_objects(const Matrice_Morse& csr)
+void Solv_cuDSS::Create_objects(const int new_n, const int new_nnz)
 {
 #ifdef cuDSS_
-
+  /* Create the solver and matrix / vector objects */
+  /* Solver and vectors are created only in the first call */
+  /*Matrix can be destroyed and re-created if nnz changes*/
   if (Process::is_parallel())
     {
       Process::exit("Sorry, cuDSS is a sequential solver.");
     }
 
-  /* get dimensions and nnz */
-  /* check that n does not change between solves */
-
-#ifndef NDEBUG
-  int new_n = csr.get_tab1().size()-1;
-  assert(((new_n==n)||(first_solve))); // n should never change between solves
-#endif
-
-  n = csr.get_tab1().size()-1;
-
-  int new_nnz = csr.get_coeff().size();
 
   //Re-build A only if new nnz is different from old one, possible if matrix changes
-  if( new_nnz != nnz)
+  if((first_solve)||(new_nnz != nnz))
     {
       nnz=new_nnz;
 
@@ -279,13 +268,11 @@ void Solv_cuDSS::Create_objects(const Matrice_Morse& csr)
                                                     CUDSS_LAYOUT_COL_MAJOR), status, "cudssMatrixCreateDn for b");
       CUDSS_CALL_AND_CHECK_VOID(cudssMatrixCreateDn(&x, n, nrhs, n, nullptr, CUDA_R_64F,
                                                     CUDSS_LAYOUT_COL_MAJOR), status, "cudssMatrixCreateDn for x");
-    }
 
-  Axb_are_built=true;
+      Axb_are_built=true;
 
+      /* Create the solver */
 
-  if (first_solve)
-    {
       /* Create a CUDA stream */
       cudaStreamCreate(&stream);
       /* Create handle */
@@ -299,7 +286,7 @@ void Solv_cuDSS::Create_objects(const Matrice_Morse& csr)
                                                &reorder_alg, sizeof(cudssAlgType_t)), status, "cudssConfigSet");
       /* create solver data */
       CUDSS_CALL_AND_CHECK_VOID(cudssDataCreate(handle, &solverData), status, "cudssDataCreate");
-      /*log*/
+
       solver_is_built = true;
     }
 #endif
@@ -323,25 +310,12 @@ void Solv_cuDSS::set_pointers_A(const Matrice_Morse& csr)
 
 void Solv_cuDSS::set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect)
 {
-  //The pointers to x and b should never change between calls to resoudre
-  //In debug we check that this is the case
+  /* get pointers */
+  x_values_d = const_cast<double*>(xvect.view_rw<1>().data()); //maybe wo ?
+  b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
 
-  if (first_solve)
-    {
-      /* get pointers */
-      x_values_d = const_cast<double*>(xvect.view_rw<1>().data()); //maybe wo ?
-      b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
-
-      /* give pointers to vectors*/
-      CUDSS_CALL_AND_CHECK_VOID(cudssMatrixSetValues(x, x_values_d), status, "cudssMatrixSetValues for x");
-      CUDSS_CALL_AND_CHECK_VOID(cudssMatrixSetValues(b, b_values_d), status, "cudssMatrixSetValues for b");
-    }
-#ifndef NDEBUG
-  else
-    {
-      assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));
-      assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
-    }
-#endif
+  /* give pointers to vectors*/
+  CUDSS_CALL_AND_CHECK_VOID(cudssMatrixSetValues(x, x_values_d), status, "cudssMatrixSetValues for x");
+  CUDSS_CALL_AND_CHECK_VOID(cudssMatrixSetValues(b, b_values_d), status, "cudssMatrixSetValues for b");
 }
 

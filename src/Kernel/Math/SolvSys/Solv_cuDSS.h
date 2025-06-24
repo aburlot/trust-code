@@ -30,7 +30,7 @@ class Solv_cuDSS : public Solv_Externe
   Declare_instanciable_sans_constructeur_ni_destructeur(Solv_cuDSS);
 
 public :
-  Solv_cuDSS();
+  Solv_cuDSS() {};
   Solv_cuDSS(const Solv_cuDSS&);
   ~Solv_cuDSS() override;
 
@@ -38,11 +38,9 @@ public :
   inline int resoudre_systeme(const Matrice_Base& a, const DoubleVect& b, DoubleVect& x, int niter_max) override { return resoudre_systeme(a,b,x); };
 
   int resoudre_systeme(const Matrice_Base& a, const DoubleVect& b, DoubleVect& x) override;
-  void create_solver(Entree& entree);
 
 private :
-  void initialize();
-  void Create_objects(const Matrice_Morse&);
+  void Create_objects(const int, const int);
   void set_pointers_A(const Matrice_Morse&);
   void set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect);
 
