@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2022, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -42,7 +42,8 @@ public :
   void calculer_Cp() override;
   void calculer_masse_volumique() override;
   void initialiser() override;
-  double calculer_masse_volumique(double,double) const override;
+  KOKKOS_INLINE_FUNCTION double calculer_masse_volumique(double P,double T) const override { return calculer_masse_volumique(P, T, R_); }
+  KOKKOS_INLINE_FUNCTION double calculer_masse_volumique(double P,double T, double R) const { return P / ( R * T ); }
   double inverser_Pth(double,double) override;
 
   // Methodes inlines

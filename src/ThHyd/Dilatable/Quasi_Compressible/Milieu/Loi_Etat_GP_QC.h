@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2022, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -34,6 +34,8 @@ class Loi_Etat_GP_QC : public Loi_Etat_Mono_GP_base
 public :
   void calculer_masse_volumique() override;
   double calculer_masse_volumique(double,double) const override;
+protected:
+  void compute_tab_rho(DoubleTab&) override;
 };
 
 #endif /* Loi_Etat_GP_QC_included */

@@ -178,19 +178,6 @@ void Loi_Etat_GP_base::calculer_alpha()
   tab_alpha.echange_espace_virtuel();
 }
 
-double Loi_Etat_GP_base::calculer_masse_volumique(double P, double T) const
-{
-  if (inf_ou_egal(T,0))
-    {
-      Cerr << finl << "Error, we find a temperature of " << T << " !" << finl;
-      Cerr << "Either your calculation has diverged or you don't define" << finl;
-      Cerr << "temperature in Kelvin somewhere in your data file." << finl;
-      Cerr << "Check your data file." << finl;
-      Process::exit();
-    }
-  return P / ( R_ * T );
-}
-
 /*! @brief Calcule la pression avec la temperature et la masse volumique
  *
  */

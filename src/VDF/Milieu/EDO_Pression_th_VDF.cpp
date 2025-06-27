@@ -30,6 +30,7 @@ Entree& EDO_Pression_th_VDF::readOn(Entree& is) { return EDO_Pression_th_base::r
  */
 double EDO_Pression_th_VDF::masse_totale(double P, const DoubleTab& T)
 {
+  ToDo_Kokkos("critical");
   int elem, nb_elem = le_dom->nb_elem();
   const DoubleVect& volumes = le_dom->volumes();
   const Loi_Etat_base& loi_ = ref_cast(Loi_Etat_base, le_fluide_->loi_etat().valeur());
@@ -60,6 +61,7 @@ double EDO_Pression_th_VDF::masse_totale(double P, const DoubleTab& T)
 
 double EDO_Pression_th_VDF::masse_totale(const DoubleTab& P, const DoubleTab& T)
 {
+  ToDo_Kokkos("critical");
   int elem, nb_elem = le_dom->nb_elem();
   const DoubleVect& volumes = le_dom->volumes();
   const Loi_Etat_base& loi_ = ref_cast(Loi_Etat_base, le_fluide_->loi_etat().valeur());
@@ -101,6 +103,7 @@ void EDO_Pression_th_VDF::calculer_grad(const DoubleTab& inco, DoubleTab& resu)
   const DoubleVect& volume_entrelaces = le_dom->volumes_entrelaces();
 
   // Boucle sur les faces internes
+  ToDo_Kokkos("critical");
   for (face = dom.premiere_face_int(); face < dom.nb_faces(); face++)
     {
       n0 = face_voisins(face, 0);

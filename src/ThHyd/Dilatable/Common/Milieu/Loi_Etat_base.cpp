@@ -241,21 +241,26 @@ void Loi_Etat_base::calculer_nu_sur_Sc()
  */
 void Loi_Etat_base::calculer_masse_volumique()
 {
-  const DoubleTab& tab_ICh = le_fluide->inco_chaleur().valeurs();
   DoubleTab& tab_rho = le_fluide->masse_volumique().valeurs();
-  double Pth = le_fluide->pression_th();
-  int n=tab_rho.size();
-  ToDo_Kokkos("critical, not easy cause virtual function");
-  for (int som=0 ; som<n ; som++)
-    {
-      tab_rho_np1(som) = calculer_masse_volumique(Pth,tab_ICh(som,0));
-      tab_rho(som,0) = 0.5 * ( tab_rho_n(som) + tab_rho_np1(som) );
-    }
+  compute_tab_rho(tab_rho); // May be overloaded for device
   tab_rho.echange_espace_virtuel();
   tab_rho_np1.echange_espace_virtuel();
   le_fluide->calculer_rho_face(tab_rho_np1);
 }
 
+// Host version
+void Loi_Etat_base::compute_tab_rho(DoubleTab& tab_rho)
+{
+  int n=tab_rho.size();
+  double Pth = le_fluide->pression_th();
+  const DoubleTab& tab_ICh = le_fluide->inco_chaleur().valeurs();
+  ToDo_Kokkos("Implement a ::compute_tab_rho() on device");
+  for (int som = 0; som < n; som++)
+    {
+      tab_rho_np1(som) = calculer_masse_volumique(Pth, tab_ICh(som, 0));
+      tab_rho(som, 0) = 0.5 * (tab_rho_n(som) + tab_rho_np1(som));
+    }
+}
 /*! @brief Cas gaz parfait : ne fait rien Cas gaz Reel : doit recalculer l'enthalpie a partir de la pression et la temperature
  *
  */

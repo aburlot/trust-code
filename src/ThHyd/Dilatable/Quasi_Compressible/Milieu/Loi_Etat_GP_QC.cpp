@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -14,6 +14,7 @@
 *****************************************************************************/
 
 #include <Loi_Etat_GP_QC.h>
+#include <Fluide_Dilatable_base.h>
 
 Implemente_instanciable(Loi_Etat_GP_QC,"Loi_Etat_Gaz_Parfait_QC",Loi_Etat_Mono_GP_base);
 // XD perfect_gaz_QC loi_etat_gaz_parfait_base gaz_parfait_QC 1 Class for perfect gas state law used with a quasi-compressible fluid.
@@ -39,6 +40,24 @@ double Loi_Etat_GP_QC::calculer_masse_volumique(double P, double T) const
 {
   return rho_constant_pour_debug_.non_nul() ? rho_constant_pour_debug_->valeurs()(0,0) :
          Loi_Etat_Mono_GP_base::calculer_masse_volumique(P,T);
+}
+
+// View version
+void Loi_Etat_GP_QC::compute_tab_rho(DoubleTab& tab_rho)
+{
+  double rho_constant = rho_constant_pour_debug_.non_nul() ? rho_constant_pour_debug_->valeurs()(0,0) : 0;
+  double Pth = le_fluide->pression_th();
+  double R = R_;
+  CDoubleArrView tab_ICh = static_cast<const ArrOfDouble&>(le_fluide->inco_chaleur().valeurs()).view_ro();
+  CDoubleArrView rho_n = static_cast<const ArrOfDouble&>(tab_rho_n).view_ro();
+  DoubleArrView rho_np1 = static_cast<ArrOfDouble&>(tab_rho_np1).view_wo();
+  DoubleArrView rho = static_cast<ArrOfDouble&>(tab_rho).view_wo();
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), tab_rho.size(), KOKKOS_LAMBDA(const int som)
+  {
+    rho_np1(som) = rho_constant ? rho_constant : Loi_Etat_Mono_GP_base::calculer_masse_volumique(Pth, tab_ICh(som), R);
+    rho(som) = 0.5 * (rho_n(som) + rho_np1(som));
+  });
+  end_gpu_timer(__KERNEL_NAME__);
 }
 
 /*! @brief Calcule la masse volumique
