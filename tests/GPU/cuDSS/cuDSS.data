@@ -1,6 +1,5 @@
-# PARALLEL OK #
-# Quasi compressible test case on GPU with still a lot of D2H copies: #
-# copyToDevice 9 #
+# PARALLEL NOT #
+# Test cuDSS Cholesky solver #
 dimension 3
 Pb_thermohydraulique_Turbulent pb1
 Domaine dom
@@ -78,7 +77,8 @@ Lire pb1
 
     Navier_Stokes_turbulent
     {
-        solveur_pression cuDSS LU { algo 0 impr }
+        solveur_pression cuDSS Cholesky { algo 0 impr }
+        # solveur_pression petsc cholesky { impr } #
         convection { muscl }
         diffusion { }
         conditions_initiales { vitesse Champ_uniforme 3 0. 0. 0. }
