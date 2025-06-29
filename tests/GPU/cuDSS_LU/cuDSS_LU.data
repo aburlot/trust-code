@@ -52,8 +52,8 @@ Read sch
     Solveur Implicite
     {
         seuil_convergence_solveur 1.e-8
-        # solveur cuDSS LU { algo 0 impr } #
-        solveur petsc LU { impr } 
+        solveur cuDSS LU { algo 0 impr }
+        # solveur petsc LU { impr } #
     }
 }
 
