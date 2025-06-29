@@ -17,7 +17,7 @@ SUBSTITUE ()
 -e "s?seq faces $eps 0?seq faces $eps 1?g" \
 -e "s? mode_db write ? mode_db read ?g" $NOM.data > $1".data"
    # Cholesky par Petsc est parallele 
-   if [ "`grep -i Cholesky $1.data | grep -vi precond_local | grep -vi Petsc`" != "" ]
+   if [ "`grep -i Cholesky $1.data | grep -vi precond_local | grep -vi Petsc | grep -vi cudss`" != "" ]
    then
      sed -e "s? precond_local Cholesky {? precond_local Cholesky {?gI" \
 -e "s? cholesky {? GCP { precond ssor { omega 1.651 } seuil 1.e-10?gI" $1.data > tmp.data
