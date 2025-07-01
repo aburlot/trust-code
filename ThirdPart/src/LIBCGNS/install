@@ -1,6 +1,5 @@
 #!/bin/bash
-package=$TRUST_ROOT/externalpackages/CGNS/CGNS.tar.gz
-commit="fc42728500afbc6a16dbf9020e89190e1aa65f98"
+package=$TRUST_ROOT/externalpackages/CGNS/CGNS-4.5.0.tar.gz
 [ ! -f $package ] && echo "$package not found! Update your makefile." && exit -1
 
 echo ""
@@ -23,7 +22,9 @@ mkdir -p $build_dir
 cd $build_dir
 
 tar -xzf $package
-cd CGNS-$commit
+cgns=`basename $package`
+cgns_src=${cgns%.tar.gz}
+cd $cgns_src
 
 mkdir -p build
 cd build

@@ -1,4 +1,4 @@
-pkg=$(TRUST_ROOT)/externalpackages/CGNS/CGNS.tar.gz
+pkg=$(TRUST_ROOT)/externalpackages/CGNS/CGNS-4.5.0.tar.gz
 lib=$(TRUST_ROOT)/lib/src/LIBCGNS/lib/libcgns.a
 
 all : $(lib)

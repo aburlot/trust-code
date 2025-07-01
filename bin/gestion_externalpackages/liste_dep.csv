@@ -221,7 +221,7 @@ MiniforgeLocChannNoarch,websocket-client-1.8.0-pyhd8ed1ab_0.conda,,ND,"Apache-2.
 MiniforgeLocChannNoarch,widgetsnbextension-4.0.13-pyhd8ed1ab_0.conda,,ND,"BSD-3-Clause",,https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.13-pyhd8ed1ab_0.conda,
 MiniforgeLocChannLinux,zeromq-4.3.5-ha4adb4c_5.conda,,ND,"MPL-2.0",,https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-ha4adb4c_5.conda,
 General,osqp-0.6.0.tar.gz,librairie,AG,"Apache License V2.0",https://osqp.org/,https://github.com/osqp/osqp/archive/refs/tags/v0.6.0.tar.gz,
-CGNS,CGNS.tar.gz,librairie,ES,"GNU Lesser General Public License",https://github.com/CGNS/CGNS,
+CGNS,CGNS-4.5.0.tar.gz,librairie,ES,"GNU Lesser General Public License",https://github.com/CGNS/CGNS,https://github.com/CGNS/CGNS/archive/refs/tags/v4.5.0.tar.gz,
 MiniforgeLocChannNoarch,comm-0.2.2-pyhd8ed1ab_0.conda,,ND,"BSD-3-Clause",,https://conda.anaconda.org/conda-forge/noarch/comm-0.2.2-pyhd8ed1ab_0.conda,
 MiniforgeLocChannNoarch,cached_property-1.5.2-pyha770c72_1.tar.bz2,,ND,"BSD-3-Clause",,https://conda.anaconda.org/conda-forge/noarch/cached_property-1.5.2-pyha770c72_1.tar.bz2,
 MiniforgeLocChannNoarch,importlib_metadata-8.5.0-hd8ed1ab_0.conda,,ND,"Apache-2.0",,https://conda.anaconda.org/conda-forge/noarch/importlib_metadata-8.5.0-hd8ed1ab_0.conda,
