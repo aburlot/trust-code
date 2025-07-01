@@ -29,7 +29,10 @@ cd $cgns_src
 mkdir -p build
 cd build
 
-options="-DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCGNS_BUILD_SHARED=OFF"
+# BUILD_SHARED=ON to be able to read CGNS format + MED format in VisIt
+BUILD_SHARED=ON && [ `uname -s` = "Darwin" ] && BUILD_SHARED=OFF
+
+options="-DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCGNS_BUILD_SHARED=$BUILD_SHARED"
 [ "$TRUST_DISABLE_MPI" = 0 ] && options=$options" -DHDF5_NEED_MPI=ON -DCGNS_ENABLE_PARALLEL=ON"
 
 if [ "$TRUST_CC_BASE_EXTP" != "" ]
