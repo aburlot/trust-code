@@ -27,6 +27,7 @@ define_modules_config()
       [ "$TRUST_CUDA_CC" = "" ] && TRUST_CUDA_CC=70           # V100
       [ "$TRUST_CUDA_CC" = 80 ] && module="arch/a100 "$module # A100
       [ "$TRUST_CUDA_CC" = 90 ] && module="arch/h100 gcc/11.3.1 openmpi/4.1.5-cuda" # H100 (pas le choix sur gcc et openmpi...)
+      module=$module" cmake/3.31.4"
    else
       # 21/06/2023 : ND : passage a gcc
       module="gcc/8.5.0 openmpi/4.0.5"
