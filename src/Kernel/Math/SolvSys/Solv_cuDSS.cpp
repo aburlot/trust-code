@@ -167,9 +167,10 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
     {
 
       /* conversion matric base to csr */
-      Matrice_Morse csr;
+      Matrice_Morse tmp;
       /*build the csr matrix on host*/
-      construit_matrice_morse_intermediaire(a, csr);
+      construit_matrice_morse_intermediaire(a, tmp);
+      const Matrice_Morse& csr = tmp.nb_lignes() ? tmp : ref_cast(Matrice_Morse, a);
 
       /* get dimensions and nnz */
       /* check that n does not change between solves */
