@@ -17,13 +17,14 @@ define_modules_config()
       # ROCM_ARCH par defaut:
       if [ "$ROCM_ARCH" = "" ]
       then
-         export ROCM_ARCH=gfx90a # MI250
-      elif [ "$ROCM_ARCH" != gfx942 ] # MI300
+         export ROCM_ARCH=gfx90a # MI250X
+      elif [ "$ROCM_ARCH" != gfx942 ] # MI300A
       then
          echo "$ROCM_ARCH not supported on adastra!"
       fi
       # Compilateur hipcc
       module="PrgEnv-gnu/8.5.0 craype-accel-amd-$ROCM_ARCH rocm/6.2.1"
+      module=$module" firefox" # For profiling
    else
       # Compilateur GNU
       #module="craype-x86-trento craype-network-ofi PrgEnv-cray libfabric gcc/10.3.0" used for first 1.9.3 install

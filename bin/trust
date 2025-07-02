@@ -144,6 +144,7 @@ help()
    echo "-vtune                        : Run vtune tool (profiling). Best profiler tool."
    echo "-perf                         : Run perf tool (profiling)."
    echo "-trace                        : Run traceanalyzer tool (MPI profiling)."
+   [ "`rocprof --version 1>/dev/null 2>&1;echo $?`" = 0 ] && echo "-rocprof                      : Run rocprof tool (GPU profiling on AMD)"
    [ "`nsys --version 1>/dev/null 2>&1;echo $?`" = 0 ] && echo "-nsys                         : Run Nsight system tool (GPU profiling)."
    [ "`ncu --version 1>/dev/null 2>&1;echo $?`" = 0 ] && echo "-ncu kernel                    : Run Nsight compute tool on given kernel (GPU Kernel profiling)."
    [ "`compute-sanitizer --version 1>/dev/null 2>&1;echo $?`" = 0 ] && echo "-cs memcheck|racecheck|initcheck|synccheck : Run compute sanitizer tool (GPU debugging)."
@@ -451,6 +452,9 @@ do
    then
       export VT_PCTRACE=15
       [ "`type traceanalyzer 2>/dev/null`" = "" ] && echo "traceanalyzer doesn't exist." && exit
+   elif [ "$1" = "-rocprof" ]
+   then
+      ROCPROF=1
    elif [ "$1" = "-nsys" ]
    then
       NSYS=1
@@ -874,7 +878,14 @@ then
       exec="perf record --call-graph dwarf -o $NOM.perf $binary" # Plus complet
    else
       Mpirun="perf record --call-graph dwarf -o $NOM.perf $Mpirun"
-   fi
+   fi   
+elif [ "$ROCPROF" = 1 ]
+then
+   rm -f *.pftrace *.csv
+   #See https://dci.dci-gitlab.cines.fr/webextranet/software_stack/tools/index.html#adastra-software-stack-tools-profiling-rocprof
+   #export AMD_SERIALIZE_COPY=3 AMD_SERIALIZE_KERNEL=3 GPU_MAX_HW_QUEUES=1
+   #profiler="rocprofv3 -o $NOM --output-format=pftrace --hip-trace --"
+   exec="\"rocprofv3 -o $NOM --output-format=pftrace --hip-trace --hip-runtime-trace -- $exec\""
 elif [ "$NSYS" = 1 ]
 then
    rm -f $NOM.qdrep
@@ -893,20 +904,20 @@ then
       sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
       # metriques GPU en plus mais necessite d'etre sudo
       trace=$trace" --gpu-metrics-device all"
-      # nsight="sudo " # Mais attention fichiers ecrits root !
+      # profiler="sudo " # Mais attention fichiers ecrits root !
    else
-      nsight=""
+      profiler=""
    fi
    # Sampling 0.1ms (default 1ms)
-   nsight=$nsight"nsys profile $trace --sampling-period=328051 --force-overwrite true -o $NOM.qdrep"
+   profiler=$profiler"nsys profile $trace --sampling-period=328051 --force-overwrite true -o $NOM.qdrep"
 elif [ "$NCU" = 1 ]
 then
    rm -f $NOM.qdrep.ncu-rep
    # Detect ncu location:
    ncu=`ls $CUDA_ROOT/../compilers/bin/ncu 2>/dev/null | tail -1`
    export PATH=`dirname $ncu`:$PATH
-   nsight="ncu --target-processes all --import-source yes --set full --nvtx --kernel-name-base=demangled -k regex:$kernel -f -o $NOM.qdrep.ncu-rep"
-   echo $nsight
+   profiler="ncu --target-processes all --import-source yes --set full --nvtx --kernel-name-base=demangled -k regex:$kernel -f -o $NOM.qdrep.ncu-rep"
+   echo $profiler
 elif [ "$CS" = 1 ]
 then
    exec="compute-sanitizer --tool $CS_OPTION $binary"
@@ -1224,7 +1235,7 @@ export FI_CXI_DEFAULT_CQ_SIZE=393216" >> $GPU_DIRECT
    fi
    if [ $NB_PROCS = 1 ] && [ $USE_MPIRUN = 0 ]
    then
-      echo "$nsight \$exec \$case $PETSC_OPTIONS 1>$OUTPUT.out 2>$OUTPUT.err" >> $sub_file
+      echo "$profiler \$exec \$case $PETSC_OPTIONS 1>$OUTPUT.out 2>$OUTPUT.err" >> $sub_file
    else
       if [ "$mpirun" != "" ]
       then
@@ -1239,12 +1250,12 @@ export FI_CXI_DEFAULT_CQ_SIZE=393216" >> $GPU_DIRECT
          fi
 	 if [ "$create_sub_file" = 1 ]
 	 then
-	    echo "$nsight $mpirun \$exec \$case $PARAM $PETSC_OPTIONS -journal=0 1>$OUTPUT.out_err 2>&1" >> $sub_file	
+	    echo "$profiler $mpirun \$exec \$case $PARAM $PETSC_OPTIONS -journal=0 1>$OUTPUT.out_err 2>&1" >> $sub_file	
 	 else
-	    echo "$nsight $mpirun \$exec \$case $PARAM $PETSC_OPTIONS 1>$OUTPUT.out 2>$OUTPUT.err" >> $sub_file
+	    echo "$profiler $mpirun \$exec \$case $PARAM $PETSC_OPTIONS 1>$OUTPUT.out 2>$OUTPUT.err" >> $sub_file
 	 fi       
       else
-         echo "$nsight $TRUST_ROOT/bin/mpirun.sh -np $NB_PROCS \$exec \$case $NB_PROCS $PETSC_OPTIONS 1>$OUTPUT.out 2>$OUTPUT.err" >> $sub_file
+         echo "$profiler $TRUST_ROOT/bin/mpirun.sh -np $NB_PROCS \$exec \$case $NB_PROCS $PETSC_OPTIONS 1>$OUTPUT.out 2>$OUTPUT.err" >> $sub_file
       fi
    fi
    #######
@@ -1324,11 +1335,11 @@ else
    fi
    if [ "$TRUST_DISABLE_MPI" = 1 ]
    then
-      run="$nsight $gdb $exec $NOM $PETSC_OPTIONS $quiet"
+      run="$profiler $gdb $exec $NOM $PETSC_OPTIONS $quiet"
    else
       mpirun="$TRUST_ROOT/bin/mpirun.sh `[ "$gdb" != "" ] && echo -gdb` -np $NB_PROCS"
       [ $USE_MPIRUN = 0 ] && [ "$gdb" = "" ] && mpirun=""
-      run="$nsight $mpirun $exec $NOM $NB_PROCS $PETSC_OPTIONS $quiet"
+      run="$profiler $mpirun $exec $NOM $NB_PROCS $PETSC_OPTIONS $quiet"
    fi
    if [ "$create_sub_file" ]
    then
@@ -1341,7 +1352,7 @@ else
    # MPS and Sserver running, submit jobs with Sserver:
    [ "$TRUST_USE_CUDA" = 1 ] && [ "`ps aux | grep nvidia-cuda-mps-control | grep -v grep`" != "" ] && [ "`ps fux | grep Sserver | grep -v grep`" != "" ] && TRUST_USE_Sjob=1
    # Use Sserver:
-   if [ "$TRUST_USE_Sjob" = "1" ] && [ "$nsight" = "" ]
+   if [ "$TRUST_USE_Sjob" = "1" ] && [ "$profiler" = "" ]
    then
       # export PATH=$PATH:$TRUST_ROOT/bin/Sjob
       sub_file=s${NB_PROCS}_$NOM
@@ -1398,6 +1409,11 @@ then
 elif [ "$VT_PCTRACE" != "" ] && [ -f `basename $binary`.stf ]
 then
    echo "Use -g flag or $exec_gcov binary for source code..." && traceanalyzer `basename $binary`.stf
+elif [ "$ROCPROF" = 1 ]
+then
+   echo "Use -g flag for source stack"
+   echo "Open $NOM"_results".fptrace file under /tmp"
+   mv -f $NOM"_results".pftrace /tmp && firefox https://ui.perfetto.dev
 elif [ "$NSYS" = 1 ]
 then
    [ -f $NOM.nsys-rep ] && nsys-ui $NOM.nsys-rep
