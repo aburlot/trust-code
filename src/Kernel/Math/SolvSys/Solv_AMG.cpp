@@ -52,12 +52,23 @@ Sortie& Solv_AMG::printOn(Sortie& s ) const
  * @throws Process::exit if the input syntax is incorrect or if an unsupported
  * library is specified.
  */
-
+Nom boomeramg(double st)
+{
+  Nom chaine(" { precond boomeramg { }");
+  if (st>=0)
+    {
+      chaine += " cli { -pc_hypre_boomeramg_strong_threshold";
+      chaine += Nom(st, "%e");
+      chaine += " }";
+    }
+  return chaine;
+}
 Entree& Solv_AMG::readOn(Entree& is)
 {
-  // amg solver { rtol value [impr] }
+  // amg GCP|BISGTSTAB|GMRES { atol|rtol doublee [st double] [impr]  }
   double rtol=0;
   double atol=0;
+  double st=-1;
   bool impr = false;
   Nom library;
   Nom options_petsc("");
@@ -69,6 +80,7 @@ Entree& Solv_AMG::readOn(Entree& is)
       else if (motcle=="{") {}
       else if (motcle=="RTOL") is >> rtol;
       else if (motcle=="ATOL") is >> atol;
+      else if (motcle=="ST") is >> st;
       else if (motcle=="IMPR") impr = true;
       else
         {
@@ -83,32 +95,39 @@ Entree& Solv_AMG::readOn(Entree& is)
   if (Process::nproc()>4)
     {
       library = "amgx";
-      chaine_lue_ += " { precond c-amg { }";    // Best GPU solver on Nvidia if MPI-GPU Aware OpenMPI 4.x
+      chaine_lue_ += " { precond c-amg {";    // Best GPU solver on Nvidia if MPI-GPU Aware OpenMPI 4.x
+      if (st>=0)
+        {
+          chaine_lue_ += " p:strength_threshold ";
+          chaine_lue_ += Nom(st, "%e");
+        }
+      chaine_lue_ += " }";
     }
   else
     {
       library = "petsc_gpu";
-      chaine_lue_ += " { precond boomeramg { }"; // Best GPU solver if not MPI-GPU Aware (Hypre diverge on multi-GPU node)
+      chaine_lue_ += boomeramg(st); // Best GPU solver if not MPI-GPU Aware (Hypre diverge on multi-GPU node)
     }
 #else
   library = "petsc_gpu";
-  chaine_lue_ += " { precond boomeramg { }"; // Best GPU solver if not MPI-GPU Aware (Hypre diverge else)
+  chaine_lue_ += boomeramg(st); // Best GPU solver if not MPI-GPU Aware (Hypre diverge else)
 #endif
 #elif defined(TRUST_USE_ROCM)
   library = "petsc_gpu";
   const char* value = std::getenv("ROCM_ARCH");
   if (value != nullptr && std::string(value) == "gfx1100")
     {
+      if (st>=0) Process::exit("st option not supported yet in Solv_AMG");
       if (Process::is_parallel())
         chaine_lue_ += " { precond ua-amg { }";  // Converge mais plus lent que sa-amg
       else
         chaine_lue_ += " { precond sa-amg { }";  // Crash en parallele
     }
   else
-    chaine_lue_ += " { precond boomeramg { }"; // Best GPU solver (// sa-amg is slow...)
+    chaine_lue_ += boomeramg(st); // Best GPU solver (// sa-amg is slow...)
 #else
   library = "petsc";
-  chaine_lue_ += " { precond boomeramg { }"; // Best CPU solver
+  chaine_lue_ += boomeramg(st); // Best CPU solver
 #endif
   if (rtol>0)
     {
