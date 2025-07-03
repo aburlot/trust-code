@@ -11,7 +11,7 @@ Modif_bord_to_raccord interass virole_CC
 # BEGIN PARTITION
 Partition interass
 {
-    Partition_tool metis { nb_parts 4 }
+    Partition_tool metis { nb_parts 2 }
     Larg_joint 2
     ecrire_lata mesh.lata
     zones_name DOM_interass

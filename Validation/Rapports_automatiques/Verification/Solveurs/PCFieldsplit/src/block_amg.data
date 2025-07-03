@@ -11,7 +11,7 @@ Modif_bord_to_raccord interass virole_CC
 # BEGIN PARTITION
 Partition interass
 {
-    Partition_tool metis { nb_parts 4 }
+    Partition_tool metis { nb_parts 2 }
     Larg_joint 2
     ecrire_lata mesh.lata
     zones_name DOM_interass
@@ -64,35 +64,37 @@ Read pb
 
     Navier_Stokes_standard
     {
-        solveur_pression petsc cli
+        solveur_pression petsc_gpu cli
         {
             -options_left
-            -mat_type aij
             -ksp_type cg
             -ksp_rtol 1.e-5
             -ksp_norm_type UNPRECONDITIONED
 
             -pc_type fieldsplit
-            -pc_fieldsplit_type additive
-            # -fieldsplit_P0_pc_type gamg #
-	    -fieldsplit_P0_ksp_type cg
+            -pc_fieldsplit_type additive # multiplicative do not converge ! #
+            
+            -fieldsplit_P0_ksp_type cg
+            -fieldsplit_P0_ksp_atol 1.e-6
+            -fieldsplit_P0_ksp_norm_type UNPRECONDITIONED
+            -fieldsplit_P0_ksp_monitor_short ascii:P0
+# gamg crash on GPU ... #                        
+#            -fieldsplit_P0_pc_type gamg #
             -fieldsplit_P0_pc_type hypre
 	    -fieldsplit_P0_pc_hypre_type boomeramg 
 	    -fieldsplit_P0_pc_hypre_boomeramg_strong_threshold 0.7
 	    -fieldsplit_P0_pc_hypre_boomeramg_print_statistics 1
-            -fieldsplit_P0_ksp_atol 1.e-6
-            -fieldsplit_P0_ksp_norm_type UNPRECONDITIONED
-            -fieldsplit_P0_ksp_monitor_short ascii:P0
 
             -fieldsplit_P1_ksp_type cg
-#            -fieldsplit_P1_pc_type jacobi #
-            -fieldsplit_P1_pc_type hypre
-	    -fieldsplit_P1_pc_hypre_type boomeramg 
-	    -fieldsplit_P1_pc_hypre_boomeramg_strong_threshold 0.7
-	    -fieldsplit_P1_pc_hypre_boomeramg_print_statistics 1
             -fieldsplit_P1_ksp_atol 1.e-6
             -fieldsplit_P1_ksp_norm_type UNPRECONDITIONED
             -fieldsplit_P1_ksp_monitor_short ascii:P1
+
+#            -fieldsplit_P1_pc_type gamg #
+            -fieldsplit_P1_pc_type hypre
+	    -fieldsplit_P1_pc_hypre_type boomeramg 
+	    -fieldsplit_P1_pc_hypre_boomeramg_strong_threshold 0.7
+	    -fieldsplit_P1_pc_hypre_boomeramg_print_statistics 1 
         }
         convection { amont }
         diffusion {  }

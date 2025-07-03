@@ -1,10 +1,9 @@
 #!/bin/bash
 gunzip -c $TRUST_ROOT/tests/Reference/Collecteur/collecteur_chaud.geom.gz > collecteur_chaud.geom
-cpu=4
 pcs="amg block_amg"
 for pc in $pcs
 do
-   make_PAR.data $pc.data $cpu
+   make_PAR.data $pc.data
    cp PAR_$pc.data $pc.data
 done
 exit 0
