@@ -51,6 +51,7 @@ private :
 
   double * b_values_d=nullptr;
   double * x_values_d=nullptr;
+  double * x_values_h=nullptr;
   int * csr_offsets_d=nullptr;
   int * csr_columns_d =nullptr;
   double * csr_values_d =nullptr;

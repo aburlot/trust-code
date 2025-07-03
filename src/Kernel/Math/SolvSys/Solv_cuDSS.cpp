@@ -207,6 +207,8 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   assert(a.nb_lignes()==n);
   assert(bvect.size_totale()==n);
   assert(xvect.size_totale()==n);
+
+  assert(x_values_h==const_cast<double*>(xvect.data()));
   assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));
   assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
 
@@ -221,6 +223,7 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   test*=-1;
   a.ajouter_multvect(xvect,test);
   double vrai_residu = mp_norme_vect(test);
+  assert(vrai_residu<1e-5);
   Cout << "||Ax-b||=" << vrai_residu << finl;
 #endif
 
@@ -313,6 +316,7 @@ void Solv_cuDSS::set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect)
 {
   /* get pointers */
   x_values_d = const_cast<double*>(xvect.view_rw<1>().data()); //maybe wo ?
+  x_values_h = const_cast<double*>(xvect.data());
   b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
 
   /* give pointers to vectors*/
