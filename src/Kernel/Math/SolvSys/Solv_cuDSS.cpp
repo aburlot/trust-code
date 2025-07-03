@@ -33,19 +33,9 @@
         status = call; \
         if (status != CUDSS_STATUS_SUCCESS) { \
             printf("Example FAILED: CUDSS call ended unsuccessfully with status = %d, details: " #msg "\n", status); \
-            return -2; \
+            Process::exit(); \
         } \
     } while(0);
-
-//For functions that return void
-#define CUDSS_CALL_AND_CHECK_VOID(call, status, msg) \
-    do { \
-        status = call; \
-        if (status != CUDSS_STATUS_SUCCESS) { \
-            printf("Example FAILED: CUDSS call ended unsuccessfully with status = %d, details: " #msg "\n", status); \
-        } \
-    } while(0);
-
 
 Implemente_instanciable_sans_constructeur_ni_destructeur(Solv_cuDSS, "Solv_cuDSS", Solv_Externe);
 // XD cuDSS Solv_Externe cuDSS 0 Solver via cuDSS API
