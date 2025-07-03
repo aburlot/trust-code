@@ -74,23 +74,23 @@ Read pb
             -pc_type fieldsplit
             -pc_fieldsplit_type additive # multiplicative do not converge ! #
             
-            -fieldsplit_P0_ksp_type cg
-            -fieldsplit_P0_ksp_atol 1.e-6
-            -fieldsplit_P0_ksp_norm_type UNPRECONDITIONED
-            -fieldsplit_P0_ksp_monitor_short ascii:P0
-# gamg crash on GPU ... #                        
-#            -fieldsplit_P0_pc_type gamg #
+             # Apply preconditioner, no inner solver # 
+             # No residual print cause slower #
+             # Use hypre, cause gamg crash on GPU ... #                        
+
+            -fieldsplit_P0_ksp_type preonly 
+             # -fieldsplit_P0_ksp_type cg -fieldsplit_P0_ksp_max_it 1 #	    
+             # -fieldsplit_P0_ksp_norm_type UNPRECONDITIONED -fieldsplit_P0_ksp_monitor_short ascii:P0 #
+             # -fieldsplit_P0_pc_type gamg #
             -fieldsplit_P0_pc_type hypre
 	    -fieldsplit_P0_pc_hypre_type boomeramg 
 	    -fieldsplit_P0_pc_hypre_boomeramg_strong_threshold 0.7
 	    -fieldsplit_P0_pc_hypre_boomeramg_print_statistics 1
 
-            -fieldsplit_P1_ksp_type cg
-            -fieldsplit_P1_ksp_atol 1.e-6
-            -fieldsplit_P1_ksp_norm_type UNPRECONDITIONED
-            -fieldsplit_P1_ksp_monitor_short ascii:P1
-
-#            -fieldsplit_P1_pc_type gamg #
+            -fieldsplit_P1_ksp_type preonly 
+             # -fieldsplit_P1_ksp_type cg -fieldsplit_P1_ksp_max_it 1 #
+             # -fieldsplit_P1_ksp_norm_type UNPRECONDITIONED -fieldsplit_P1_ksp_monitor_short ascii:P1 #
+             # -fieldsplit_P1_pc_type gamg #
             -fieldsplit_P1_pc_type hypre
 	    -fieldsplit_P1_pc_hypre_type boomeramg 
 	    -fieldsplit_P1_pc_hypre_boomeramg_strong_threshold 0.7
