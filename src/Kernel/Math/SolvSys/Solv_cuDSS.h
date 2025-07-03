@@ -62,7 +62,7 @@ private :
 
 #ifdef cuDSS_
 
-  cudssAlgType_t reorder_alg; //Can be 0->5. Default / recommended is 0
+  cudssAlgType_t reorder_alg = CUDSS_ALG_DEFAULT; //Can be 0->5. Default / recommended is 0
   cudssConfig_t solverConfig;
   cudssHandle_t handle;
   cudssData_t solverData;
