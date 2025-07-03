@@ -76,7 +76,7 @@ Read pb
 
     Navier_Stokes_QC
     {
-        solveur_pression cholesky { }
+        solveur_pression petsc cholesky { }
         # solveur_pression GCP { precond ssor { omega 1.5 } seuil 1.e-7 impr } #
         convection { amont }
         diffusion { }
