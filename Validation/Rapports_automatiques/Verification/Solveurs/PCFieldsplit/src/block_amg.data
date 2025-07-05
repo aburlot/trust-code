@@ -84,7 +84,7 @@ Read pb
              # -fieldsplit_P0_pc_type gamg #
             -fieldsplit_P0_pc_type hypre
 	    -fieldsplit_P0_pc_hypre_type boomeramg 
-	    -fieldsplit_P0_pc_hypre_boomeramg_strong_threshold 0.7
+	    -fieldsplit_P0_pc_hypre_boomeramg_strong_threshold 0.1
 	    -fieldsplit_P0_pc_hypre_boomeramg_print_statistics 1
 
             -fieldsplit_P1_ksp_type preonly 
@@ -93,7 +93,7 @@ Read pb
              # -fieldsplit_P1_pc_type gamg #
             -fieldsplit_P1_pc_type hypre
 	    -fieldsplit_P1_pc_hypre_type boomeramg 
-	    -fieldsplit_P1_pc_hypre_boomeramg_strong_threshold 0.7
+	    -fieldsplit_P1_pc_hypre_boomeramg_strong_threshold 0.1
 	    -fieldsplit_P1_pc_hypre_boomeramg_print_statistics 1 
         }
         convection { amont }
