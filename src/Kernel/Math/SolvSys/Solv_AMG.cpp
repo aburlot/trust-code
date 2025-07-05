@@ -63,14 +63,40 @@ Nom boomeramg(double st)
     }
   return chaine;
 }
+
+Nom pcfieldsplit(int n, double rtol, double atol)
+{
+  Nom chaine("cli { -ksp_type cg ");
+  chaine+=rtol>0 ? "-ksp_rtol " : "-ksp_atol ";
+  chaine+=rtol>0 ? Nom(rtol, "%e ") : Nom(atol, "%e ");
+  chaine+="-ksp_norm_type UNPRECONDITIONED \
+-pc_type fieldsplit \
+-pc_fieldsplit_type additive \
+-fieldsplit_P0_ksp_type preonly \
+-fieldsplit_P0_pc_type hypre \
+-fieldsplit_P0_pc_hypre_type boomeramg \
+-fieldsplit_P0_pc_hypre_boomeramg_strong_threshold 0.1 \
+-fieldsplit_P0_pc_hypre_boomeramg_print_statistics 1 \
+-fieldsplit_P1_ksp_type preonly \
+-fieldsplit_P1_pc_type hypre \
+-fieldsplit_P1_pc_hypre_type boomeramg \
+-fieldsplit_P1_pc_hypre_boomeramg_strong_threshold 0.1 \
+-fieldsplit_P1_pc_hypre_boomeramg_print_statistics 1 ";
+  if (n==3)
+    {
+      // ToDo: not efficient on P0P1Pa
+      chaine+="-fieldsplit_P2_ksp_type preonly \
+-fieldsplit_P2_pc_type hypre \
+-fieldsplit_P2_pc_hypre_type boomeramg \
+-fieldsplit_P2_pc_hypre_boomeramg_strong_threshold 0.1 \
+-fieldsplit_P2_pc_hypre_boomeramg_print_statistics 1 ";
+    }
+  chaine +="}";
+  return chaine;
+}
 Entree& Solv_AMG::readOn(Entree& is)
 {
   // amg GCP|BISGTSTAB|GMRES { atol|rtol doublee [st double] [impr]  }
-  double rtol=0;
-  double atol=0;
-  double st=-1;
-  bool impr = false;
-  Nom library;
   Nom options_petsc("");
   Motcle motcle;
   is >> motcle;
@@ -78,10 +104,10 @@ Entree& Solv_AMG::readOn(Entree& is)
     {
       if (motcle=="GCP" || motcle=="BICGSTAB" || motcle=="GMRES") chaine_lue_=motcle;
       else if (motcle=="{") {}
-      else if (motcle=="RTOL") is >> rtol;
-      else if (motcle=="ATOL") is >> atol;
-      else if (motcle=="ST") is >> st;
-      else if (motcle=="IMPR") impr = true;
+      else if (motcle=="RTOL") is >> rtol_;
+      else if (motcle=="ATOL") is >> atol_;
+      else if (motcle=="ST") is >> st_;
+      else if (motcle=="IMPR") impr_ = true;
       else
         {
           options_petsc+=motcle;
@@ -94,72 +120,94 @@ Entree& Solv_AMG::readOn(Entree& is)
 #if defined(MPIX_CUDA_AWARE_SUPPORT) && (OMPI_MAJOR_VERSION == 4)
   if (Process::nproc()>4)
     {
-      library = "amgx";
+      library_ = "amgx";
       chaine_lue_ += " { precond c-amg {";    // Best GPU solver on Nvidia if MPI-GPU Aware OpenMPI 4.x
-      if (st>=0)
+      if (st_>=0)
         {
           chaine_lue_ += " p:strength_threshold ";
-          chaine_lue_ += Nom(st, "%e");
+          chaine_lue_ += Nom(st_, "%e");
         }
       chaine_lue_ += " }";
     }
   else
     {
-      library = "petsc_gpu";
-      chaine_lue_ += boomeramg(st); // Best GPU solver if not MPI-GPU Aware (Hypre diverge on multi-GPU node)
+      library_ = "petsc_gpu";
+      chaine_lue_ += boomeramg(st_); // Best GPU solver if not MPI-GPU Aware (Hypre diverge on multi-GPU node)
     }
 #else
-  library = "petsc_gpu";
-  chaine_lue_ += boomeramg(st); // Best GPU solver if not MPI-GPU Aware (Hypre diverge else)
+  library_ = "petsc_gpu";
+  chaine_lue_ += boomeramg(st_); // Best GPU solver if not MPI-GPU Aware (Hypre diverge else)
 #endif
 #elif defined(TRUST_USE_ROCM)
-  library = "petsc_gpu";
+  library_ = "petsc_gpu";
   const char* value = std::getenv("ROCM_ARCH");
   if (value != nullptr && std::string(value) == "gfx1100")
     {
-      if (st>=0) Process::exit("st option not supported yet in Solv_AMG");
+      if (st_>=0) Process::exit("st option not supported yet in Solv_AMG");
       if (Process::is_parallel())
         chaine_lue_ += " { precond ua-amg { }";  // Converge mais plus lent que sa-amg
       else
         chaine_lue_ += " { precond sa-amg { }";  // Crash en parallele
     }
   else
-    chaine_lue_ += boomeramg(st); // Best GPU solver (// sa-amg is slow...)
+    chaine_lue_ += boomeramg(st_); // Best GPU solver (// sa-amg is slow...)
 #else
-  library = "petsc";
-  chaine_lue_ += boomeramg(st); // Best CPU solver
+  library_ = "petsc";
+  chaine_lue_ += boomeramg(st_); // Best CPU solver
 #endif
-  if (rtol>0)
+  if (rtol_>0)
     {
       chaine_lue_ += " rtol ";
-      chaine_lue_ += Nom(rtol, "%e");
+      chaine_lue_ += Nom(rtol_, "%e");
     }
-  if (atol>0)
+  if (atol_>0)
     {
       chaine_lue_ += " atol ";
-      chaine_lue_ += Nom(atol, "%e");
+      chaine_lue_ += Nom(atol_, "%e");
     }
-  if (impr) chaine_lue_ += " impr";
+  if (impr_) chaine_lue_ += " impr";
   if (options_petsc!="")
     {
       chaine_lue_ += " ";
       chaine_lue_ += options_petsc;
     }
   chaine_lue_ += " }";
-  Cerr << "====================================================================" << finl;
-  Cerr << "Creating AMG solver: " << library << " " << chaine_lue_ << finl;
-  Cerr << "====================================================================" << finl;
-  EChaine entree(chaine_lue_);
-  Nom nom_solveur("Solv_");
-  nom_solveur+=library;
-  solveur_.typer(nom_solveur);
-  if (library=="amgx")
-    ref_cast(Solv_AMGX, solveur_.valeur()).create_solver(entree);
-  else if (library=="petsc")
-    ref_cast(Solv_Petsc, solveur_.valeur()).create_solver(entree);
-  else if (library=="petsc_gpu")
-    ref_cast(Solv_Petsc_GPU, solveur_.valeur()).create_solver(entree);
-  else
-    Process::exit("Unsupported case in Solv_AMG::readOn");
   return is;
+}
+
+#include <MD_Vector_composite.h>
+int Solv_AMG::resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, DoubleVect& x)
+{
+  // We don't create solver during readOn as usual but just before solve to get more infos about matrix/vectors to fine tune
+  if (solveur_.est_nul())
+    {
+      // ToDo: ecart etrange sur le cas GPU4....
+      if (sub_type(MD_Vector_composite, b.get_md_vector().valeur()) && chaine_lue_.contient("boomeramg"))
+        {
+          int nb_blocks = ref_cast(MD_Vector_composite, b.get_md_vector().valeur()).nb_parts();
+          if (nb_blocks>1)
+            {
+              // Block matrix : we use PCFieldsplit (eg: VEF) for boomeramg preconditioner
+              // Much better convergence for P0P1 for instance
+              Cerr << "Detecting " << nb_blocks << "x" << nb_blocks << " blocks into the matrix..." << finl;
+              chaine_lue_ = pcfieldsplit(nb_blocks, rtol_, atol_);
+            }
+        }
+      Cerr << "====================================================================" << finl;
+      Cerr << "Creating AMG solver: " << library_ << " " << chaine_lue_ << finl;
+      Cerr << "====================================================================" << finl;
+      EChaine entree(chaine_lue_);
+      Nom nom_solveur("Solv_");
+      nom_solveur+=library_;
+      solveur_.typer(nom_solveur);
+      if (library_=="amgx")
+        ref_cast(Solv_AMGX, solveur_.valeur()).create_solver(entree);
+      else if (library_=="petsc")
+        ref_cast(Solv_Petsc, solveur_.valeur()).create_solver(entree);
+      else if (library_=="petsc_gpu")
+        ref_cast(Solv_Petsc_GPU, solveur_.valeur()).create_solver(entree);
+      else
+        Process::exit("Unsupported case in Solv_AMG::readOn");
+    }
+  return solveur_.resoudre_systeme(mat, b, x);
 }

@@ -27,14 +27,17 @@ class Solv_AMG : public SolveurSys_base
   Declare_instanciable(Solv_AMG);
 public :
   virtual int solveur_direct() const override { return 0; };
-  virtual int resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, DoubleVect& x) override { return solveur_.resoudre_systeme(mat, b, x); }
-  inline int resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, DoubleVect& x, int niter_max) override
+  virtual int resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, DoubleVect& x) override;
+  virtual int resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, DoubleVect& x, int niter_max) override
   {
     return resoudre_systeme(mat, b, x);
   };
-  inline bool read_matrix() { return ref_cast(Solv_Petsc, solveur_.valeur()).read_matrix(); }
+  inline bool read_matrix() { return chaine_lue_.contient("READ_MATRIX"); }
 private :
   SolveurSys solveur_;
+  Nom library_;
+  double rtol_=0, atol_=0, st_=-1;
+  bool impr_ = false;
 };
 
 #endif
