@@ -1,4 +1,5 @@
 # ThermoHydraulique 3D : recuperateur SFR, DNS, quart geometrie #
+# PARALLEL OK #
 dimension 3
 Pb_Thermohydraulique pb
 
@@ -422,7 +423,7 @@ Lire pb
 
 
                           	format lml
-                                Fichier thermohydraulique_VEF_DNS
+                                fichier thermohydraulique_VEF_DNS
                                 Champs dt_post 1e6      {
                                                         STAT_MOY_vitesse elem
                                                         STAT_EC_vitesse elem
