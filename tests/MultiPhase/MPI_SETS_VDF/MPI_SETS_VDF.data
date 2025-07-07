@@ -1,0 +1,145 @@
+# PARALLEL ONLY 4 #
+# OPENMP NOT #
+
+Dimension 2
+Domaine dom
+
+# BEGIN SCATTER #
+Scatter DOM.Zones dom
+# END SCATTER #
+
+vdf  dis option_vdf { all_options }
+# PolyMAC_P0  dis option_PolyMAC_P0 { } #
+
+Schema_euler_implicite sch
+Read sch
+{
+    tinit 0
+    tmax 10
+    dt_impr 1e-8
+    facsec 0.8
+    facsec_max 0.8
+    nb_pas_dt_max 45
+    seuil_statio 1.e-3
+    dt_start dt_fixe 1.e-7
+    solveur ICE
+    {
+        criteres_convergence { alpha 1e-5 }
+        iter_min 2
+        solveur petsc cholesky { quiet }
+	# solveur petsc cli { } #
+        seuil_convergence_implicite 1e30	
+    }
+}
+
+Pb_Multiphase pb
+Associate  pb dom
+Associate  pb sch
+Discretize pb dis
+
+Lire pb
+{
+    milieu_composite
+    {
+    
+     liquide_eau Fluide_Incompressible { mu champ_uniforme 1 1.e-3
+                                         rho champ_uniforme 1  1.e3
+					 lambda Champ_Uniforme  1 0.604
+					 Cp Champ_Uniforme 1 75.366
+					 beta_th Champ_Uniforme 1 0 }
+					 
+     gaz_air Fluide_Incompressible { mu champ_uniforme 1 1.e-5
+                                     rho champ_uniforme 1  1.
+				     lambda Champ_Uniforme  1 0.023
+				     Cp Champ_Uniforme 1 1006
+				     beta_th Champ_Uniforme 1 0 }
+				     
+     interface_eau_air interface_sigma_constant  { tension_superficielle 0.0728 }
+     
+    }
+    correlations
+    {
+	# flux_interfacial coef_constant { liquide_eau 1e10 gaz_air 1e10 } #
+        frottement_interfacial bulles_constant { coeff_derive 0.1 rayon_bulle 5.e-4 } 
+    }
+    QDM_Multiphase
+    {
+        evanescence { homogene { alpha_res 5.e-5 alpha_res_min 1.e-6 } }
+        solveur_pression petsc cholesky { quiet }
+	# solveur_pression petsc cli_quiet { -pc_type hypre -pc_hypre_type boomeramg } #
+        convection { amont }
+        diffusion  { negligeable }
+        initial_conditions
+        {
+	    vitesse  champ_fonc_xyz dom 4  0.0 0.0 0.0 -0.059*(y]0.04)*(x[3.e-4)
+            pression Champ_Fonc_xyz dom 1 1e5
+        }
+		conditions_limites	
+		{
+			wall paroi_fixe
+			inlet frontiere_ouverte_vitesse_imposee champ_front_uniforme 4 0.0 0.0 -0.059 -0.059
+			outlet frontiere_ouverte_pression_imposee champ_front_uniforme 1 1e5
+			sym symetrie
+			mur paroi_fixe
+		}
+		sources
+		{ 
+			source_qdm Champ_Fonc_xyz dom 4  0  0  -9.81 -9.81  ,
+			frottement_interfacial { }
+		}
+    }
+    Masse_Multiphase
+    {
+        initial_conditions
+	{
+		alpha Champ_Fonc_xyz dom 2
+		0.99999*(y<0.04)+0.00001*(y]0.04)
+		0.00001*(y<0.04)+0.99999*(y]0.04)
+	}
+
+        convection { amont }
+		conditions_limites	
+		{
+			wall paroi
+			inlet frontiere_ouverte a_ext Champ_Front_fonc_xyz 2 0.0 1.0
+			outlet frontiere_ouverte a_ext Champ_Front_fonc_xyz 2 0.0 1.0
+			sym  symetrie
+			mur paroi
+		}
+		sources {  }
+    }
+    Energie_Multiphase
+    {
+	equation_non_resolue 1
+        diffusion { negligeable }
+        convection { amont }
+        initial_conditions { temperature Champ_Uniforme 2 20 20 }
+        boundary_conditions
+        {
+            wall paroi_adiabatique
+	    inlet frontiere_ouverte_temperature_imposee Champ_Front_uniforme 2 20.0 20.0
+	    outlet frontiere_ouverte T_ext Champ_Front_Uniforme 2 20 20
+	    sym symetrie
+	    mur paroi_adiabatique
+        }
+        sources 
+        { 
+        }
+    }
+
+    Postraitement
+	{
+
+		sondes			{
+
+ vitesse_liquide_eau vitesse_liquide_eau periode 1.e-2 segment 40 1.5e-4 0.025 1.5e-4 0.05
+ vitesse_gaz_air vitesse_gaz_air periode 1.e-2 segment 40 1.5e-4 0.025 1.5e-4 0.05
+ alpha_gaz_air alpha_gaz_air periode 1.e-2 segment 40 1.5e-4 0.025 1.5e-4 0.05
+ pression pression periode 1.e-2 segment 40 1.5e-4 0.025 1.5e-4 0.05
+					}
+	}
+}
+
+Resoudre pb
+
+Fin

@@ -1,0 +1,52 @@
+Dimension 2
+Domaine dom
+
+Mailler dom
+{
+	Pave bloc1 
+	{
+	Origine 0. 0.
+	Nombre_de_Noeuds 251 251
+	Longueurs 0.025 0.025
+	facteurs 1.0 1.0
+	}
+	{
+	Bord wall	X = 0.025	0.0 <= Y <= 0.025
+	Bord wall	Y = 0.0		0.0 <= X <= 0.025
+	Bord sym        X = 0.0	        0.0 <= Y <= 0.025
+	Bord mur        Y = 0.025       3.0e-4 <= X <= 4.0e-4
+	} ,
+	Pave bloc2
+	{
+	Origine 0.0 0.025
+	Nombre_de_Noeuds 4 251
+	Longueurs 3.0e-4 0.025
+	facteurs 1.0 1.0
+	}
+	{
+	Bord inlet	Y = 0.05	0.0 <= X <= 3.0e-4
+	Bord sym        X = 0.0	        0.025 <= Y <= 0.05
+	Bord mur        X = 3.0e-4      0.025 <= Y <= 0.05
+	} ,
+	Pave bloc3
+	{
+	Origine 4.0e-4 0.025
+	Nombre_de_Noeuds 247 251
+	Longueurs 0.0246 0.025
+	facteurs 1.0 1.0
+	}
+	{
+	Bord outlet	Y = 0.05       4.0e-4 <= X <= 0.025
+	Bord wall       X = 0.025       0.025 <= Y <= 0.05
+	Bord mur        X = 4.0e-4      0.025 <= Y <= 0.05
+	} 
+}
+
+Partition dom
+{
+        /* Choose Nb_parts so to have ~ 25000 cells per processor */
+        Partition_tool metis { Nb_parts 4 }
+        Larg_joint 2
+        zones_name DOM
+}
+end
