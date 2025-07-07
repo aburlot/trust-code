@@ -153,8 +153,7 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 {
 #ifdef cuDSS_
 
-// if ((nouvelle_matrice()||first_solve))
-//   {
+
 
   /* conversion matric base to csr */
   Matrice_Morse tmp;
@@ -171,17 +170,24 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 #endif
   n=new_n;
 
-  /* create cudss matrix, vector and solver and size them */
-  Create_objects(new_n, new_nnz);
+  if ((nouvelle_matrice()||first_solve))
+    {
+      /* create cudss matrix, vector and solver and size them */
+      Create_objects(new_n, new_nnz);
+    }
   /* give the device data / csr pointers to the cudss matrix */
   set_pointers_A(csr);
-  /* Symbolic factorization x, and b are unused*/
-  CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData,
-                                    A, x, b), status, "cudssExecute for analysis");
 
-  /* Factorization x, and b are unused*/
-  CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
-                                    solverData, A, x, b), status, "cudssExecute for facto");
+  if ((nouvelle_matrice()||first_solve))
+    {
+      /* Symbolic factorization x, and b are unused*/
+      CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData,
+                                        A, x, b), status, "cudssExecute for analysis");
+
+      /* Factorization x, and b are unused*/
+      CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
+                                        solverData, A, x, b), status, "cudssExecute for facto");
+    }
   //  }
 
 
