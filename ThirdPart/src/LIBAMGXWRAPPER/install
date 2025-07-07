@@ -1,0 +1,93 @@
+#!/bin/bash
+# AmgXwrapper	: See https://github.com/barbagroup/AmgXWrapper/blob/master/doc/install.md
+AMGX_DIR=`dirname $1`
+LIB=`basename $1`
+ROOT=`pwd`
+valgrind=$TRUST_ROOT/exec/valgrind/bin/valgrind
+
+# Gestion du NVidia SDK (apparait de plus en plus sur les clusters. Et necessaire pour OpenMP)
+# Il faut cmake 3.22 (sinon CUDA::cublas non detecte) et nvcc qui pointe sur une version du Cuda Toolkit !
+# Pas:  /product/ubuntu20-x86_64/apps/NVHPC-nompi/22.1/Linux_x86_64/22.1/compilers/bin/nvcc
+# Mais: /product/ubuntu20-x86_64/apps/NVHPC-nompi/22.1/Linux_x86_64/22.1/cuda/11.0/bin/nvcc
+# On peut se baser sur Linux_x86_64 pour voir que c'est le Nvidia SDK et refuser le chemin /compilers/
+
+# ToDo: reecrire cette partie avec math_libs !
+# Il faut faire attention a pointer vers la bonne version de CUDA (vu sur JeanZay) avec NVHPC_CUDA_HOME
+for CUDA_LIB_PATH in `echo $NVHPC_CUDA_HOME | sed "1,$ s?/cuda/?/math_libs/?g"` $CUDA_ROOT/math_libs $CUDA_ROOT/../math_libs $CUDA_ROOT/../../math_libs `echo $CUDA_ROOT | sed "1,$ s?/cuda/?/../math_libs/?g"`
+do
+   [ -d $CUDA_LIB_PATH ] && export CUDA_LIB_PATH && CUDA_NVCC_FLAGS="-DCUDA_NVCC_FLAGS=-I$CUDA_LIB_PATH/include;--compiler-options;-L$CUDA_LIB_PATH/lib64;-fPIC" && break
+done
+# Fin ToDo
+log=$ROOT/perf_$LIB.log && rm -f $log
+rm -r -f $LIB
+if [ $LIB = AmgXWrapper ]
+then
+   cd $ROOT
+   if [ "$TRUST_AMGXWRAPPER_COMMIT" != "" ]
+   then
+      commit=$TRUST_AMGXWRAPPER_COMMIT
+      git clone https://github.com/barbagroup/AmgXWrapper.git $LIB
+      cd $LIB && git checkout $commit && cd -
+      PACKAGE=$TRUST_ROOT/externalpackages/AmgX/$LIB"_"$commit.tar.gz
+      tar cfz $PACKAGE --exclude .git $LIB && echo "Creation du package $PACKAGE"
+   else
+      commit=331eba32db693528749bd2c46158073079d80972
+      tar xfz $TRUST_ROOT/externalpackages/AmgX/AmgXWrapper_$commit.tar.gz
+   fi
+   # Hack pour acceder directement au solver AmgX via AmgXWrapper:
+   sed -i "1,$ s?private:?public:?g" AmgXWrapper/src/AmgXSolver.hpp || exit -1
+   # Hack pour empecher le test des binaires qui ne marche pas cluster (un binaire PETSc compile avec CUDA plantera sur la frontale non gpu)
+   sed -i "1,$ s?endif (\${\${runs}})??" AmgXWrapper/cmake-modules/FindPETSc.cmake
+   sed -i "1,$ s?if (\${\${runs}})??"    AmgXWrapper/cmake-modules/FindPETSc.cmake
+   # Hack pour int64:
+   cp -R patch_AmgXWrapper/* AmgXWrapper
+   cd $LIB && rm -r -f build && mkdir -p build && cd build
+   BUILD=RELEASE
+   #BUILD=DEBUG
+   # On specifie CC et CXX:
+   export CXX=$TRUST_CC
+   export CC=$TRUST_cc
+   if [ "$TRUST_CC_BASE_EXTP" != "" ]
+   then
+      export OMPI_CXX=$TRUST_CC_BASE_EXTP
+      export OMPI_CC=$TRUST_cc_BASE_EXTP
+      export MPICH_CXX=$OMPI_CXX
+      export MPICH_CC=$OMPI_CC
+      unset CPATH
+   fi
+   CMAKE_FLAGS=" -DCMAKE_CUDA_COMPILER=$TRUST_NVCC -DCUDA_DIR=$CUDA_ROOT -DAMGX_DIR=$AMGX_DIR/AmgX -DCMAKE_CUDA_HOST_COMPILER=$CC -DCMAKE_CXX_FLAGS=-fPIC"
+   #CMAKE_FLAGS=$CMAKE_FLAGS" -DCMAKE_CXX_FLAGS=-g -DCMAKE_CUDA_FLAGS=-g" # Pour debug
+   # Configure and build:
+   cmake $CMAKE_FLAGS -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_INSTALL_PREFIX=$AMGX_DIR/$LIB -DCMAKE_BUILD_TYPE=$BUILD -DBUILD_SHARED_LIBS=OFF .. && $TRUST_MAKE
+   [ $? != 0 ] && exit -1
+   make install # Erreur sur la doc on ne fait pas de exit
+   # Creation d'une librairie statique en plus de la dynamique libAmgXWrapper.so
+   # ar cru $AMGX_DIR/$LIB/lib64/libAmgXWrapper_static.a CMakeFiles/AmgXWrapper.dir/src/*.o || exit -1
+   # Test
+   cd $AMGX_DIR/$LIB 
+   rm -r -f example && mkdir -p example && cd example
+   tests="poisson solveFromFiles"
+   for test in $tests
+   do
+      echo "Building $test test..."
+      sed -i "1,$ s?# include <petsctime.h>??g" $ROOT/AmgXWrapper/example/$test/src/solve.cpp || exit -1
+      mkdir -p $test && cd $test && cp $ROOT/AmgXWrapper/example/$test/README.md .
+      cmake $CMAKE_FLAGS $ROOT/AmgXWrapper/example/$test || exit -1
+      # On reprend les compilateurs de TRUST pour les tests (regle les pbs de link OMP)
+      if [ "$TRUST_CC_BASE_EXTP" != "" ]
+      then
+         MPICH_CXX=$TRUST_CC_BASE OMPI_CXX=$TRUST_CC_BASE $TRUST_MAKE || exit -1
+      else
+         $TRUST_MAKE || exit -1
+      fi
+      cd ..
+   done
+   cd $ROOT && rm -r -f $LIB # On efface les sources ?
+fi
+if [ -f $TRUST_ENV/card.log ] && [ "$TRUST_WITHOUT_HOST" = 1 ] # On ne teste que si on peut lancer des calculs GPU
+then
+   # Ces tests doivent absolument marcher:
+   echo "Testing $LIB..."
+   ./test_$LIB.sh >> $log || exit -1
+fi
+exit 0
