@@ -185,12 +185,10 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
     }
 
 
-  if (first_solve)
-    {
       /* give the device data / csr pointers to the cudss vectors x and b */
       //The pointers to x and b should never change between calls to resoudre
       set_pointers_xb(bvect, xvect);
-    }
+
 
   /*some checks*/
   /* sizes should never change */
