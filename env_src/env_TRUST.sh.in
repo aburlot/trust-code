@@ -53,6 +53,16 @@ else
    export TRUST_VERSION=`awk '/version/ && /Release notes/ {print $4;exit}' $TRUST_ROOT/RELEASE_NOTES`
    export TRUST_MAIL=trust@cea.fr
    echo "TRUST v$TRUST_VERSION support : $TRUST_MAIL"
+   
+   #################################
+   # Tell user to cite us
+   #################################
+   echo
+   echo "=================================================================="
+   echo "* If you use standalone TRUST or as a base for your application, *" 
+   echo "* please cite https://cea-trust-platform.github.io/cite_us/      *"
+   echo "=================================================================="
+   echo
 
    ###################################
    # Initialize the TRUST environment
