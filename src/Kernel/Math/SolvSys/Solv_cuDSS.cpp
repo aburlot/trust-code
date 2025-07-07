@@ -153,41 +153,41 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 {
 #ifdef cuDSS_
 
-  if ((nouvelle_matrice()||first_solve))
-    {
+// if ((nouvelle_matrice()||first_solve))
+//   {
 
-      /* conversion matric base to csr */
-      Matrice_Morse tmp;
-      /*build the csr matrix on host*/
-      construit_matrice_morse_intermediaire(a, tmp);
-      const Matrice_Morse& csr = tmp.nb_lignes() ? tmp : ref_cast(Matrice_Morse, a);
+  /* conversion matric base to csr */
+  Matrice_Morse tmp;
+  /*build the csr matrix on host*/
+  construit_matrice_morse_intermediaire(a, tmp);
+  const Matrice_Morse& csr = tmp.nb_lignes() ? tmp : ref_cast(Matrice_Morse, a);
 
-      /* get dimensions and nnz */
-      /* check that n does not change between solves */
-      int new_n = csr.get_tab1().size()-1;
-      int new_nnz = csr.get_coeff().size();
+  /* get dimensions and nnz */
+  /* check that n does not change between solves */
+  int new_n = csr.get_tab1().size()-1;
+  int new_nnz = csr.get_coeff().size();
 #ifndef NDEBUG
-      assert(((new_n==n)||(first_solve))); // n should never change between solves
+  assert(((new_n==n)||(first_solve))); // n should never change between solves
 #endif
-      n=new_n;
+  n=new_n;
 
-      /* create cudss matrix, vector and solver and size them */
-      Create_objects(new_n, new_nnz);
-      /* give the device data / csr pointers to the cudss matrix */
-      set_pointers_A(csr);
-      /* Symbolic factorization x, and b are unused*/
-      CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData,
-                                        A, x, b), status, "cudssExecute for analysis");
+  /* create cudss matrix, vector and solver and size them */
+  Create_objects(new_n, new_nnz);
+  /* give the device data / csr pointers to the cudss matrix */
+  set_pointers_A(csr);
+  /* Symbolic factorization x, and b are unused*/
+  CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData,
+                                    A, x, b), status, "cudssExecute for analysis");
 
-      /* Factorization x, and b are unused*/
-      CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
-                                        solverData, A, x, b), status, "cudssExecute for facto");
-    }
+  /* Factorization x, and b are unused*/
+  CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
+                                    solverData, A, x, b), status, "cudssExecute for facto");
+  //  }
 
 
-      /* give the device data / csr pointers to the cudss vectors x and b */
-      //The pointers to x and b should never change between calls to resoudre
-      set_pointers_xb(bvect, xvect);
+  /* give the device data / csr pointers to the cudss vectors x and b */
+  //The pointers to x and b should never change between calls to resoudre
+  set_pointers_xb(bvect, xvect);
 
 
   /*some checks*/
