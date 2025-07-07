@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,7 +30,8 @@ Entree& Diametre_bulles_champ::readOn(Entree& is)
 {
   OWN_PTR(Champ_Don_base) diametres_don_;
   is >> diametres_don_;
-
+  if (diametres_don_->valeurs().dimension(1)!=2)
+    Process::exit("diametre_bulles field should have 2 components.");
   Pb_Multiphase& pb = ref_cast(Pb_Multiphase, pb_.valeur());
   int N = pb.nb_phases();
   const Discret_Thyd& dis=ref_cast(Discret_Thyd,pb.discretisation());
