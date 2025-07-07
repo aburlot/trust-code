@@ -185,21 +185,18 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   //  }
 
 
-  /* give the device data / csr pointers to the cudss vectors x and b */
   //The pointers to x and b should never change between calls to resoudre
-  set_pointers_xb(bvect, xvect);
-
-
-  /*some checks*/
+  assert(x_values_h==const_cast<double*>(xvect.data())); //@PL: why does this fail ? vector pointer has changed between calls
+  assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));  //@PL: whyd does this fail ? vector pointer has changed between calls
+  assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
   /* sizes should never change */
   assert(a.nb_lignes()==n);
   assert(bvect.size_totale()==n);
   assert(xvect.size_totale()==n);
 
-  assert(x_values_h==const_cast<double*>(xvect.data()));
-  assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));
-  assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
 
+  /* give the device data / csr pointers to the cudss vectors x and b */
+  set_pointers_xb(bvect, xvect);
 
   /* Solving */
   CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
