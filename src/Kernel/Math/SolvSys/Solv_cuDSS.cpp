@@ -153,31 +153,23 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 {
 #ifdef cuDSS_
 
-
-
-  /* conversion matric base to csr */
+  /* used for conversion matric base to csr */
   Matrice_Morse tmp;
+
   /*build the csr matrix on host*/
   construit_matrice_morse_intermediaire(a, tmp);
+
+  /* build the csr matrix ref*/
   const Matrice_Morse& csr = tmp.nb_lignes() ? tmp : ref_cast(Matrice_Morse, a);
 
-  /* get dimensions and nnz */
-  /* check that n does not change between solves */
-  int new_n = csr.get_tab1().size()-1;
-  int new_nnz = csr.get_coeff().size();
-#ifndef NDEBUG
-  assert(((new_n==n)||(first_solve))); // n should never change between solves
-#endif
-  n=new_n;
+  /* create cudss matrix, vector and solver and size them */
+  Create_objects(csr);
 
-  if ((nouvelle_matrice()||first_solve))
-    {
-      /* create cudss matrix, vector and solver and size them */
-      Create_objects(new_n, new_nnz);
-    }
   /* give the device data / csr pointers to the cudss matrix */
+  /* has to be done at EACH solve, to ensure H/D sync */
   set_pointers_A(csr);
 
+  /* analysis and facto can be only done when the matrix changes */
   if ((nouvelle_matrice()||first_solve))
     {
       /* Symbolic factorization x, and b are unused*/
@@ -188,8 +180,6 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
       CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
                                         solverData, A, x, b), status, "cudssExecute for facto");
     }
-  //  }
-
 
   //The pointers to x and b should never change between calls to resoudre
   assert(x_values_h==const_cast<double*>(xvect.data())); //@PL: why does this fail ? vector pointer has changed between calls
@@ -227,7 +217,7 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 #endif
 }
 
-void Solv_cuDSS::Create_objects(const int new_n, const int new_nnz)
+void Solv_cuDSS::Create_objects(const Matrice_Morse& csr)
 {
 #ifdef cuDSS_
   /* Create the solver and matrix / vector objects */
@@ -238,11 +228,20 @@ void Solv_cuDSS::Create_objects(const int new_n, const int new_nnz)
       Process::exit("Sorry, cuDSS is a sequential solver.");
     }
 
+  /* get dimensions and nnz */
+  /* check that n does not change between solves */
+  int new_n = csr.get_tab1().size()-1;
+  int new_nnz = csr.get_coeff().size();
+#ifndef NDEBUG
+  assert(((new_n==n)||(first_solve))); // n should never change between solves
+#endif
+
 
   //Re-build A only if new nnz is different from old one, possible if matrix changes
   if((first_solve)||(new_nnz != nnz))
     {
       nnz=new_nnz;
+      n = new_n;
 
       /* destroy if A is built */
       if (Axb_are_built)
