@@ -163,6 +163,7 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   const Matrice_Morse& csr = tmp.nb_lignes() ? tmp : ref_cast(Matrice_Morse, a);
 
   /* create cudss matrix, vector and solver and size them */
+  /* Does very few things if the matrix has not changed*/
   Create_objects(csr);
 
   /* give the device data / csr pointers to the cudss matrix */
