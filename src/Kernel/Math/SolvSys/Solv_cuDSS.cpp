@@ -202,6 +202,7 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   /* Solving */
   CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
                                     A, x, b), status, "cudssExecute for solve");
+  cudaStreamSynchronize(nullptr); // Important factorization and solve phases are asynchronous
   statistiques().end_count(gpu_library_counter_);
 
   /*compute error in debug mode */
