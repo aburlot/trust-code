@@ -291,7 +291,7 @@ void Solv_cuDSS::Create_objects(const Matrice_Morse& csr)
 
 void Solv_cuDSS::set_pointers_A(const Matrice_Morse& csr)
 {
-
+#ifdef cuDSS_
   /* get pointers */
   csr_offsets_d = const_cast<int*>(csr.get_tab1().view_ro<1>().data());
   csr_columns_d = const_cast<int*>(csr.get_tab2().view_ro<1>().data());
@@ -303,10 +303,13 @@ void Solv_cuDSS::set_pointers_A(const Matrice_Morse& csr)
                                                  nullptr,/*rowEnd*/
                                                  csr_columns_d,
                                                  csr_values_d), status, "cudssMatrixSetCsrPointers")
+#endif
 }
 
 void Solv_cuDSS::set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect)
 {
+#ifdef cuDSS_
+
   /* get pointers */
   x_values_d = const_cast<double*>(xvect.view_wo<1>().data());
   b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
@@ -314,5 +317,6 @@ void Solv_cuDSS::set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect)
   /* give pointers to vectors*/
   CUDSS_CALL_AND_CHECK(cudssMatrixSetValues(x, x_values_d), status, "cudssMatrixSetValues for x");
   CUDSS_CALL_AND_CHECK(cudssMatrixSetValues(b, b_values_d), status, "cudssMatrixSetValues for b");
+#endif
 }
 

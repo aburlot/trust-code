@@ -19,12 +19,14 @@
 #include <Solv_Externe.h>
 #include <Motcle.h>
 #include <Device.h>
-#include <cudss.h>
-#include <cuda.h>
 #include <Matrice_Morse.h>
 class EChaine;
 
+#ifdef TRUST_USE_CUDA
+#include <cudss.h>
+#include <cuda.h>
 #define cuDSS_
+#endif
 
 class Solv_cuDSS : public Solv_Externe
 {
