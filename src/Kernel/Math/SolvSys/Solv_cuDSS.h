@@ -72,7 +72,6 @@ private :
   cudssMatrix_t x, b, A;
   cudssIndexBase_t base = CUDSS_BASE_ONE; //Fortran indexing
   cudssStatus_t status;
-  cudaStream_t stream = nullptr;
 #endif
 };
 

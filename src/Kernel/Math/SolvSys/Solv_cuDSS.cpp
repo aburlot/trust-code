@@ -181,8 +181,6 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
       /* Factorization x, and b are unused*/
       CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
                                         solverData, A, x, b), status, "cudssExecute for facto");
-
-      cudaStreamSynchronize(stream); // Important factorization and solve phases are asynchronous
     }
 
 
@@ -204,7 +202,6 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   /* Solving */
   CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
                                     A, x, b), status, "cudssExecute for solve");
-  cudaStreamSynchronize(stream); // Important factorization and solve phases are asynchronous
   statistiques().end_count(gpu_library_counter_);
 
   /*compute error in debug mode */
@@ -276,12 +273,8 @@ void Solv_cuDSS::Create_objects(const Matrice_Morse& csr)
 
       /* Create the solver */
 
-      /* Create a CUDA stream */
-      cudaStreamCreate(&stream);
       /* Create handle */
       CUDSS_CALL_AND_CHECK(cudssCreate(&handle), status, "cudssCreate");
-      /* (optional) Setting the custom stream for the library handle */
-      CUDSS_CALL_AND_CHECK(cudssSetStream(handle, stream), status, "cudssSetStream");
       /* Create config */
       CUDSS_CALL_AND_CHECK(cudssConfigCreate(&solverConfig), status, "cudssConfigCreate");
       /* set options to config */
