@@ -148,7 +148,7 @@ Solv_cuDSS::~Solv_cuDSS()
 #endif
 }
 
-
+#include <Debog.h>
 int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect, DoubleVect& xvect)
 {
 #ifdef cuDSS_
@@ -156,29 +156,33 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   /* used for conversion matric base to csr */
   Matrice_Morse tmp;
 
-  /*build the csr matrix on host*/
-  construit_matrice_morse_intermediaire(a, tmp);
+  if ((nouvelle_matrice()||first_solve))
+    {
+      /*build the csr matrix on host*/
+      construit_matrice_morse_intermediaire(a, tmp);
 
-  /* build the csr matrix ref*/
-  const Matrice_Morse& csr = tmp.nb_lignes() ? tmp : ref_cast(Matrice_Morse, a);
+      /* build the csr matrix ref*/
+      const Matrice_Morse& csr = tmp.nb_lignes() ? tmp : ref_cast(Matrice_Morse, a);
 
-  /* create cudss matrix, vector and solver and size them */
-  /* Does very few things if the matrix has not changed*/
-  Create_objects(csr);
+      /* create cudss matrix, vector and solver and size them */
+      /* Does very few things if the matrix has not changed*/
+      /* create cudss matrix, vector and solver and size them */
+      Create_objects(csr);
 
-  /* give the device data / csr pointers to the cudss matrix */
-  /* has to be done at EACH solve, to ensure H/D sync */
-  set_pointers_A(csr);
+      /* give the device data / csr pointers to the cudss matrix */
+      /* has to be done at EACH solve, to ensure H/D sync */
+      set_pointers_A(csr);
 
-  //The pointers to x and b should never change between calls to resoudre
-  assert(x_values_h==const_cast<double*>(xvect.data())); //@PL: why does this fail ? vector pointer has changed between calls
-  assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));  //@PL: whyd does this fail ? vector pointer has changed between calls
-  assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
-  /* sizes should never change */
-  assert(a.nb_lignes()==n);
-  assert(bvect.size_totale()==n);
-  assert(xvect.size_totale()==n);
-
+      //The pointers to x and b should never change between calls to resoudre
+      assert(x_values_h==const_cast<double*>(xvect.data())); //@PL: why does this fail ? vector pointer has changed between calls
+      assert(x_values_d ==
+             const_cast<double *>(xvect.view_rw<1>().data()));  //@PL: whyd does this fail ? vector pointer has changed between calls
+      assert(b_values_d == const_cast<double *>(bvect.view_ro<1>().data()));
+      /* sizes should never change */
+      assert(a.nb_lignes() == n);
+      assert(bvect.size_totale() == n);
+      assert(xvect.size_totale() == n);
+    }
   /* give the device data / csr pointers to the cudss vectors x and b */
   set_pointers_xb(bvect, xvect);
 
@@ -197,8 +201,8 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   /* Solving */
   CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
                                     A, x, b), status, "cudssExecute for solve");
+  cudaStreamSynchronize(stream); // Important factorization and solve phases are asynchronous
   statistiques().end_count(gpu_library_counter_);
-
   /*compute error in debug mode */
 #ifndef NDEBUG
   DoubleVect test(bvect);
@@ -210,7 +214,7 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 #endif
 
   first_solve = false;
-
+  fixer_nouvelle_matrice(0);
   return 0;
 #else
   Process::exit("Sorry, cuDSS solvers not available with this build (resoudre_systeme).");
