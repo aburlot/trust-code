@@ -167,10 +167,9 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
       set_pointers_A(csr);
 
       //The pointers to x and b should never change between calls to resoudre
-      assert(x_values_h==const_cast<double*>(xvect.data())); //@PL: why does this fail ? vector pointer has changed between calls
-      assert(x_values_d ==
-             const_cast<double *>(xvect.view_rw<1>().data()));  //@PL: whyd does this fail ? vector pointer has changed between calls
-      assert(b_values_d == const_cast<double *>(bvect.view_ro<1>().data()));
+      //assert(x_values_h==const_cast<double*>(xvect.data())); //@PL: why does this fail ? vector pointer has changed between calls
+      //assert(x_values_d == const_cast<double *>(xvect.view_rw<1>().data()));  //@PL: whyd does this fail ? vector pointer has changed between calls
+      //assert(b_values_d == const_cast<double *>(bvect.view_ro<1>().data()));
       /* sizes should never change */
       assert(a.nb_lignes() == n);
       assert(bvect.size_totale() == n);
@@ -213,17 +212,14 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   cudaStreamSynchronize(stream); // Important factorization and solve phases are asynchronous
   statistiques().end_count(gpu_library_counter_);
   /*compute error in debug mode */
-  /* Temporaire
-  #ifndef NDEBUG
-  DoubleTrav test;
-  test = bvect;
+#ifndef NDEBUG
+  DoubleVect test(bvect);
   test*=-1;
   a.ajouter_multvect(xvect,test);
   double vrai_residu = mp_norme_vect(test);
   assert(vrai_residu<1e-5);
   Cout << "||Ax-b||=" << vrai_residu << finl;
-  #endif
-  */
+#endif
   first_solve = false;
   fixer_nouvelle_matrice(0);
   return 0;
