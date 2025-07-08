@@ -159,24 +159,16 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 
       /* create cudss matrix, vector and solver and size them */
       /* Does very few things if the matrix has not changed*/
-      /* create cudss matrix, vector and solver and size them */
       Create_objects(csr);
 
       /* give the device data / csr pointers to the cudss matrix */
-      /* has to be done at EACH solve, to ensure H/D sync */
       set_pointers_A(csr);
 
-      //The pointers to x and b should never change between calls to resoudre
-      //assert(x_values_h==const_cast<double*>(xvect.data())); //@PL: why does this fail ? vector pointer has changed between calls
-      //assert(x_values_d == const_cast<double *>(xvect.view_rw<1>().data()));  //@PL: whyd does this fail ? vector pointer has changed between calls
-      //assert(b_values_d == const_cast<double *>(bvect.view_ro<1>().data()));
       /* sizes should never change */
       assert(a.nb_lignes() == n);
       assert(bvect.size_totale() == n);
       assert(xvect.size_totale() == n);
     }
-  /* give the device data / csr pointers to the cudss vectors x and b */
-  set_pointers_xb(bvect, xvect);
 
   /* analysis and facto can be only done when the matrix changes */
   statistiques().begin_count(gpu_library_counter_);
@@ -189,10 +181,17 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
       /* Factorization x, and b are unused*/
       CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
                                         solverData, A, x, b), status, "cudssExecute for facto");
+
+      cudaStreamSynchronize(stream); // Important factorization and solve phases are asynchronous
     }
 
 
+  //The pointers to x and b should never change between calls to resoudre
+// assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));
+// assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
+
   /* give the device data / csr pointers to the cudss vectors x and b */
+  /* This has to be done at each solve to ensure sync mechanism*/
   set_pointers_xb(bvect, xvect);
 
   /*some checks*/
@@ -201,16 +200,13 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
   assert(bvect.size_totale()==n);
   assert(xvect.size_totale()==n);
 
-  assert(x_values_h==const_cast<double*>(xvect.data()));
-  assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));
-  assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
-
 
   /* Solving */
   CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
                                     A, x, b), status, "cudssExecute for solve");
   cudaStreamSynchronize(stream); // Important factorization and solve phases are asynchronous
   statistiques().end_count(gpu_library_counter_);
+
   /*compute error in debug mode */
 #ifndef NDEBUG
   DoubleVect test(bvect);
@@ -226,6 +222,7 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 #else
   Process::exit("Sorry, cuDSS solvers not available with this build (resoudre_systeme).");
   return -1;
+
 #endif
 }
 
@@ -318,7 +315,6 @@ void Solv_cuDSS::set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect)
 {
   /* get pointers */
   x_values_d = const_cast<double*>(xvect.view_wo<1>().data());
-  x_values_h = const_cast<double*>(xvect.data());
   b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
 
   /* give pointers to vectors*/
