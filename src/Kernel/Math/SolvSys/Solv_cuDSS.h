@@ -40,7 +40,7 @@ public :
   int resoudre_systeme(const Matrice_Base& a, const DoubleVect& b, DoubleVect& x) override;
 
 private :
-  void Create_objects(const int, const int);
+  void Create_objects(const Matrice_Morse&);
   void set_pointers_A(const Matrice_Morse&);
   void set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect);
 
