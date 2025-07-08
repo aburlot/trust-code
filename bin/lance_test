@@ -1021,12 +1021,12 @@ then
              i=""
           fi
        fi
-       # Discard AmgX test case
+       # Discard AmgX/cuDSS test case
        if [ "$TRUST_USE_CUDA" = 0 ]
        then
-          if [ "`grep -i -e amgx $REP/* 2>/dev/null | grep -v hierarchie.dump | grep -v .lml.gz`" != "" ]
+          if [ "`grep -i -e amgx -e cudss $REP/* 2>/dev/null | grep -v hierarchie.dump | grep -v .lml.gz`" != "" ]
           then
-             echo "Test $i skipped (no AmgX)"
+             echo "Test $i skipped (no Nvidia GPU)"
              liste_skipped=$liste_skipped" $i"
              i=""
           fi
