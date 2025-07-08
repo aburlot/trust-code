@@ -1,5 +1,6 @@
 # PARALLEL NOT #
 # Test cuDSS Cholesky solver #
+# It is the JEL_bous test case #
 dimension 3
 Pb_thermohydraulique_Turbulent pb1
 Domaine dom
