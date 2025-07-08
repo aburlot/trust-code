@@ -64,7 +64,10 @@ associer pb sch
 
 discretiser pb dis
 
-lire pb
+Domaine coupe_z0
+Extraire_plan { domaine coupe_z0 probleme pb epaisseur 1e-6 origine 3 -1 0 0.5 point1 3 -1 1 0.5 point2 3 1 0 0.5 }
+
+Lire pb
 {
     fluide_quasi_compressible
     # water/ethanol water/saccarose mixture #
@@ -114,6 +117,17 @@ lire pb
 
 	liste_postraitements
 	{
+		postraitement IMAGES
+			{
+			domaine coupe_z0
+			fichier IMAGES
+			format lata
+			champs binaire dt_post 0.005
+						{
+						temperature som
+						vitesse som
+						}
+			}
 	        postraitement NR
 		{
 			fichier ColdLegMixing format lml
