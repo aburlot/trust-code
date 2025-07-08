@@ -21,6 +21,7 @@
 #include <Device.h>
 #include <cudss.h>
 #include <cuda.h>
+#include <Matrice_Morse.h>
 class EChaine;
 
 #define cuDSS_
@@ -59,6 +60,7 @@ private :
   bool Axb_are_built = false;
   bool solver_is_built = false;
   bool first_solve=true;
+  Matrice_Morse csr_;
 
 #ifdef cuDSS_
 

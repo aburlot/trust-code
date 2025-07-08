@@ -14,7 +14,6 @@
 *****************************************************************************/
 
 #include <Solv_cuDSS.h>
-#include <Matrice_Morse_Sym.h>
 #include <TRUSTVect.h>
 #include <EChaine.h>
 #include <Motcle.h>
@@ -25,8 +24,7 @@
 #include <Device.h>
 #include <stat_counters.h>
 #include <Array_tools.h>
-#include <cuda.h>
-
+#include <TRUSTTrav.h>
 
 #define CUDSS_CALL_AND_CHECK(call, status, msg) \
     do { \
@@ -152,17 +150,12 @@ Solv_cuDSS::~Solv_cuDSS()
 int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect, DoubleVect& xvect)
 {
 #ifdef cuDSS_
-
-  /* used for conversion matric base to csr */
-  Matrice_Morse tmp;
-
   if ((nouvelle_matrice()||first_solve))
     {
+      /* conversion matric base to csr */
       /*build the csr matrix on host*/
-      construit_matrice_morse_intermediaire(a, tmp);
-
-      /* build the csr matrix ref*/
-      const Matrice_Morse& csr = tmp.nb_lignes() ? tmp : ref_cast(Matrice_Morse, a);
+      construit_matrice_morse_intermediaire(a, csr_);
+      const Matrice_Morse& csr = csr_.nb_lignes() ? csr_ : ref_cast(Matrice_Morse, a);
 
       /* create cudss matrix, vector and solver and size them */
       /* Does very few things if the matrix has not changed*/
@@ -198,21 +191,39 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
       CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig,
                                         solverData, A, x, b), status, "cudssExecute for facto");
     }
+
+
+  /* give the device data / csr pointers to the cudss vectors x and b */
+  set_pointers_xb(bvect, xvect);
+
+  /*some checks*/
+  /* sizes should never change */
+  assert(a.nb_lignes()==n);
+  assert(bvect.size_totale()==n);
+  assert(xvect.size_totale()==n);
+
+  assert(x_values_h==const_cast<double*>(xvect.data()));
+  assert(x_values_d==const_cast<double*>(xvect.view_rw<1>().data()));
+  assert(b_values_d==const_cast<double*>(bvect.view_ro<1>().data()));
+
+
   /* Solving */
   CUDSS_CALL_AND_CHECK(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData,
                                     A, x, b), status, "cudssExecute for solve");
   cudaStreamSynchronize(stream); // Important factorization and solve phases are asynchronous
   statistiques().end_count(gpu_library_counter_);
   /*compute error in debug mode */
-#ifndef NDEBUG
-  DoubleVect test(bvect);
+  /* Temporaire
+  #ifndef NDEBUG
+  DoubleTrav test;
+  test = bvect;
   test*=-1;
   a.ajouter_multvect(xvect,test);
   double vrai_residu = mp_norme_vect(test);
   assert(vrai_residu<1e-5);
   Cout << "||Ax-b||=" << vrai_residu << finl;
-#endif
-
+  #endif
+  */
   first_solve = false;
   fixer_nouvelle_matrice(0);
   return 0;
@@ -310,7 +321,7 @@ void Solv_cuDSS::set_pointers_A(const Matrice_Morse& csr)
 void Solv_cuDSS::set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect)
 {
   /* get pointers */
-  x_values_d = const_cast<double*>(xvect.view_rw<1>().data()); //maybe wo ?
+  x_values_d = const_cast<double*>(xvect.view_wo<1>().data());
   x_values_h = const_cast<double*>(xvect.data());
   b_values_d = const_cast<double*>(bvect.view_ro<1>().data());
 
