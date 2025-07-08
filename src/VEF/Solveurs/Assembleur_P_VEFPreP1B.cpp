@@ -541,7 +541,6 @@ int Assembleur_P_VEFPreP1B::modifier_secmem_elem(const DoubleTab& tab_Gpoint, Do
       if (sub_type(Entree_fluide_vitesse_imposee, cl_base) && champ_front.instationnaire() )
         {
           // Construction de la liste des faces a traiter (reelles + virtuelles)
-          ToDo_Kokkos("Check we have a test case!");
           const int nb_faces_bord_tot = front_VF.nb_faces_tot();
           int dimension_ = Objet_U::dimension;
           CIntTabView face_voisins = domaine_VEF.face_voisins().view_ro();
