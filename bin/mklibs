@@ -54,7 +54,7 @@ then
       do
          [ -f lib$lib.a ] && PETSC_L=$PETSC_L" $lib"
       done
-      [ -f libumfpack.a ] && PETSC_L=$PETSC_L" umfpack klu spqr cholmod btf ccolamd colamd camd amd suitesparseconfig" && [ `uname -s` != Darwin ] && SYSLIBS_L=$SYSLIBS_L" rt"
+      [ -f libumfpack.a ] && PETSC_L=$PETSC_L" umfpack klu spqr cholmod btf ccolamd colamd camd amd suitesparseconfig suitesparse_gpuruntime gpuqrengine" && [ `uname -s` != Darwin ] && SYSLIBS_L=$SYSLIBS_L" rt"
       # Link avec les librairies statiques de CUDA:
       # Pros: Portability ?
       # Cons: Binary size 74Mo -> 900Mo ! Crash possible sur orcus (Caught amgx exception: Cannot allocate pinned memory) si on utilise la librairie statique AmgX avec -lamgx !
