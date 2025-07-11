@@ -18,6 +18,7 @@ help()
    echo "-create                        : Build a minimal .ipynb with data files found in the src directory."
    echo "-xpdf                          : Open the PDF report file at the end of the build."
    echo "-compare_pdf pdf_path          : Compare the produced rapport.pdf with a pdf file. Run_fiche should be run using -export_pdf or -parallel_run mode in addition to this option."
+   echo "-no_visit                      : Do not build any VisIt figure, which is faster on notebooks having many VisIt snapshots. This is also useful when VisIt is disabled."
    echo "-archive                       : Build a preserve.tgz file containing all the needed files from the build directory to compare later, PDF reports each other."
    echo
    echo "For .prm validation forms:"
@@ -190,7 +191,8 @@ do
       shift
    elif [ "$1" = -no_visit ]
    then
-      options=$options" "--no_visit
+      options=$options" "--no_visit    # for PRM
+      export NO_VISIT=true             # for .ipynb
       shift
    elif [ "$1" = -o ]
    then

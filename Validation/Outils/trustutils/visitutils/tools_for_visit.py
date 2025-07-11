@@ -16,6 +16,12 @@ import matplotlib.image as mpimg
 
 from .message import GestionMessages
 
+def VisItDisabled():
+    if not os.getenv("NO_VISIT") is None:
+        print("Warning: VisIt images are not generated and not included in the current report since environment variable NO_VISIT set")
+        return True
+    return False
+
 
 def visitTmpFile_(justFile=False):
     """Internal ..."""
@@ -93,6 +99,7 @@ def saveFile(file, plottype, name, iteration, active=False):
 def showMesh(filename, mesh="dom"):
     """
     Methods to plot the mesh from a .lata file.
+    If environment variable NO_VISIT is set, VisIt plots (visu) are not generated.
 
     Parameters
     ---------
@@ -106,6 +113,9 @@ def showMesh(filename, mesh="dom"):
         a Visit plot
     """
 
+    if VisItDisabled():
+        return
+
     field = Show(filename=filename, plottype="Mesh", name=mesh, plotmesh=False)
     field.plot()
 
@@ -114,6 +124,7 @@ def showField(filename, plottype, name,
               plotmesh=True, title="", iteration=-1, size=10, max=None, min=None,):
     """
     Methods to plot a field from a .lata file.
+    If environment variable NO_VISIT is set, VisIt plots (visu) are not generated.
 
     Parameters
     ---------
@@ -141,6 +152,10 @@ def showField(filename, plottype, name,
     -------
         a Visit plot
     """
+
+    if VisItDisabled():
+        return
+    
     field = Show(filename, plottype, name, plotmesh=plotmesh,
                  title=title, iteration=iteration, size=size, max=max, min=min,)
     field.plot()
@@ -149,6 +164,7 @@ def showField(filename, plottype, name,
 class Show(object):
     """
     Class Show, which allow to use visit command in a python environment
+    If environment variable NO_VISIT is set, VisIt plots (visu) are not generated.
     """
 
     def __init__(self, filename="", plottype="", name="", nX=1, nY=1,
@@ -189,7 +205,9 @@ class Show(object):
         -------
         None
         """
-        #
+
+        if VisItDisabled() : return
+
         if not empty:
             if not all([filename, plottype, name]):
                 raise ValueError("Error: A filename, plottype and name are needed!!")
@@ -372,6 +390,9 @@ class Show(object):
         -------
 
         """
+        if VisItDisabled():
+            return
+
         if filename is None:
             filename = self.filename
 
@@ -418,6 +439,9 @@ class Show(object):
         -------
 
         """
+        if VisItDisabled():
+            return
+
         with open(visitTmpFile_(), "a") as f:
             f.write(string + "\n")
 
@@ -443,6 +467,9 @@ class Show(object):
         Display the visit plot in Jupyter.
 
         """
+        if VisItDisabled():
+            return
+
         from ..jupyter.run import BUILD_DIRECTORY
 
         import re
@@ -619,6 +646,9 @@ class Show(object):
         -------
 
         """
+        if VisItDisabled():
+            return
+
         # finalization of the previous subplot
         self.plot(show=False)
 
@@ -639,6 +669,7 @@ class Show(object):
         """
 
         Visualize the graph.
+        If environment variable NO_VISIT is set, VisIt plots (visu) are not generated.
 
         Parameters
         ---------
@@ -647,6 +678,9 @@ class Show(object):
         -------
 
         """
+        if VisItDisabled():
+            return
+
         self.executeVisitCmds()
         if self.show:
             self.insert()
@@ -667,6 +701,9 @@ class Show(object):
         -------
 
         """
+        if VisItDisabled():
+            return
+
         with open(visitTmpFile_(), "a") as f:
             f.write(self._genAddPlot("'Mesh'", f"'{mesh}'", self.iteration))
             f.write("DrawPlots() \n")
@@ -1125,6 +1162,8 @@ class export_lata_base:
         None
 
         """
+        if VisItDisabled():
+            return
         self.filename = filename
         self.plottype = plottype
         self.name = name
@@ -1342,6 +1381,9 @@ class export_lata_base:
         -------
         None
         """
+        if VisItDisabled():
+            return
+
         self.setFrame(iteration=iteration)
         with open(visitTmpFile_(), "a") as f:
             f.write('Query("Max", use_actual_data=1) \n')
@@ -1368,6 +1410,8 @@ class export_lata_base:
         -------
         None
         """
+        if VisItDisabled():
+            return
         self.setFrame(iteration=iteration)
         with open(visitTmpFile_(), "a") as f:
             f.write('Query("Min", use_actual_data=1) \n')
@@ -1400,6 +1444,8 @@ class export_lata_base:
         Run the visit command in terminal.
 
         """
+        if VisItDisabled():
+            return
         from ..jupyter.run import BUILD_DIRECTORY
 
         origin = os.getcwd()

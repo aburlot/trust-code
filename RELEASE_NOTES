@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+26/08/25 (Tools) New feature  : For validation forms, -no_visit option added to Run_fiche. If specified, VisIt plots are skipped when running notebooks/generating PDF
 26/08/25 (TRUST) Fix          : Turbulent viscosity computed in Mixing Length (l_melange) model in Multiphase was not correctly computed.
 31/07/25 (TRUST) Fix          : Shear rate was not correctly computed in Multiphase VDF calculation with at least two phases
 28/07/25 (TRUST) Portability  : cmake 3.26.0 or newer is necessary to install petsc 3.23.2 and so TRUST.
