@@ -1125,6 +1125,7 @@
  Solv_AMG Solv_AMG Solv_AMG.h
  Solv_AMGX Solv_AMGX Solv_AMGX.h
  Solv_Cholesky Solv_Cholesky Solv_Cholesky.h
+ Solv_cuDSS Solv_cuDSS Solv_cuDSS.h
  Solv_Externe Solv_Externe Solv_Externe.h
  Solv_GCP Solv_GCP Solv_GCP.h
  Solv_GCP_NS Solv_GCP_NS Solv_GCP_NS.h

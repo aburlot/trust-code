@@ -2624,6 +2624,7 @@ echo $ECHO_OPTS "done."
 includes="
 $TRUST_ROOT/lib/src/LIBAMGX/AmgXWrapper/include/AmgXSolver.hpp
 $TRUST_ROOT/lib/src/LIBAMGX/AmgX/include/amgx_c.h
+$TRUST_ROOT/lib/src/LIBCUDSS/include/cudss.h
 $TRUST_ROOT/lib/src/LIBROCALUTION/include/rocalution_for_kernel.h
 $TRUST_ROOT/lib/src/LIBMETIS/include/metis.h
 $TRUST_ROOT/lib/src/LIBMED/MED/include/med.h
