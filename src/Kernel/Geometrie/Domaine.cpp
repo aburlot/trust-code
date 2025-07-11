@@ -360,7 +360,7 @@ typename Domaine_32_64<_SZ_>::SmallArrOfTID_t& Domaine_32_64<_SZ_>::chercher_ele
   if (!deformable() && positions.dimension(0) > 1)
     {
       set_cache = true;
-      if (!deriv_octree_.non_nul() || !deriv_octree_->construit())
+      if (deriv_octree_.est_nul() || !deriv_octree_->construit())
         {
           // Vide le cache
           cached_elements_.reset();
@@ -400,11 +400,14 @@ typename Domaine_32_64<_SZ_>::SmallArrOfTID_t& Domaine_32_64<_SZ_>::chercher_ele
   if (set_cache)
     {
       // Securite car vu sur un calcul FT (cache qui augmente indefiniment, nombre de particules variables...)
-      if (cached_memory>1e8) // 100Mo/proc
+      // if (cached_memory>1e8) // 100Mo/proc
+      if (cached_positions_.size()>100) // Change heuristic cause 100Mo on GPU is tiny !
         {
           // Vide le cache
+          Cerr << "Warning, cache flushed in Domaine_32_64<_SZ_>::chercher_elements() cause too much lines used !" << finl;
           cached_elements_.reset();
           cached_positions_.reset();
+          cached_memory = 0;
         }
       else
         {
@@ -419,7 +422,7 @@ typename Domaine_32_64<_SZ_>::SmallArrOfTID_t& Domaine_32_64<_SZ_>::chercher_ele
           cached_memory += (double)(elements.size_array() * sizeof(int));
           if (cached_memory > 1e7)   // 10Mo
             {
-              Cerr << 2 * cached_positions_.size() << " arrays cached in memory for Zone::chercher_elements(...): ";
+              Cerr << 2 * cached_positions_.size() << " arrays cached in memory for Domaine_32_64<_SZ_>::chercher_elements(...): ";
               if (cached_memory < 1e6)
                 Cerr << int(cached_memory / 1024) << " KBytes" << finl;
               else

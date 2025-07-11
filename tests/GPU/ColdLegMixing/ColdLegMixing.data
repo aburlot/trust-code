@@ -122,10 +122,9 @@ Lire pb
 			domaine coupe_z0
 			fichier IMAGES
 			format lata
-			champs binaire dt_post 0.005
+			champs binaire dt_post 0.05
 						{
-						temperature som
-						vitesse som
+						vorticite elem
 						}
 			}
 	        postraitement NR
