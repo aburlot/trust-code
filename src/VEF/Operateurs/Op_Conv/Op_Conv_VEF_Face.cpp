@@ -141,8 +141,6 @@ void Op_Conv_VEF_Face::completer()
           int rang = rang_elem_non_std(poly);
           type_elem_Cl_[poly] = rang == -1 ? 0 : domaine_Cl_VEF.type_elem_Cl(rang);
         }
-      // Appel a vecteur_face_facette() des le completer:
-      Cerr << "Build of vecteur_face_facette() size:" << ref_cast_non_const(Domaine_VEF,domaine_VEF).vecteur_face_facette().size_array() << finl;
     }
 }
 //
@@ -188,7 +186,6 @@ DoubleTab& Op_Conv_VEF_Face::ajouter(const DoubleTab& transporte,
   int nb_faces = domaine_VEF.nb_faces();
   int nfac = domaine.nb_faces_elem();
   int nsom = domaine.nb_som_elem();
-  const DoubleTab& vecteur_face_facette = ref_cast_non_const(Domaine_VEF,domaine_VEF).vecteur_face_facette();
   const DoubleTab& vecteur_face_facette_Cl = domaine_Cl_VEF.vecteur_face_facette_Cl();
   int nb_bord = domaine_VEF.nb_front_Cl();
   const IntTab& les_elems=domaine.les_elems();
@@ -703,6 +700,7 @@ DoubleTab& Op_Conv_VEF_Face::ajouter(const DoubleTab& transporte,
       else
         {
           // Non tetra (tri, quad, hexa)
+          const DoubleTab& vecteur_face_facette = ref_cast_non_const(Domaine_VEF,domaine_VEF).vecteur_face_facette();
           ArrOfInt face(nfac);
           ArrOfDouble vs(dimension);
           ArrOfDouble vc(dimension);

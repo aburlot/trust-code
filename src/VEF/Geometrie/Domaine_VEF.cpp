@@ -1265,6 +1265,7 @@ DoubleTab& Domaine_VEF::vecteur_face_facette()
               // Fin de Calcul des rx0 et rx1
             }
         }
+      Cerr << "Build of vecteur_face_facette() size:" << vecteur_face_facette_.size_array() << finl;
     }
   return vecteur_face_facette_;
 }
