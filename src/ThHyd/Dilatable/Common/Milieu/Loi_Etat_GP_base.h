@@ -40,9 +40,9 @@ public :
   void calculer_alpha() override;
   void remplir_T() override;
   void calculer_Cp() override;
-  void calculer_masse_volumique() override;
   void initialiser() override;
-  KOKKOS_INLINE_FUNCTION double calculer_masse_volumique(double P,double T) const override { return calculer_masse_volumique(P, T, R_); }
+  using Loi_Etat_base::calculer_masse_volumique;
+  double calculer_masse_volumique(double P,double T) const override { return calculer_masse_volumique(P, T, R_); }
   KOKKOS_INLINE_FUNCTION double calculer_masse_volumique(double P,double T, double R) const { return P / ( R * T ); }
   double inverser_Pth(double,double) override;
 

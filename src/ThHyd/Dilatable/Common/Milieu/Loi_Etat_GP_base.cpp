@@ -185,11 +185,3 @@ double Loi_Etat_GP_base::inverser_Pth(double T, double rho)
 {
   return rho * R_ * T;
 }
-
-/*! @brief Calcule la masse volumique
- *
- */
-void Loi_Etat_GP_base::calculer_masse_volumique()
-{
-  Loi_Etat_base::calculer_masse_volumique();
-}
