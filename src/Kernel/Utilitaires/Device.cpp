@@ -211,7 +211,7 @@ _TYPE_* allocateOnDevice(_TYPE_* ptr, _SIZE_ size)
   end_gpu_timer(__KERNEL_NAME__);
 #endif
   statistiques().end_count(gpu_mallocfree_counter_);
-  if (clock_on)
+  if (clock_on && Process::je_suis_maitre())
     {
       std::string clock(Process::is_parallel() ? "[clock]#"+std::to_string(Process::me()) : "[clock]  ");
       double ms = 1000 * (Statistiques::get_time_now() - clock_start);
@@ -245,7 +245,7 @@ void deleteOnDevice(_TYPE_* ptr, _SIZE_ size)
   else
     clock = "[clock]  ";
   _SIZE_ bytes = sizeof(_TYPE_) * size;
-  if (clock_on)
+  if (clock_on && Process::je_suis_maitre())
     cout << clock << "            [Data]   Delete on device array [" << ptrToString(ptr).c_str() << "] of " << bytes << " Bytes. It remains " << DeviceMemory::getMemoryMap().size()-1 << " arrays." << endl << flush;
   Kokkos::kokkos_free(addrOnDevice(ptr));
   DeviceMemory::del(ptr);
@@ -357,7 +357,7 @@ void copyFromDevice(_TYPE_* ptr, _SIZE_ size)
       std::stringstream message;
       message << "Copy from device [" << ptrToString(ptr) << "] " << size << " items ";
       end_gpu_timer(message.str(), 0, bytes);
-      if (clock_on) printf("\n");
+      //if (clock_on) printf("\n");
       if (DeviceMemory::warning(size)) // Warning for large array only:
         ToDo_Kokkos("D2H update of large array! Add a breakpoint to find the reason if not IO.");
     }
@@ -539,7 +539,7 @@ void end_gpu_timer(const std::string& str, int onDevice, int bytes) // Return in
 #endif
         }
       if (bytes == -1) statistiques().end_count(gpu_kernel_counter_, 0, onDevice, false);
-      if (clock_on) // Affichage
+      if (clock_on && Process::je_suis_maitre()) // Affichage
         {
           std::string clock(Process::is_parallel() ? "[clock]#" + std::to_string(Process::me()) : "[clock]  ");
           double ms = 1000 * (Statistiques::get_time_now() - clock_start);
