@@ -90,7 +90,7 @@ int main_TRUST(int argc, char** argv,mon_main*& main_process,bool force_mpi, boo
 
   Nom log_directory = "";
   bool helptrust = false;
-  // itrue => use of feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  // if bool ieee = true => use of feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 // Crashes bizarres sur compilateurs clang++, fcc, nvc++ donc on desactive:
 #if defined(_COMPILE_AVEC_CLANG) || defined (_COMPILE_AVEC_FCC) || defined(__NVCOMPILER)
   ieee = false;

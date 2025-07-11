@@ -47,7 +47,9 @@ private :
   void set_pointers_A(const Matrice_Morse&);
   void set_pointers_xb(const DoubleVect& bvect, DoubleVect& xvect);
 
+  Matrice_Morse csr_;
 
+#ifdef cuDSS_
   int nrhs=1; //For batched solve
   int n=-1;
   int nnz=-1;
@@ -61,9 +63,6 @@ private :
   bool Axb_are_built = false;
   bool solver_is_built = false;
   bool first_solve=true;
-  Matrice_Morse csr_;
-
-#ifdef cuDSS_
 
   cudssAlgType_t reorder_alg = CUDSS_ALG_DEFAULT; //Can be 0->5. Default / recommended is 0
   cudssConfig_t solverConfig;
