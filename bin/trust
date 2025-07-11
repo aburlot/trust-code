@@ -1075,7 +1075,7 @@ then
          [ "$ram" != "" ] && echo "#SBATCH --mem=$ram"                         >> $sub_file    # Real memory required per node in MegaBytes
          echo $D"#SBATCH --mail-user=$EMAIL"                                   >> $sub_file
          echo $D"#SBATCH --mail-type=END"                                      >> $sub_file
-         echo "set -x"                                                         >> $sub_file
+         [ "$node" = 1 ] && echo "set -x"                                      >> $sub_file
          echo "cd \$SLURM_SUBMIT_DIR"                                          >> $sub_file    # Submit directory for reprise_auto script
          ;;
       POE)
@@ -1129,7 +1129,7 @@ then
          [ "$ram" != "" ] && echo "#MSUB -M $ram"                              >> $sub_file
          [ "$espacedir" != "" ] && echo "#MSUB -m $espacedir"                  >> $sub_file
          echo $D"#MSUB -@ $EMAIL:end"                                          >> $sub_file
-         echo "set -x"                                                         >> $sub_file
+         [ "$node" = 1 ] && echo "set -x"                                      >> $sub_file
          echo "cd \$BRIDGE_MSUB_PWD"                                           >> $sub_file
          ;;
       SGE)
