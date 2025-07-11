@@ -454,6 +454,20 @@ then
 fi
 add_package metis
 
+########
+# AmgX #
+########
+if [ "$TRUST_USE_CUDA" = 1 ]
+then
+   with_packages=$with_packages" --with-amgx=1 --with-amgx-dir=$TRUST_ROOT/lib/src/LIBAMGX/AmgX"
+   CONFIG=config/BuildSystem/config/packages/amgx.py
+   # Try to hack int32 limitation:
+   sed -i "1,$ s?self.requires32bitint = 1?self.requires32bitint = 0?" $CONFIG || exit -1
+   # meld $DIR/amgx.cxx src/ksp/pc/impls/amgx/amgx.cxx
+   cp $DIR/amgx.cxx src/ksp/pc/impls/amgx/amgx.cxx || exit -1
+   #nedit $CONFIG
+fi
+
 #############
 # STRUMPACK #
 #############
