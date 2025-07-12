@@ -17,7 +17,7 @@
 #define Solv_AMG_included
 
 #include <SolveurSys.h>
-#include <Solv_Petsc.h>
+#include <EChaine.h>
 
 /*! @brief AMD solver wrapper to switch to the more robust/performant AMG preconditioner on CPU/GPU Nvidia/GPU AMD
  *  and have datafile unicity, as changing solver/preconditioner for different architecture is painful

@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -55,6 +55,8 @@ int SolveurSys::resoudre_systeme(const Matrice_Base& matrice, const DoubleVect& 
   statistiques().end_count(solv_sys_counter_, nb_iter);
 
   // Si limpr vaut -1, on n'imprime pas
+  //if (le_nom()=="??")
+  //  Process::exit("Solver not named. Fix!");
   if (valeur().limpr() >= 0)
     Cout << " Convergence in " << nb_iter << " iterations for " << le_nom() << finl;
 

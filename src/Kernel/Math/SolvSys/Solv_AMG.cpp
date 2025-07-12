@@ -22,6 +22,7 @@
 #include <rocm-core/rocm_version.h>
 #endif
 #include <comm_incl.h> // Mandatory to have MPIX_CUDA_AWARE_SUPPORT defined or not
+#include <MD_Vector_composite.h>
 
 Implemente_instanciable(Solv_AMG,"Solv_AMG",SolveurSys_base);
 // XD amg solveur_sys_base amg 0 Wrapper for AMG preconditioner-based solver which switch for the best one on CPU/GPU Nvidia/GPU AMD
@@ -52,6 +53,7 @@ Sortie& Solv_AMG::printOn(Sortie& s ) const
  * @throws Process::exit if the input syntax is incorrect or if an unsupported
  * library is specified.
  */
+
 Nom boomeramg(double st)
 {
   Nom chaine(" { precond boomeramg { }");
@@ -64,7 +66,29 @@ Nom boomeramg(double st)
   return chaine;
 }
 
-Nom pcfieldsplit(int n, double rtol, double atol)
+Nom pcfieldsplit_amgx(int n, double rtol, double atol)
+{
+  Nom chaine("cli { -ksp_type cg ");
+  chaine+=rtol>0 ? "-ksp_rtol " : "-ksp_atol ";
+  chaine+=rtol>0 ? Nom(rtol, "%e ") : Nom(atol, "%e ");
+  chaine+="-ksp_norm_type UNPRECONDITIONED \
+-pc_type fieldsplit \
+-pc_fieldsplit_type additive \
+-fieldsplit_P0_ksp_type preonly \
+-fieldsplit_P0_pc_type amgx \
+-fieldsplit_P1_ksp_type preonly \
+-fieldsplit_P1_pc_type amgx ";
+  if (n==3)
+    {
+      // ToDo: not efficient on P0P1Pa
+      chaine+="-fieldsplit_P2_ksp_type preonly \
+-fieldsplit_P2_pc_type amgx ";
+    }
+  chaine +="}";
+  return chaine;
+}
+
+Nom pcfieldsplit_boomeramg(int n, double rtol, double atol)
 {
   Nom chaine("cli { -ksp_type cg ");
   chaine+=rtol>0 ? "-ksp_rtol " : "-ksp_atol ";
@@ -94,15 +118,46 @@ Nom pcfieldsplit(int n, double rtol, double atol)
   chaine +="}";
   return chaine;
 }
+
+Nom pcfieldsplit_gamg(int n, double rtol, double atol)
+{
+  Nom chaine("cli { -ksp_type cg ");
+  chaine+=rtol>0 ? "-ksp_rtol " : "-ksp_atol ";
+  chaine+=rtol>0 ? Nom(rtol, "%e ") : Nom(atol, "%e ");
+  chaine+="-ksp_norm_type UNPRECONDITIONED \
+-pc_type fieldsplit \
+-pc_fieldsplit_type additive \
+-fieldsplit_P0_ksp_type preonly \
+-fieldsplit_P0_pc_type gamg \
+-fieldsplit_P0_pc_gamg_threshold 0.01 \
+-fieldsplit_P0_pc_gamg_square_graph 1 \
+-fieldsplit_P1_ksp_type preonly \
+-fieldsplit_P1_pc_type gamg \
+-fieldsplit_P1_pc_gamg_threshold 0.01 \
+-fieldsplit_P1_pc_gamg_square_graph 1 ";
+  if (n==3)
+    {
+      // ToDo: not efficient on P0P1Pa
+      chaine+="-fieldsplit_P2_ksp_type preonly \
+-fieldsplit_P2_ksp_type preonly \
+-fieldsplit_P2_pc_type gamg \
+-fieldsplit_P2_pc_gamg_threshold 0.01 \
+-fieldsplit_P2_pc_gamg_square_graph 1 ";
+    }
+  chaine +="}";
+  return chaine;
+}
+
 Entree& Solv_AMG::readOn(Entree& is)
 {
   // amg GCP|BISGTSTAB|GMRES { atol|rtol doublee [st double] [impr]  }
   Nom options_petsc("");
   Motcle motcle;
+  Nom solver;
   is >> motcle;
   while (motcle != "}")
     {
-      if (motcle=="GCP" || motcle=="BICGSTAB" || motcle=="GMRES") chaine_lue_=motcle;
+      if (motcle=="GCP" || motcle=="BICGSTAB" || motcle=="GMRES") solver=motcle;
       else if (motcle=="{") {}
       else if (motcle=="RTOL") is >> rtol_;
       else if (motcle=="ATOL") is >> atol_;
@@ -116,11 +171,18 @@ Entree& Solv_AMG::readOn(Entree& is)
       is >> motcle;
     }
   // We select the more efficient/robust one:
+  chaine_lue_ = solver;
 #if defined(TRUST_USE_CUDA)
-#if defined(MPIX_CUDA_AWARE_SUPPORT) && (OMPI_MAJOR_VERSION == 4)
+  library_ = "petsc_gpu";
+  chaine_lue_ += boomeramg(st_); // Best GPU solver
+  // KSP divergence with cg+boomeramg on multi-node with MPI Cuda Aware so we switch to AmgX:
+  // Or switch to bcgs from cg ? Works !!! Strangely KSPSolve is 2x-3x slower on A100X vs MI250X... rocsparse better than cusparse ? And Kokkos-Kernels ?
+  // Or use cg+gamg cg+amgx ?
+#if defined(MPIX_CUDA_AWARE_SUPPORT)
   if (Process::nproc()>4)
     {
       library_ = "amgx";
+      chaine_lue_ = solver;
       chaine_lue_ += " { precond c-amg {";    // Best GPU solver on Nvidia if MPI-GPU Aware OpenMPI 4.x
       if (st_>=0)
         {
@@ -129,14 +191,6 @@ Entree& Solv_AMG::readOn(Entree& is)
         }
       chaine_lue_ += " }";
     }
-  else
-    {
-      library_ = "petsc_gpu";
-      chaine_lue_ += boomeramg(st_); // Best GPU solver if not MPI-GPU Aware (Hypre diverge on multi-GPU node)
-    }
-#else
-  library_ = "petsc_gpu";
-  chaine_lue_ += boomeramg(st_); // Best GPU solver if not MPI-GPU Aware (Hypre diverge else)
 #endif
 #elif defined(TRUST_USE_ROCM)
   library_ = "petsc_gpu";
@@ -175,22 +229,28 @@ Entree& Solv_AMG::readOn(Entree& is)
   return is;
 }
 
-#include <MD_Vector_composite.h>
 int Solv_AMG::resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, DoubleVect& x)
 {
   // We don't create solver during readOn as usual but just before solve to get more infos about matrix/vectors to fine tune
   if (solveur_.est_nul())
     {
-      // ToDo: ecart etrange sur le cas GPU4....
-      if (sub_type(MD_Vector_composite, b.get_md_vector().valeur()) && chaine_lue_.contient("boomeramg"))
+      if (sub_type(MD_Vector_composite, b.get_md_vector().valeur()))
         {
           int nb_blocks = ref_cast(MD_Vector_composite, b.get_md_vector().valeur()).nb_parts();
           if (nb_blocks>1)
             {
-              // Block matrix : we use PCFieldsplit (eg: VEF) for boomeramg preconditioner
+              // Block matrix : we use PCFieldsplit (eg: VEF) for preconditioner
               // Much better convergence for P0P1 for instance
               Cerr << "Detecting " << nb_blocks << "x" << nb_blocks << " blocks into the matrix..." << finl;
-              chaine_lue_ = pcfieldsplit(nb_blocks, rtol_, atol_);
+              if (chaine_lue_.contient("boomeramg"))
+                chaine_lue_ = pcfieldsplit_boomeramg(nb_blocks, rtol_, atol_);
+              else if (chaine_lue_.contient("gamg"))
+                chaine_lue_ = pcfieldsplit_gamg(nb_blocks, rtol_, atol_);
+              else if (library_=="amgx")
+                {
+                  library_ = "petsc_gpu";
+                  chaine_lue_ = pcfieldsplit_amgx(nb_blocks, rtol_, atol_);
+                }
             }
         }
       Cerr << "====================================================================" << finl;
@@ -200,6 +260,7 @@ int Solv_AMG::resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, Dou
       Nom nom_solveur("Solv_");
       nom_solveur+=library_;
       solveur_.typer(nom_solveur);
+      solveur_.nommer("solveur_pression");
       if (library_=="amgx")
         ref_cast(Solv_AMGX, solveur_.valeur()).create_solver(entree);
       else if (library_=="petsc")

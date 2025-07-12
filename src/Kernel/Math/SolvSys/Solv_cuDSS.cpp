@@ -216,11 +216,10 @@ int Solv_cuDSS::resoudre_systeme(const Matrice_Base& a, const DoubleVect& bvect,
 #endif
   first_solve = false;
   fixer_nouvelle_matrice(0);
-  return 0;
+  return 1;
 #else
   Process::exit("Sorry, cuDSS solvers not available with this build (resoudre_systeme).");
   return -1;
-
 #endif
 }
 
