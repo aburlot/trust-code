@@ -1114,6 +1114,7 @@ void Op_Conv_VEF_Face::ajouter_contribution(const DoubleTab& transporte, Matrice
   // boucle sur les polys
   const IntTab& KEL=domaine_VEF.type_elem().KEL();
   int phi_u_transportant_yes=phi_u_transportant(equation());
+  ToDo_Kokkos("critical");
   for (poly=0; poly<nb_elem_tot; poly++)
     {
 

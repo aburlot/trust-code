@@ -363,6 +363,7 @@ void Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_contribution_bord_gen(const Double
             {
               const Echange_externe_impose& la_cl_paroi = ref_cast(Echange_externe_impose, la_cl.valeur());
               const int ndeb = le_bord.num_premiere_face(), nfin = ndeb + le_bord.nb_faces();
+              ToDo_Kokkos("critical");
               for (int face = ndeb; face < nfin; face++)
                 matrice(face, face) += la_cl_paroi.h_imp(face - ndeb) * domaine_VEF.face_surfaces(face);
             }

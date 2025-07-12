@@ -689,6 +689,7 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
           // on ne parcourt que la moitie des faces periodiques
           // on copiera a la fin le resultat dans la face
           // associee...
+          ToDo_Kokkos("critical");
           for (int fac = num1; fac < num2b; fac++)
             {
               int fac_asso = la_cl_perio.face_associee(fac - num1) + num1;
@@ -844,6 +845,7 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
           const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
           int ndeb = le_bord.num_premiere_face();
           int nfin = ndeb + le_bord.nb_faces();
+          ToDo_Kokkos("critical");
           for (int face = ndeb; face < nfin; face++)
             {
               tab_h_impose(face) = la_cl_paroi.h_imp(face - ndeb);
@@ -864,6 +866,7 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
 
           int ndeb = le_bord.num_premiere_face();
           int nfin = ndeb + le_bord.nb_faces();
+          ToDo_Kokkos("critical");
           for (int face = ndeb; face < nfin; face++)
             {
               tab_h_impose(face) = la_cl_paroi.h_imp(face-ndeb);
@@ -946,6 +949,7 @@ void Op_Diff_VEF_Face::ajouter_contribution_multi_scalaire(const DoubleTab& tab_
           // on ne parcourt que la moitie des faces periodiques
           // on copiera a la fin le resultat dans la face
           // associee...
+          ToDo_Kokkos("critical");
           for (int fac = num1; fac < num2b; fac++)
             {
               int fac_asso = la_cl_perio.face_associee(fac - num1) + num1;
@@ -1110,6 +1114,7 @@ void Op_Diff_VEF_Face::ajouter_contribution_multi_scalaire(const DoubleTab& tab_
           const Echange_externe_impose& la_cl_paroi = ref_cast(Echange_externe_impose, la_cl.valeur());
           int ndeb = le_bord.num_premiere_face();
           int nfin = ndeb + le_bord.nb_faces();
+          ToDo_Kokkos("critical");
           for (int face = ndeb; face < nfin; face++)
             for (int nc = 0; nc < nb_comp; nc++)
               {
@@ -1152,7 +1157,7 @@ void Op_Diff_VEF_Face::contribue_au_second_membre(DoubleTab& resu ) const
               const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
               int ndeb = le_bord.num_premiere_face();
               int nfin = ndeb + le_bord.nb_faces();
-
+              ToDo_Kokkos("critical");
               for (int face=ndeb; face<nfin; face++)
                 resu[face] += la_cl_paroi.flux_impose(face-ndeb)*domaine_VEF.surface(face);
             }
@@ -1181,6 +1186,7 @@ void Op_Diff_VEF_Face::contribue_au_second_membre(DoubleTab& resu ) const
               const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
               int ndeb = le_bord.num_premiere_face();
               int nfin = ndeb + le_bord.nb_faces();
+              ToDo_Kokkos("critical");
               for (int face=ndeb; face<nfin; face++)
                 for (int comp=0; comp<nb_comp; comp++)
                   resu(face,comp) += la_cl_paroi.flux_impose(face-ndeb,comp)*domaine_VEF.surface(face);

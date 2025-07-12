@@ -597,6 +597,7 @@ int Op_VEF_Face::impr(Sortie& os, const Operateur_base& op) const
 /////////////////////////////////////////
 void modif_matrice_pour_periodique_avant_contribuer(Matrice_Morse& matrice, const Equation_base& eqn)
 {
+  ToDo_Kokkos("critical");
   const int nb_comp = eqn.inconnue().valeurs().line_size();
   const Domaine_Cl_dis_base& domaine_Cl_VEF = eqn.domaine_Cl_dis();
   const Domaine_VF& domaine_VEF = ref_cast(Domaine_VF, eqn.domaine_dis());
