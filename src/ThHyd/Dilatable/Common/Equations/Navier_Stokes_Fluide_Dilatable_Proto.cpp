@@ -159,7 +159,7 @@ DoubleTab& Navier_Stokes_Fluide_Dilatable_Proto::derivee_en_temps_inco_impl(Navi
 }
 
 void Navier_Stokes_Fluide_Dilatable_Proto::assembler_avec_inertie_impl(const Navier_Stokes_std& eqn, Matrice_Morse& mat_morse,
-                                                                       const DoubleTab& present, DoubleTab& secmem)
+                                                                       const DoubleTab& present, DoubleTab& tab_secmem)
 {
   // ******   avant inertie   ******
   // diffusion en div(mu grad u ) or on veut impliciter en rho * u => on divise les contributions par le rho_face associe
@@ -168,36 +168,40 @@ void Navier_Stokes_Fluide_Dilatable_Proto::assembler_avec_inertie_impl(const Nav
 
   // Op diff
   eqn.operateur(0).l_op_base().contribuer_a_avec(present,mat_morse);
-  eqn.operateur(0).ajouter(secmem);
+  eqn.operateur(0).ajouter(tab_secmem);
 
   const Fluide_Dilatable_base& fluide_dil=ref_cast(Fluide_Dilatable_base,eqn.milieu());
   const DoubleTab& tab_rho_face_np1 = fluide_dil.rho_face_np1(), &tab_rho_face_n=fluide_dil.rho_face_n();
   const int nb_compo = present.line_size();
-  const IntVect& tab1 = mat_morse.get_tab1(), &tab2 = mat_morse.get_tab2();
 
-  DoubleVect& coeff = mat_morse.get_set_coeff();
-  ToDo_Kokkos("critical for implicit");
-  for (int i=0; i<mat_morse.nb_lignes(); i++)
+  CIntArrView tab1 = mat_morse.get_tab1().view_ro();
+  CIntArrView tab2 = mat_morse.get_tab2().view_ro();
+  CDoubleArrView rho_face_np1 = static_cast<const ArrOfDouble&>(tab_rho_face_np1).view_ro();
+  DoubleArrView coeff = static_cast<ArrOfDouble&>(mat_morse.get_set_coeff()).view_rw();
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), mat_morse.nb_lignes(), KOKKOS_LAMBDA(const int i)
+  {
     for (int k=tab1(i)-1; k<tab1(i+1)-1; k++)
       {
         int j = tab2(k)-1;
-        double rapport = tab_rho_face_np1(j/nb_compo);
+        double rapport = rho_face_np1(j/nb_compo);
         coeff(k) /= rapport;
       }
+  });
+  end_gpu_timer(__KERNEL_NAME__);
 
   rho_vitesse_impl(tab_rho_face_np1,present,rhovitesse); // rho*U
 
   // Op conv
   eqn.operateur(1).l_op_base().contribuer_a_avec(rhovitesse,mat_morse);
-  eqn.operateur(1).ajouter(rhovitesse,secmem);
+  eqn.operateur(1).ajouter(rhovitesse,tab_secmem);
 
   // sources
-  eqn.sources().ajouter(secmem);
+  eqn.sources().ajouter(tab_secmem);
   eqn.sources().contribuer_a_avec(present,mat_morse);
 
   // on resout en rho u on stocke donc rho u dans present
   rho_vitesse_impl(tab_rho_face_np1,present,ref_cast_non_const(DoubleTab,present));
-  mat_morse.ajouter_multvect(present,secmem);
+  mat_morse.ajouter_multvect(present, tab_secmem);
 
   /*
    * contribution a la matrice de l'inertie :
@@ -211,10 +215,10 @@ void Navier_Stokes_Fluide_Dilatable_Proto::assembler_avec_inertie_impl(const Nav
   eqn.solv_masse().ajouter_masse(dt,mat_morse,0);
 
   rho_vitesse_impl(tab_rho_face_n,eqn.inconnue().passe(),rhovitesse);
-  eqn.solv_masse().ajouter_masse(dt,secmem,rhovitesse,0);
+  eqn.solv_masse().ajouter_masse(dt,tab_secmem,rhovitesse,0);
 
   // blocage_cl faux si dirichlet u!=0 !!!!!! manque multiplication par rho
-  for (int op=0; op< eqn.nombre_d_operateurs(); op++) eqn.operateur(op).l_op_base().modifier_pour_Cl(mat_morse,secmem);
+  for (int op=0; op< eqn.nombre_d_operateurs(); op++) eqn.operateur(op).l_op_base().modifier_pour_Cl(mat_morse,tab_secmem);
 
   /*
    * correction finale pour les dirichlets
@@ -227,22 +231,23 @@ void Navier_Stokes_Fluide_Dilatable_Proto::assembler_avec_inertie_impl(const Nav
       const Cond_lim_base& la_cl_base = itr.valeur();
       if (sub_type(Dirichlet,la_cl_base))
         {
-
           const Front_VF& la_front_dis = ref_cast(Front_VF,la_cl_base.frontiere_dis());
           int ndeb = la_front_dis.num_premiere_face();
           int nfin = ndeb + la_front_dis.nb_faces();
-          for (int num_face=ndeb; num_face<nfin; num_face++)
-            {
-              if (present.line_size()==1) secmem(num_face)*=tab_rho_face_np1(num_face);
-              else
-                for (int dir=0; dir<Objet_U::dimension; dir++) secmem(num_face,dir)*=tab_rho_face_np1(num_face);
-            }
+          int dim = present.line_size()==1 ? 1 : Objet_U::dimension;
+          DoubleTabView secmem = tab_secmem.view_rw();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(ndeb, nfin), KOKKOS_LAMBDA(const int num_face)
+          {
+            for (int dir=0; dir<dim; dir++)
+              secmem(num_face,dir)*=rho_face_np1(num_face);
+          });
+          end_gpu_timer(__KERNEL_NAME__);
         }
     }
 }
 
 
-void Navier_Stokes_Fluide_Dilatable_Proto::assembler_blocs_avec_inertie(const Navier_Stokes_std& eqn, matrices_t matrices, DoubleTab& secmem, const tabs_t& semi_impl)
+void Navier_Stokes_Fluide_Dilatable_Proto::assembler_blocs_avec_inertie(const Navier_Stokes_std& eqn, matrices_t matrices, DoubleTab& tab_secmem, const tabs_t& semi_impl)
 {
   statistiques().begin_count(assemblage_sys_counter_);
   const std::string& nom_inco = eqn.inconnue().le_nom().getString();
@@ -255,40 +260,44 @@ void Navier_Stokes_Fluide_Dilatable_Proto::assembler_blocs_avec_inertie(const Na
   DoubleTrav rhovitesse(present);
 
   // Op diff
-  eqn.operateur(0).l_op_base().ajouter_blocs(matrices, secmem, semi_impl);
+  eqn.operateur(0).l_op_base().ajouter_blocs(matrices, tab_secmem, semi_impl);
 
   const Fluide_Dilatable_base& fluide_dil=ref_cast(Fluide_Dilatable_base,eqn.milieu());
   const DoubleTab& tab_rho_face_np1 = fluide_dil.rho_face_np1(), &tab_rho_face_n=fluide_dil.rho_face_n();
   const int nb_compo = present.line_size();
-  const IntVect& tab1 = mat->get_tab1(), &tab2 = mat->get_tab2();
 
-  DoubleVect& coeff = mat->get_set_coeff();
-  ToDo_Kokkos("critical for implicit");
-  for (int i=0; i<mat->nb_lignes(); i++)
+  CIntArrView tab1 = mat->get_tab1().view_ro();
+  CIntArrView tab2 = mat->get_tab2().view_ro();
+  CDoubleArrView rho_face_np1 = static_cast<const ArrOfDouble&>(tab_rho_face_np1).view_ro();
+  DoubleArrView coeff = static_cast<ArrOfDouble&>(mat->get_set_coeff()).view_rw();
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), mat->nb_lignes(), KOKKOS_LAMBDA(const int i)
+  {
     for (int k=tab1(i)-1; k<tab1(i+1)-1; k++)
       {
         int j = tab2(k)-1;
-        double rapport = tab_rho_face_np1(j/nb_compo);
+        double rapport = rho_face_np1(j/nb_compo);
         coeff(k) /= rapport;
       }
+  });
+  end_gpu_timer(__KERNEL_NAME__);
 
   rho_vitesse_impl(tab_rho_face_np1,present,rhovitesse); // rho*U
 
   // Op conv
-  eqn.operateur(1).l_op_base().ajouter_blocs(matrices, secmem, {{nom_inco,rhovitesse}});
+  eqn.operateur(1).l_op_base().ajouter_blocs(matrices, tab_secmem, {{nom_inco,rhovitesse}});
   statistiques().end_count(assemblage_sys_counter_);
 
   // sources
   statistiques().begin_count(source_counter_);
   for (int i = 0; i < eqn.sources().size(); i++)
-    eqn.sources()(i)->ajouter_blocs(matrices, secmem, semi_impl);
+    eqn.sources()(i)->ajouter_blocs(matrices, tab_secmem, semi_impl);
   statistiques().end_count(source_counter_);
 
   statistiques().begin_count(assemblage_sys_counter_);
   // on resout en rho u on stocke donc rho u dans present
   rho_vitesse_impl(tab_rho_face_np1,present,ref_cast_non_const(DoubleTab,present));
-  mat->ajouter_multvect(present,secmem);
-  eqn.operateur_gradient()->ajouter_blocs(matrices, secmem, semi_impl);
+  mat->ajouter_multvect(present,tab_secmem);
+  eqn.operateur_gradient()->ajouter_blocs(matrices, tab_secmem, semi_impl);
 
   /*
    * contribution a la matrice de l'inertie :
@@ -301,10 +310,10 @@ void Navier_Stokes_Fluide_Dilatable_Proto::assembler_blocs_avec_inertie(const Na
   const double dt=eqn.schema_temps().pas_de_temps();
   eqn.solv_masse().ajouter_masse(dt,*mat,0);
   rho_vitesse_impl(tab_rho_face_n,eqn.inconnue().passe(),rhovitesse);
-  eqn.solv_masse().ajouter_masse(dt,secmem,rhovitesse,0);
+  eqn.solv_masse().ajouter_masse(dt,tab_secmem,rhovitesse,0);
 
   // blocage_cl faux si dirichlet u!=0 !!!!!! manque multiplication par rho
-  for (int op=0; op< eqn.nombre_d_operateurs(); op++) eqn.operateur(op).l_op_base().modifier_pour_Cl(*mat,secmem);
+  for (int op=0; op< eqn.nombre_d_operateurs(); op++) eqn.operateur(op).l_op_base().modifier_pour_Cl(*mat,tab_secmem);
 
   /*
    * correction finale pour les dirichlets
@@ -321,15 +330,17 @@ void Navier_Stokes_Fluide_Dilatable_Proto::assembler_blocs_avec_inertie(const Na
           const Front_VF& la_front_dis = ref_cast(Front_VF,la_cl_base.frontiere_dis());
           int ndeb = la_front_dis.num_premiere_face();
           int nfin = ndeb + la_front_dis.nb_faces();
-          for (int num_face=ndeb; num_face<nfin; num_face++)
-            {
-              if (present.line_size()==1) secmem(num_face)*=tab_rho_face_np1(num_face);
-              else
-                for (int dir=0; dir<Objet_U::dimension; dir++) secmem(num_face,dir)*=tab_rho_face_np1(num_face);
-            }
+          int dim = present.line_size()==1 ? 1 : Objet_U::dimension;
+          DoubleTabView secmem = tab_secmem.view_rw();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(ndeb, nfin), KOKKOS_LAMBDA(const int num_face)
+          {
+            for (int dir=0; dir<dim; dir++)
+              secmem(num_face,dir)*=rho_face_np1(num_face);
+          });
+          end_gpu_timer(__KERNEL_NAME__);
         }
     }
-  secmem.echange_espace_virtuel();
+  tab_secmem.echange_espace_virtuel();
   statistiques().end_count(assemblage_sys_counter_);
 
 }
