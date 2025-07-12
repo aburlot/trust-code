@@ -51,6 +51,7 @@ run()
    then
       np=""
    else  
+      echo "Partition for $np MPI..." 
       make_PAR.data $jdd $np 1>/dev/null 2>&1
       jdd=PAR"_"$jdd
    fi
@@ -88,7 +89,12 @@ else
    GPU_ARCH=""
    [ "$TRUST_USE_CUDA" = 1 ] && GPU_ARCH=_cc$TRUST_CUDA_CC
    [ "$TRUST_USE_ROCM" = 1 ] && GPU_ARCH=_$ROCM_ARCH
+   # Run:
    run $HOST$GPU_ARCH $np
+   if [ $HOST = topaze ] || [ $HOST = adastra ] # Test strong scalability on multi-node GPU
+   then
+      [ "`grep -i 'nb_parts 8' $jdd.data`" != "" ] && run $HOST$GPU_ARCH 8
+   fi
 fi
 # clean
 rm -f *.sauv *.lml *.sqlite *.nsys-rep
