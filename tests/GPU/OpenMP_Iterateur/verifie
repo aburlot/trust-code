@@ -2,13 +2,11 @@
 # Recherche des Copy from device uniquement en optimise (car des copies en plus en debug pour assert_echange_espace_virtuel())
 if [ "$TRUST_USE_GPU" = 1 ] && [ ${exec%mpi_opt} != $exec ]
 then
-   NP=1 && [ ${1#PAR} != $1 ] && NP=8
-   TRUST_CLOCK_ON=1 trust $1 $NP 1>$1.out_err 2>&1 
    limit=`awk '/copyToDevice/ {print $3}' $1.data`
    # On compte uniquement les copies de tableaux (pas le buffer_base en // lors des echange espaces virtuels) entre les pas de temps 2 et 3...
-   awk -v NP=$NP -v limit=$limit '/time step number 2/ {n=0} /Copy to device array/ && /Bytes/ && ($(NF-3)>80) {n+=1} /time step number 3/ {copy=n/NP;print copy"<="limit" copyToDevice per time step.";exit (copy<=limit)}' $1.out_err
+   awk -v limit=$limit '/time step number 2/ {n=0} /Copy to device array/ && /Bytes/ && ($(NF-3)>80) {n+=1} /time step number 3/ {copy=n;print copy"<="limit" copyToDevice per time step.";exit (copy<=limit)}' $1.out
    OK=$?
-   [ $OK = 0 ] && echo "See `pwd`/$1.out_err" && exit -1
+   [ $OK = 0 ] && echo "See `pwd`/$1.out" && exit -1
 fi
 
 #####################################

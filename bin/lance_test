@@ -1238,6 +1238,8 @@ then
           fi
           NB_CPUS=`cat $NOM.data | $TRUST_Awk '/# PARALLEL ONLY/ {print $4}'`
           PARALLEL_ONLY=0
+	  # Enable verbosity on GPU version if copyToDevice in top of the datafile
+	  [ "$TRUST_USE_GPU" = 1 ] && unset TRUST_CLOCK_ON && [ "`head -5 $NOM.data | grep copyToDevice`" != "" ] && TRUST_CLOCK_ON=1
           if [ "$NB_CPUS" = "" ]
           then
              E="echo $ECHO_OPTS 'Running sequential calculation...\c' ;trust $NOM 1>$NOM.out 2>$NOM.err;OK \$?"
