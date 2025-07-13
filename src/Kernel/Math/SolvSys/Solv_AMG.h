@@ -32,11 +32,12 @@ public :
   {
     return resoudre_systeme(mat, b, x);
   };
-  inline bool read_matrix() { return chaine_lue_.contient("READ_MATRIX"); }
 private :
+  void create_amg();
+  void create_block_amg(int,Nom);
   SolveurSys solveur_;
-  Nom library_;
-  double rtol_=0, atol_=0, st_=-1;
+  Nom library_="", solver_="", options_="";
+  double rtol_=-1, atol_=-1, st_=-1;
   bool impr_ = false;
 };
 

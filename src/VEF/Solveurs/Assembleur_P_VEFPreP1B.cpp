@@ -218,15 +218,9 @@ int Assembleur_P_VEFPreP1B::assembler_mat(Matrice& la_matrice,const DoubleVect& 
   set_resoudre_en_u(resoudre_en_u);
 
   SolveurSys& solveur_pression = ref_cast(Navier_Stokes_std, mon_equation.valeur()).solveur_pression();
-  bool read_matrix = false;
-  if (sub_type(Solv_Petsc, solveur_pression.valeur()))
-    read_matrix = ref_cast(Solv_Petsc, solveur_pression.valeur()).read_matrix();
-  else if (sub_type(Solv_AMG, solveur_pression.valeur()))
-    read_matrix = ref_cast(Solv_AMG, solveur_pression.valeur()).read_matrix();
-  if (read_matrix) // Lecture de la matrice dans un fichier
+  if (solveur_pression->read_matrix()) // Lecture de la matrice dans un fichier (uniquement supporte par PETSc pour le moment)
     {
       la_matrice.typer("Matrice_Petsc");
-      //ref_cast(Matrice_Petsc, la_matrice.valeur()).RestoreMatrixFromFile();
     }
   else // Assemblage de la matrice
     {

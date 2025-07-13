@@ -64,10 +64,13 @@ public :
   void set_reuse_preconditioner(bool flag) { reuse_preconditioner_=flag; }
   bool reuse_preconditioner() { return reuse_preconditioner_; }
   const Nom& get_chaine_lue() const { return chaine_lue_ ; };
+  inline bool read_matrix() const { return read_matrix_; };
+  void set_read_matrix(bool flag) { read_matrix_ = flag; };
 
 protected :
   int nouvelle_matrice_; // Drapeau pour savoir si un stockage ou une factorisation est a refaire
   bool save_matrice_ = false;     // Drapeau pour savoir si un stockage disque est a refaire
+  bool read_matrix_ = false; // Drapeau pour savoir si une matrice est a lire
   bool return_on_error_ = false; //drapeau pour savoir si on doit faire exit() ou renvoyer -1 si resoudre_
 
   // Pour lecture/stockage des parametres des solveurs:

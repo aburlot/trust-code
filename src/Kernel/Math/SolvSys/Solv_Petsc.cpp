@@ -868,7 +868,7 @@ void Solv_Petsc::create_solver(Entree& entree)
               }
             case 7:
               {
-                read_matrix_=1;
+                read_matrix_=true;
                 break;
               }
             case 8:
@@ -2040,7 +2040,7 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
         {
           // Matrice deja au format Petsc
           MatricePetsc_ = ref_cast(Matrice_Petsc, la_matrice).getMat();
-          read_matrix_ = 1; // flag reutilise comme si on avait lu la matrice
+          read_matrix_ = true; // flag reutilise comme si on avait lu la matrice
         }
       else
         construit_matrice_morse_intermediaire(la_matrice, matrice_morse_intermediaire);

@@ -74,10 +74,6 @@ public :
   }
 #endif
   inline void reset();
-  inline bool read_matrix() const
-  {
-    return read_matrix_ == 1;
-  }
 #ifdef PETSCKSP_H
   inline Solv_Petsc& operator=(const Solv_Petsc&);
   inline Solv_Petsc(const Solv_Petsc&);
@@ -101,6 +97,12 @@ public :
   };
   PetscErrorCode set_convergence_test(PetscErrorCode (*converge)(KSP,PetscInt,PetscReal,KSPConvergedReason*,void*),void *cctx,PetscErrorCode (*destroy)(void*))
   {
+    if (SolveurPetsc_==nullptr)
+      {
+        // Create solver now just before solve
+        EChaine e(chaine_lue_);
+        create_solver(e);
+      }
     return KSPSetConvergenceTest(SolveurPetsc_, converge, cctx, destroy);
   }
   // Timers:
@@ -183,7 +185,6 @@ protected :
 
 
   int solveur_direct_ = no;          // Pour savoir si l'on manipule un solveur direct et non iteratif
-  int read_matrix_;		// Read constant matrix in a file
   bool gpu_ = false;                    // Utilisation des solveurs GPU de PETSc
   bool amgx_ = false;			// Utilisation des solveurs GPU de AMGX
   const Nom config();    // Nom du fichier de config eventuel
@@ -208,7 +209,6 @@ protected :
 
 inline Solv_Petsc::Solv_Petsc()
 {
-  read_matrix_=0;
 #ifdef PETSCKSP_H
   initialize();
   instance++;

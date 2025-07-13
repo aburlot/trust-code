@@ -53,6 +53,102 @@ Sortie& Solv_AMG::printOn(Sortie& s ) const
  * @throws Process::exit if the input syntax is incorrect or if an unsupported
  * library is specified.
  */
+Entree& Solv_AMG::readOn(Entree& is)
+{
+  // amg GCP|BISGTSTAB|GMRES { atol|rtol doublee [st double] [impr]  }
+  is >> solver_;
+  if ((Motcle)solver_!="GCP")
+    {
+      Cerr << solver_ << " not supported yet for AMG !" << finl;
+      Process::exit();
+    }
+  Motcle motcle;
+  is >> motcle;
+  while (motcle != "}")
+    {
+      if (motcle=="{") {}
+      else if (motcle=="RTOL") is >> rtol_;
+      else if (motcle=="ATOL") is >> atol_;
+      else if (motcle=="ST") is >> st_;
+      else if (motcle=="IMPR") impr_ = true;
+      else if (motcle=="READ_MATRIX") set_read_matrix(true);
+      else if (motcle=="SEUIL") Process::exit("Use atol 'absolute tolerance' instead of seuil.");
+      else
+        {
+          options_+=" ";
+          options_+=motcle;
+        }
+      is >> motcle;
+    }
+  if (atol_<0 && rtol_<0) Process::exit("atol or rtol should be defined in AMG solver.");
+  return is;
+}
+
+void Solv_AMG::create_block_amg(int n, Nom precond)
+{
+  // ToDo: not efficient on P0P1Pa (n==3)
+  chaine_lue_="cli { -ksp_type cg";
+  chaine_lue_+=rtol_>0 ? Nom(rtol_, " -ksp_rtol %e") : Nom(atol_, " -ksp_atol %e");
+  chaine_lue_+=" -ksp_norm_type UNPRECONDITIONED \
+-pc_type fieldsplit \
+-pc_fieldsplit_type additive";
+  if (precond=="gamg")
+    {
+      // ToDo: fix crash on multi-GPU (issue sent to PETSc support)
+      chaine_lue_+=" -fieldsplit_P0_ksp_type preonly \
+-fieldsplit_P0_pc_type gamg \
+-fieldsplit_P0_pc_gamg_threshold 0.01 \
+-fieldsplit_P0_pc_gamg_square_graph 1 \
+-fieldsplit_P1_ksp_type preonly \
+-fieldsplit_P1_pc_type gamg \
+-fieldsplit_P1_pc_gamg_threshold 0.01 \
+-fieldsplit_P1_pc_gamg_square_graph 1";
+      if (n==3)
+        {
+          chaine_lue_+=" -fieldsplit_P2_ksp_type preonly \
+-fieldsplit_P2_ksp_type preonly \
+-fieldsplit_P2_pc_type gamg \
+-fieldsplit_P2_pc_gamg_threshold 0.01 \
+-fieldsplit_P2_pc_gamg_square_graph 1";
+        }
+    }
+  else if (precond=="boomeramg")
+    {
+      chaine_lue_+=" -fieldsplit_P0_ksp_type preonly \
+-fieldsplit_P0_pc_type hypre \
+-fieldsplit_P0_pc_hypre_type boomeramg \
+-fieldsplit_P0_pc_hypre_boomeramg_strong_threshold 0.1 \
+-fieldsplit_P0_pc_hypre_boomeramg_print_statistics 1 \
+-fieldsplit_P1_ksp_type preonly \
+-fieldsplit_P1_pc_type hypre \
+-fieldsplit_P1_pc_hypre_type boomeramg \
+-fieldsplit_P1_pc_hypre_boomeramg_strong_threshold 0.1 \
+-fieldsplit_P1_pc_hypre_boomeramg_print_statistics 1";
+      if (n==3)
+        {
+          chaine_lue_+=" -fieldsplit_P2_ksp_type preonly \
+-fieldsplit_P2_pc_type hypre \
+-fieldsplit_P2_pc_hypre_type boomeramg \
+-fieldsplit_P2_pc_hypre_boomeramg_strong_threshold 0.1 \
+-fieldsplit_P2_pc_hypre_boomeramg_print_statistics 1";
+        }
+    }
+  else if (precond=="amgx")
+    {
+      chaine_lue_+=" -fieldsplit_P0_ksp_type preonly \
+-fieldsplit_P0_pc_type amgx \
+-fieldsplit_P1_ksp_type preonly \
+-fieldsplit_P1_pc_type amgx";
+      if (n==3)
+        {
+          chaine_lue_+=" -fieldsplit_P2_ksp_type preonly \
+-fieldsplit_P2_pc_type amgx";
+        }
+    }
+  else
+    Process::exit("Error in Solv_AMG::create_block_amg");
+  chaine_lue_ +=" }";
+}
 
 Nom boomeramg(double st)
 {
@@ -65,130 +161,23 @@ Nom boomeramg(double st)
     }
   return chaine;
 }
-
-Nom pcfieldsplit_amgx(int n, double rtol, double atol)
+void Solv_AMG::create_amg()
 {
-  Nom chaine("cli { -ksp_type cg ");
-  chaine+=rtol>0 ? "-ksp_rtol " : "-ksp_atol ";
-  chaine+=rtol>0 ? Nom(rtol, "%e ") : Nom(atol, "%e ");
-  chaine+="-ksp_norm_type UNPRECONDITIONED \
--pc_type fieldsplit \
--pc_fieldsplit_type additive \
--fieldsplit_P0_ksp_type preonly \
--fieldsplit_P0_pc_type amgx \
--fieldsplit_P1_ksp_type preonly \
--fieldsplit_P1_pc_type amgx ";
-  if (n==3)
-    {
-      // ToDo: not efficient on P0P1Pa
-      chaine+="-fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_pc_type amgx ";
-    }
-  chaine +="}";
-  return chaine;
-}
-
-Nom pcfieldsplit_boomeramg(int n, double rtol, double atol)
-{
-  Nom chaine("cli { -ksp_type cg ");
-  chaine+=rtol>0 ? "-ksp_rtol " : "-ksp_atol ";
-  chaine+=rtol>0 ? Nom(rtol, "%e ") : Nom(atol, "%e ");
-  chaine+="-ksp_norm_type UNPRECONDITIONED \
--pc_type fieldsplit \
--pc_fieldsplit_type additive \
--fieldsplit_P0_ksp_type preonly \
--fieldsplit_P0_pc_type hypre \
--fieldsplit_P0_pc_hypre_type boomeramg \
--fieldsplit_P0_pc_hypre_boomeramg_strong_threshold 0.1 \
--fieldsplit_P0_pc_hypre_boomeramg_print_statistics 1 \
--fieldsplit_P1_ksp_type preonly \
--fieldsplit_P1_pc_type hypre \
--fieldsplit_P1_pc_hypre_type boomeramg \
--fieldsplit_P1_pc_hypre_boomeramg_strong_threshold 0.1 \
--fieldsplit_P1_pc_hypre_boomeramg_print_statistics 1 ";
-  if (n==3)
-    {
-      // ToDo: not efficient on P0P1Pa
-      chaine+="-fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_pc_type hypre \
--fieldsplit_P2_pc_hypre_type boomeramg \
--fieldsplit_P2_pc_hypre_boomeramg_strong_threshold 0.1 \
--fieldsplit_P2_pc_hypre_boomeramg_print_statistics 1 ";
-    }
-  chaine +="}";
-  return chaine;
-}
-
-Nom pcfieldsplit_gamg(int n, double rtol, double atol)
-{
-  Nom chaine("cli { -ksp_type cg ");
-  chaine+=rtol>0 ? "-ksp_rtol " : "-ksp_atol ";
-  chaine+=rtol>0 ? Nom(rtol, "%e ") : Nom(atol, "%e ");
-  chaine+="-ksp_norm_type UNPRECONDITIONED \
--pc_type fieldsplit \
--pc_fieldsplit_type additive \
--fieldsplit_P0_ksp_type preonly \
--fieldsplit_P0_pc_type gamg \
--fieldsplit_P0_pc_gamg_threshold 0.01 \
--fieldsplit_P0_pc_gamg_square_graph 1 \
--fieldsplit_P1_ksp_type preonly \
--fieldsplit_P1_pc_type gamg \
--fieldsplit_P1_pc_gamg_threshold 0.01 \
--fieldsplit_P1_pc_gamg_square_graph 1 ";
-  if (n==3)
-    {
-      // ToDo: not efficient on P0P1Pa
-      chaine+="-fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_pc_type gamg \
--fieldsplit_P2_pc_gamg_threshold 0.01 \
--fieldsplit_P2_pc_gamg_square_graph 1 ";
-    }
-  chaine +="}";
-  return chaine;
-}
-
-Entree& Solv_AMG::readOn(Entree& is)
-{
-  // amg GCP|BISGTSTAB|GMRES { atol|rtol doublee [st double] [impr]  }
-  Nom options_petsc("");
-  Motcle motcle;
-  Nom solver;
-  is >> motcle;
-  while (motcle != "}")
-    {
-      if (motcle=="GCP" || motcle=="BICGSTAB" || motcle=="GMRES") solver=motcle;
-      else if (motcle=="{") {}
-      else if (motcle=="RTOL") is >> rtol_;
-      else if (motcle=="ATOL") is >> atol_;
-      else if (motcle=="ST") is >> st_;
-      else if (motcle=="IMPR") impr_ = true;
-      else
-        {
-          options_petsc+=motcle;
-          options_petsc+=" ";
-        }
-      is >> motcle;
-    }
   // We select the more efficient/robust one:
-  chaine_lue_ = solver;
+  chaine_lue_ = solver_;
 #if defined(TRUST_USE_CUDA)
   library_ = "petsc_gpu";
   chaine_lue_ += boomeramg(st_); // Best GPU solver
+#if defined(MPIX_CUDA_AWARE_SUPPORT)
   // KSP divergence with cg+boomeramg on multi-node with MPI Cuda Aware so we switch to AmgX:
   // Or switch to bcgs from cg ? Works !!! Strangely KSPSolve is 2x-3x slower on A100X vs MI250X... rocsparse better than cusparse ? And Kokkos-Kernels ?
   // Or use cg+gamg cg+amgx ?
-#if defined(MPIX_CUDA_AWARE_SUPPORT)
   if (Process::nproc()>4)
     {
       library_ = "amgx";
-      chaine_lue_ = solver;
-      chaine_lue_ += " { precond c-amg {";    // Best GPU solver on Nvidia if MPI-GPU Aware OpenMPI 4.x
-      if (st_>=0)
-        {
-          chaine_lue_ += " p:strength_threshold ";
-          chaine_lue_ += Nom(st_, "%e");
-        }
+      chaine_lue_ = solver_;
+      chaine_lue_ += " { precond c-amg {";
+      if (st_>=0) chaine_lue_ += Nom(st_, " p:strength_threshold %e");
       chaine_lue_ += " }";
     }
 #endif
@@ -209,24 +198,10 @@ Entree& Solv_AMG::readOn(Entree& is)
   library_ = "petsc";
   chaine_lue_ += boomeramg(st_); // Best CPU solver
 #endif
-  if (rtol_>0)
-    {
-      chaine_lue_ += " rtol ";
-      chaine_lue_ += Nom(rtol_, "%e");
-    }
-  if (atol_>0)
-    {
-      chaine_lue_ += " atol ";
-      chaine_lue_ += Nom(atol_, "%e");
-    }
+  chaine_lue_ += rtol_>0 ? Nom(rtol_, " rtol %e") : Nom(atol_, " atol %e");
   if (impr_) chaine_lue_ += " impr";
-  if (options_petsc!="")
-    {
-      chaine_lue_ += " ";
-      chaine_lue_ += options_petsc;
-    }
+  if (options_!="") chaine_lue_ += options_;
   chaine_lue_ += " }";
-  return is;
 }
 
 int Solv_AMG::resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, DoubleVect& x)
@@ -234,23 +209,21 @@ int Solv_AMG::resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, Dou
   // We don't create solver during readOn as usual but just before solve to get more infos about matrix/vectors to fine tune
   if (solveur_.est_nul())
     {
-      if (sub_type(MD_Vector_composite, b.get_md_vector().valeur()))
+      create_amg();
+      int nb_blocks = sub_type(MD_Vector_composite, b.get_md_vector().valeur()) ? ref_cast(MD_Vector_composite, b.get_md_vector().valeur()).nb_parts() : 1;
+      if (nb_blocks>1)
         {
-          int nb_blocks = ref_cast(MD_Vector_composite, b.get_md_vector().valeur()).nb_parts();
-          if (nb_blocks>1)
+          // Block matrix : we use PCFieldsplit (eg: VEF) for preconditioner
+          // Much better convergence for P0P1 for instance
+          Cerr << "Detecting " << nb_blocks << "x" << nb_blocks << " blocks into the matrix. Creating a specific block preconditioning:" << finl;
+          if (chaine_lue_.contient("gamg"))
+            create_block_amg(nb_blocks, "gamg");
+          else if (chaine_lue_.contient("boomeramg"))
+            create_block_amg(nb_blocks, "boomeramg");
+          else if (library_=="amgx")
             {
-              // Block matrix : we use PCFieldsplit (eg: VEF) for preconditioner
-              // Much better convergence for P0P1 for instance
-              Cerr << "Detecting " << nb_blocks << "x" << nb_blocks << " blocks into the matrix..." << finl;
-              if (chaine_lue_.contient("boomeramg"))
-                chaine_lue_ = pcfieldsplit_boomeramg(nb_blocks, rtol_, atol_);
-              else if (chaine_lue_.contient("gamg"))
-                chaine_lue_ = pcfieldsplit_gamg(nb_blocks, rtol_, atol_);
-              else if (library_=="amgx")
-                {
-                  library_ = "petsc_gpu";
-                  chaine_lue_ = pcfieldsplit_amgx(nb_blocks, rtol_, atol_);
-                }
+              library_ = "petsc_gpu";
+              create_block_amg(nb_blocks, "amgx");
             }
         }
       Cerr << "====================================================================" << finl;
