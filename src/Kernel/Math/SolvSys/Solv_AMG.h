@@ -39,6 +39,7 @@ private :
   Nom library_="", solver_="", options_="";
   double rtol_=-1, atol_=-1, st_=-1;
   bool impr_ = false;
+  bool petsc_cg_issue_ = false;
 };
 
 #endif

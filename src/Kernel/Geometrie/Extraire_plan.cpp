@@ -264,7 +264,7 @@ Entree& Extraire_plan::interpreter_(Entree& is)
   for (int fac=0; fac<nbfaces; fac++)
     if (marq[fac]==1)
       {
-        Cerr<<fac <<" ";
+        //Cerr<<fac <<" ";
         for (int s=0; s<3; s++)
           les_elems(nb,s)=face_sommets(fac,s);
         // on calcule la normale

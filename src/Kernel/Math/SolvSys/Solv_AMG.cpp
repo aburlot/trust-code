@@ -87,7 +87,8 @@ Entree& Solv_AMG::readOn(Entree& is)
 void Solv_AMG::create_block_amg(int n, Nom precond)
 {
   // ToDo: not efficient on P0P1Pa (n==3)
-  chaine_lue_="cli { -ksp_type cg";
+  chaine_lue_="cli { -ksp_type ";
+  chaine_lue_+=petsc_cg_issue_ ? "bcgs" : "cg";
   chaine_lue_+=rtol_>0 ? Nom(rtol_, " -ksp_rtol %e") : Nom(atol_, " -ksp_atol %e");
   chaine_lue_+=" -ksp_norm_type UNPRECONDITIONED \
 -pc_type fieldsplit \
@@ -135,14 +136,21 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
     }
   else if (precond=="amgx")
     {
+      Cerr << "Warning! PETSc with AmgX preconditioner was not tested yet for nnz>2^31 !" << finl;
       chaine_lue_+=" -fieldsplit_P0_ksp_type preonly \
 -fieldsplit_P0_pc_type amgx \
+-fieldsplit_P0_pc_amgx_verbose 1 \
+-fieldsplit_P0_pc_amgx_print_grid_stats 1 \
 -fieldsplit_P1_ksp_type preonly \
--fieldsplit_P1_pc_type amgx";
+-fieldsplit_P1_pc_type amgx \
+-fieldsplit_P1_pc_amgx_verbose 1 \
+-fieldsplit_P1_pc_amgx_print_grid_stats 1";
       if (n==3)
         {
           chaine_lue_+=" -fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_pc_type amgx";
+-fieldsplit_P2_pc_type amgx \
+-fieldsplit_P2_pc_amgx_verbose 1 \
+-fieldsplit_P2_pc_amgx_print_grid_stats 1";
         }
     }
   else
@@ -169,11 +177,12 @@ void Solv_AMG::create_amg()
   library_ = "petsc_gpu";
   chaine_lue_ += boomeramg(st_); // Best GPU solver
 #if defined(MPIX_CUDA_AWARE_SUPPORT)
-  // KSP divergence with cg+boomeramg on multi-node with MPI Cuda Aware so we switch to AmgX:
-  // Or switch to bcgs from cg ? Works !!! Strangely KSPSolve is 2x-3x slower on A100X vs MI250X... rocsparse better than cusparse ? And Kokkos-Kernels ?
-  // Or use cg+gamg cg+amgx ?
+  // KSP divergence with cg+boomeramg/amgx on multi-node with MPI Cuda Aware so we switch to bcgs !
+  // Strangely KSPSolve is 2x-3x slower on A100X vs MI250X... rocsparse better than cusparse ? And Kokkos-Kernels ?
+  // With Cuda backend, BCGS+AmgX seems better than BCGS+Boomeramg (A100)
   if (Process::nproc()>4)
     {
+      petsc_cg_issue_ = true;
       library_ = "amgx";
       chaine_lue_ = solver_;
       chaine_lue_ += " { precond c-amg {";
