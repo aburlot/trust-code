@@ -26,6 +26,7 @@
 #include <TRUSTVect.h>
 #include <Device.h>
 #include <Tetra_VEF.h>
+#include <Tri_VEF.h>
 
 Implemente_instanciable_sans_constructeur(Op_Conv_VEF_Face,"Op_Conv_Generic_VEF_P1NC",Op_Conv_VEF_base);
 // XD convection_generic convection_deriv generic 0 Keyword for generic calling of upwind and muscl convective scheme in VEF discretization. For muscl scheme, limiters and order for fluxes calculations have to be specified. The available limiters are : minmod - vanleer -vanalbada - chakravarthy - superbee, and the order of accuracy is 1 or 2. Note that chakravarthy is a non-symmetric limiter and superbee may engender results out of physical limits. By consequence, these two limiters are not recommended. NL2 Examples: NL2 convection { generic amont }NL2 convection { generic muscl minmod 1 }NL2 convection { generic muscl vanleer 2 }NL2 NL2 In case of results out of physical limits with muscl scheme (due for instance to strong non-conformal velocity flow field), user can redefine in data file a lower order and a smoother limiter, as : convection { generic muscl minmod 1 }
@@ -1007,58 +1008,35 @@ DoubleTab& Op_Conv_VEF_Face::ajouter(const DoubleTab& transporte,
 }
 
 // methodes recuperes de l'ancien OpVEFFaAmont
-inline void convbisimplicite_dec(const double psc_, const int num1, const int num2,
-                                 const DoubleTab& transporte, const int ncomp,
-                                 DoubleVect& coeff, Matrice_Morse& matrice,
-                                 const DoubleVect& porosite_face, int phi_u_transportant)
+KOKKOS_INLINE_FUNCTION void convbisimplicite_dec(const double psc_, const int num1, const int num2,
+                                                 CDoubleTabView transporte, const int ncomp,
+                                                 Matrice_Morse_View matrice,
+                                                 CDoubleArrView porosite_face, int phi_u_transportant)
 {
   double psc=psc_;
-  if (psc>=0)
+  if (!phi_u_transportant)
+    psc*=porosite_face(psc_>=0 ? num1 : num2);
+  for (int comp=0; comp<ncomp; comp++)
     {
-      if (!phi_u_transportant)
-        psc*=porosite_face(num1);
-      for (int comp=0; comp<ncomp; comp++)
-        {
-          int n0=num1*ncomp+comp;
-          int j0=num2*ncomp+comp;
-          matrice(n0,n0)+=psc;
-          matrice(j0,n0)-=psc;
-        }
-    }
-  else
-    {
-      if (!phi_u_transportant)
-        psc*=porosite_face(num2);
-      for (int comp=0; comp<ncomp; comp++)
-        {
-          int n0=num1*ncomp+comp;
-          int j0=num2*ncomp+comp;
-          matrice(n0,j0)+=psc;
-          matrice(j0,j0)-=psc;
-        }
+      int n1=num1*ncomp+comp;
+      int n2=num2*ncomp+comp;
+      int n = psc_>=0 ? n1 : n2;
+      matrice.atomic_add(n1,n,psc);
+      matrice.atomic_add(n2,n,-psc);
     }
 }
 
-void Op_Conv_VEF_Face::ajouter_contribution(const DoubleTab& transporte, Matrice_Morse& matrice ) const
+void Op_Conv_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Matrice_Morse& matrice_morse) const
 {
-  modifier_matrice_pour_periodique_avant_contribuer(matrice,equation());
+  modifier_matrice_pour_periodique_avant_contribuer(matrice_morse,equation());
   const Domaine_Cl_VEF& domaine_Cl_VEF = la_zcl_vef.valeur();
   const Domaine_VEF& domaine_VEF = le_dom_vef.valeur();
   const Champ_Inc_base& la_vitesse=vitesse();
-  const DoubleTab& vitesse_face_absolue=la_vitesse.valeurs();
-  const IntTab& elem_faces = domaine_VEF.elem_faces();
-  const DoubleTab& face_normales = domaine_VEF.face_normales();
-  const DoubleTab& facette_normales = domaine_VEF.facette_normales();
+
   const Domaine& domaine = domaine_VEF.domaine();
   const Elem_VEF_base& type_elem = domaine_VEF.type_elem();
   const int nfa7 = type_elem.nb_facette();
   const int nb_elem_tot = domaine_VEF.nb_elem_tot();
-  const IntVect& rang_elem_non_std = domaine_VEF.rang_elem_non_std();
-  const IntTab& les_elems=domaine.les_elems();
-
-  const DoubleVect& porosite_face = equation().milieu().porosite_face();
-  const DoubleVect& porosite_elem = equation().milieu().porosite_elem();
-  const DoubleTab& normales_facettes_Cl = domaine_Cl_VEF.normales_facettes_Cl();
 
   int nfac = domaine.nb_faces_elem();
   int nsom = domaine.nb_som_elem();
@@ -1073,17 +1051,7 @@ void Op_Conv_VEF_Face::ajouter_contribution(const DoubleTab& transporte, Matrice
   // En bref pour un polyedre le traitement de la convection depend
   // du type (triangle, tetraedre ...) et du nombre de faces de Dirichlet.
 
-  double psc;
-  //DoubleTab pscl=0;
-  int poly,face_adj,fa7,i,j,n_bord;
-  int num_face, rang ,itypcl;
-  int num10,num20,num_som;
-  int ncomp_ch_transporte;
-  if (transporte.nb_dim() == 1)
-    ncomp_ch_transporte=1;
-  else
-    ncomp_ch_transporte= transporte.dimension(1);
-
+  int ncomp_ch_transporte = tab_transporte.nb_dim() == 1 ? 1 : tab_transporte.dimension(1);
 
   int marq=phi_u_transportant(equation());
 
@@ -1091,19 +1059,14 @@ void Op_Conv_VEF_Face::ajouter_contribution(const DoubleTab& transporte, Matrice
   // soit on a transporte=phi*transporte_ et vitesse_face=vitesse_
   // soit transporte=transporte_ et vitesse_face=phi*vitesse_
   // cela depend si on transporte avec phi u ou avec u.
-  const DoubleTab& vitesse_face=modif_par_porosite_si_flag(vitesse_face_absolue,vitesse_face_,marq,porosite_face);
-  ArrOfInt face(nfac);
-  ArrOfDouble vs(dimension);
-  ArrOfDouble vc(dimension);
-  DoubleTab vsom(nsom,dimension);
-  ArrOfDouble cc(dimension);
-  DoubleVect& coeff = matrice.get_set_coeff();
-  const Elem_VEF_base& type_elemvef= domaine_VEF.type_elem();
+  const DoubleTab& tab_vitesse_face_absolue = la_vitesse.valeurs();
+  const DoubleVect& tab_porosite_face = equation().milieu().porosite_face();
+  const DoubleTab& tab_vitesse_face=modif_par_porosite_si_flag(tab_vitesse_face_absolue,vitesse_face_,marq,tab_porosite_face);
+  const Elem_VEF_base& type_elemvef = domaine_VEF.type_elem();
   int istetra=0;
   Nom nom_elem=type_elemvef.que_suis_je();
   if ((nom_elem=="Tetra_VEF")||(nom_elem=="Tri_VEF"))
     istetra=1;
-
 
   // Les polyedres non standard sont ranges en 2 groupes dans le Domaine_VEF:
   //  - polyedres bords et joints
@@ -1112,140 +1075,136 @@ void Op_Conv_VEF_Face::ajouter_contribution(const DoubleTab& transporte, Matrice
   // dans le domaine
 
   // boucle sur les polys
-  const IntTab& KEL=domaine_VEF.type_elem().KEL();
   int phi_u_transportant_yes=phi_u_transportant(equation());
-  ToDo_Kokkos("critical");
-  for (poly=0; poly<nb_elem_tot; poly++)
-    {
+  int dim = Objet_U::dimension;
+  CIntTabView KEL = type_elemvef.KEL().view_ro();
+  CIntArrView rang_elem_non_std = domaine_VEF.rang_elem_non_std().view_ro();
+  CIntArrView type_elem_Cl = domaine_Cl_VEF.type_elem_Cl().view_ro();
+  CIntTabView elem_faces = domaine_VEF.elem_faces().view_ro();
+  CDoubleTabView3 normales_facettes_Cl = domaine_Cl_VEF.normales_facettes_Cl().view_ro<3>();
+  CDoubleTabView3 facette_normales = domaine_VEF.facette_normales().view_ro<3>();
+  CDoubleArrView porosite_face = tab_porosite_face.view_ro();
+  CDoubleArrView porosite_elem = equation().milieu().porosite_elem().view_ro();
+  CDoubleTabView vitesse = la_vitesse.valeurs().view_ro();
+  CDoubleTabView vitesse_face_absolue = tab_vitesse_face_absolue.view_ro();
+  CDoubleTabView transporte = tab_transporte.view_ro();
+  Matrice_Morse_View matrice;
+  matrice.set(matrice_morse);
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(0, nb_elem_tot), KOKKOS_LAMBDA(const int poly)
+  {
+    int rang = rang_elem_non_std(poly);
+    int itypcl= rang==-1 ? 0 : type_elem_Cl(rang);
 
-      rang = rang_elem_non_std(poly);
-      if (rang==-1)
-        itypcl=0;
-      else
-        itypcl=domaine_Cl_VEF.type_elem_Cl(rang);
+    // calcul des numeros des faces du polyedre
+    int face[4];
+    for (int face_adj=0; face_adj<nfac; face_adj++)
+      face[face_adj] = elem_faces(poly,face_adj);
 
-      // calcul des numeros des faces du polyedre
-      for (face_adj=0; face_adj<nfac; face_adj++)
-        face[face_adj]= elem_faces(poly,face_adj);
+    double vs[3];
+    for (int j=0; j<dim; j++)
+      {
+        vs[j] = vitesse_face_absolue(face[0],j)*porosite_face[face[0]];
+        for (int i=1; i<nfac; i++)
+          vs[j] += vitesse_face_absolue(face[i],j)*porosite_face[face[i]];
+      }
+    // calcul de la vitesse aux sommets des polyedres
+    // On va utliser les fonctions de forme implementees dans la classe Champs_P1_impl ou Champs_Q1_impl
+    double vsom[12];
+    if (istetra==1)
+      {
+        for (int i=0; i<nsom; i++)
+          for (int j=0; j<dim; j++)
+            vsom[i * dim + j] = (vs[j] - dim*vitesse_face_absolue(face[i],j)*porosite_face[face[i]]);
+      }
+    else
+      {
+        // pour que cela soit valide avec les hexa (c'est + lent a calculer...)
+        Process::Kokkos_exit("Implicit scheme for VEF hexa ? Not coded. Even not tested.");
+        /*
+        for (int i=0; i<nsom; i++)
+          {
+            int num_som = les_elems(poly,i);
+            for (int j=0; j<dim; j++)
+              vsom(i,j) = la_vitesse.valeur_a_sommet_compo(num_som,poly,j);
+          } */
+      }
 
-      for (j=0; j<dimension; j++)
-        {
-          vs[j] = vitesse_face_absolue(face[0],j)*porosite_face[face[0]];
-          for (i=1; i<nfac; i++)
-            vs[j]+= vitesse_face_absolue(face[i],j)*porosite_face[face[i]];
-        }
-      // calcul de la vitesse aux sommets des polyedres
-      // On va utliser les fonctions de forme implementees dans la classe Champs_P1_impl ou Champs_Q1_impl
-      if (istetra==1)
-        {
-          for (i=0; i<nsom; i++)
-            for (j=0; j<dimension; j++)
-              vsom(i,j) = (vs[j] - dimension*vitesse_face_absolue(face[i],j)*porosite_face[face[i]]);
-        }
-      else
-        {
-          // pour que cela soit valide avec les hexa (c'est + lent a calculer...)
-          int ncomp;
-          for (j=0; j<nsom; j++)
-            {
-              num_som = les_elems(poly,j);
-              for (ncomp=0; ncomp<dimension; ncomp++)
-                vsom(j,ncomp) = la_vitesse.valeur_a_sommet_compo(num_som,poly,ncomp);
-            }
-        }
+    // calcul de vc (a l'intersection des 3 facettes) vc vs vsom proportionnelles a la prosite
+    double vc[3];
+    if (dim==3)
+      calcul_vc_tetra_views(face,vc,vs,vsom,vitesse,itypcl,porosite_face);
+    else
+      calcul_vc_tri_views(face,vc,vs,vsom,vitesse,itypcl,porosite_face);
+    if (marq==0)
+      {
+        const double porosite_poly=porosite_elem(poly);
+        for (int j=0; j<dim; j++)
+          {
+            vs[j]/=porosite_poly;
+            vc[j]/=porosite_poly;
+            for (int i=0; i<nsom; i++)
+              vsom[i * dim + j]/=porosite_poly;
+          }
+      }
+    // Boucle sur les facettes du polyedre non standard:
+    double cc[3];
+    for (int fa7=0; fa7<nfa7; fa7++)
+      {
+        // normales aux facettes
+        for (int i=0; i<dim; i++)
+          cc[i] = rang==-1 ? facette_normales(poly,fa7,i) : normales_facettes_Cl(rang,fa7,i);
 
+        // On applique le schema de convection a chaque sommet de la facette
+        double psc_c=0,psc_s=0,psc_s2=0;
+        for (int i=0; i<dim; i++)
+          {
+            psc_c += vc[i]*cc[i];
+            psc_s += vsom[KEL(2,fa7) * dim + i]*cc[i];
+            psc_s2 += dim==3 ? vsom[KEL(3,fa7) * dim + i]*cc[i] : 0;
+          }
+        double psc_m=(psc_c+psc_s+psc_s2)/dim;
+        int num10 = face[KEL(0,fa7)];
+        int num20 = face[KEL(1,fa7)];
+        convbisimplicite_dec(psc_m,num10,num20,transporte,ncomp_ch_transporte,matrice,porosite_face,phi_u_transportant_yes);
+      } // fin de boucle sur les facettes.
 
-      // calcul de vc (a l'intersection des 3 facettes) vc vs vsom proportionnelles a la prosite
-      type_elemvef.calcul_vc(face,vc,vs,vsom,vitesse(),itypcl,porosite_face);
-      if (marq==0)
-        {
-          double porosite_poly=porosite_elem(poly);
-          for (i=0; i<nsom; i++)
-            for (j=0; j<dimension; j++)
-              vsom(i,j)/=porosite_poly;
-          for (j=0; j<dimension; j++)
-            {
-              vs[j]/= porosite_elem(poly);
-              vc[j]/=porosite_elem(poly);
-            }
-        }
-      // Boucle sur les facettes du polyedre non standard:
-      for (fa7=0; fa7<nfa7; fa7++)
-        {
-          num10 = face[KEL(0,fa7)];
-          num20 = face[KEL(1,fa7)];
-          // normales aux facettes
-          if (rang==-1)
-            {
-              for (i=0; i<dimension; i++)
-                cc[i] = facette_normales(poly, fa7, i);
-            }
-          else
-            {
-              for (i=0; i<dimension; i++)
-                cc[i] = normales_facettes_Cl(rang,fa7,i);
-            }
-          // On applique le schema de convection a chaque sommet de la facette
-
-
-          double psc_c=0,psc_s=0,psc_m,psc_s2=0;
-          if (dimension==2)
-            {
-              for (i=0; i<dimension; i++)
-                {
-                  psc_c+=vc[i]*cc[i];
-                  psc_s+=vsom(KEL(2,fa7),i)*cc[i];
-                }
-              psc_m=(psc_c+psc_s)/2.;
-            }
-          else
-            {
-              for (i=0; i<dimension; i++)
-                {
-                  psc_c+=vc[i]*cc[i];
-                  psc_s+=vsom(KEL(2,fa7),i)*cc[i];
-                  psc_s2+=vsom(KEL(3,fa7),i)*cc[i];
-                }
-              psc_m=(psc_c+psc_s+psc_s2)/3.;
-            }
-          convbisimplicite_dec(psc_m,num10,num20,transporte,ncomp_ch_transporte,coeff,matrice,porosite_face,phi_u_transportant_yes);
-        } // fin de boucle sur les facettes.
-
-    } // fin de boucle sur les polyedres.
+  }); // fin de boucle sur les polyedres.
+  end_gpu_timer(__KERNEL_NAME__);
 
   // Boucle sur les bords pour traiter les conditions aux limites
   // il y a prise en compte d'un terme de convection pour les
   // conditions aux limites de Neumann_sortie_libre seulement
   int nb_bord = domaine_VEF.nb_front_Cl();
-  for (n_bord=0; n_bord<nb_bord; n_bord++)
+  for (int n_bord=0; n_bord<nb_bord; n_bord++)
     {
-
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
-
       if (sub_type(Neumann_sortie_libre,la_cl.valeur()))
         {
           const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
           int num1 = le_bord.num_premiere_face();
           int num2 = num1 + le_bord.nb_faces();
-          for (num_face=num1; num_face<num2; num_face++)
-            {
-              psc =0;
-              for (i=0; i<dimension; i++)
-                psc += vitesse_face(num_face,i)*face_normales(num_face,i);
-              if (!phi_u_transportant_yes)
-                psc*=porosite_face(num_face);
-              if (psc>0)
-                {
-                  for (j=0; j<ncomp_ch_transporte; j++)
-                    {
-                      int n0=num_face*ncomp_ch_transporte+j;
-                      matrice(n0,n0)+=psc;
-                    }
-                }
-            }
+          CDoubleTabView face_normales = domaine_VEF.face_normales().view_ro();
+          CDoubleTabView vitesse_face = tab_vitesse_face.view_ro();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(num1, num2), KOKKOS_LAMBDA(const int num_face)
+          {
+            double psc=0;
+            for (int i=0; i<dim; i++)
+              psc += vitesse_face(num_face,i)*face_normales(num_face,i);
+            if (!phi_u_transportant_yes)
+              psc*=porosite_face(num_face);
+            if (psc>0)
+              {
+                for (int j=0; j<ncomp_ch_transporte; j++)
+                  {
+                    int n0=num_face*ncomp_ch_transporte+j;
+                    matrice.atomic_add(n0,n0,psc);
+                  }
+              }
+          });
+          end_gpu_timer(__KERNEL_NAME__);
         }
     }
-  modifier_matrice_pour_periodique_apres_contribuer(matrice,equation());
+  modifier_matrice_pour_periodique_apres_contribuer(matrice_morse,equation());
 }
 
 void Op_Conv_VEF_Face::contribue_au_second_membre(DoubleTab& resu ) const
