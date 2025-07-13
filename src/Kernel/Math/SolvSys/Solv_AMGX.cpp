@@ -29,14 +29,12 @@ Implemente_instanciable_sans_constructeur(Solv_AMGX,"Solv_AMGX",Solv_Petsc);
 // printOn
 Sortie& Solv_AMGX::printOn(Sortie& s ) const
 {
-  s << chaine_lue_;
-  return s;
+  return Solv_Petsc::printOn(s);
 }
 // readOn
 Entree& Solv_AMGX::readOn(Entree& is)
 {
-  create_solver(is);
-  return is;
+  return Solv_Petsc::readOn(is);
 }
 
 #ifdef PETSCKSP_H

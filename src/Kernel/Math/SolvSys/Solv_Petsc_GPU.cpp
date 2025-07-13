@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2022, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -23,15 +23,13 @@ Implemente_instanciable_sans_constructeur(Solv_Petsc_GPU,"Solv_Petsc_GPU",Solv_P
 // XD attr rtol floattant rtol 1 Relative threshold for convergence
 
 // printOn
-Sortie& Solv_Petsc_GPU::printOn(Sortie& s ) const
+Sortie& Solv_Petsc_GPU::printOn(Sortie& s) const
 {
-  s << chaine_lue_;
-  return s;
+  return Solv_Petsc::printOn(s);
 }
 
 // readOn
 Entree& Solv_Petsc_GPU::readOn(Entree& is)
 {
-  create_solver(is);
-  return is;
+  return Solv_Petsc::readOn(is);
 }

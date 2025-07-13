@@ -177,7 +177,7 @@ Sortie& Solv_Petsc::printOn(Sortie& s ) const
 // readOn
 Entree& Solv_Petsc::readOn(Entree& is)
 {
-  create_solver(is);
+  lecture(is);
   return is;
 }
 
@@ -207,23 +207,21 @@ void Solv_Petsc::create_solver(Entree& entree)
 {
   if (amgx_ || std::getenv("TRUST_PETSC_VERBOSE")) verbose = true;
 #ifdef PETSCKSP_H
-
   if(!std::is_same<PetscInt, trustIdType>::value)
     Process::exit("Type mismatch!!! PetscInt and trustIdType should be equal!!! PETSc not compiled in 64b??");
-
-  lecture(entree);
-  EChaine is(get_chaine_lue());
 
   Motcle accolade_ouverte("{");
   Motcle accolade_fermee("}");
   Nom pc("");
   Nom motlu;
   Nom ksp;
+  lecture(entree);
+  EChaine is(get_chaine_lue());
   is >> ksp;   // On lit le solveur en premier puis les options du solveur: PETSC ksp { ... }
   is >> motlu; // On lit l'accolade
   if (motlu != accolade_ouverte)
     {
-      Cerr << "Error while reading the parameters of the solver of PETSC " << ksp << " { ... }" << finl;
+      Cerr << "Error while reading the parameters of PETSc solver: " << ksp << " { ... }" << finl;
       Cerr << "We expected " << accolade_ouverte << " instead of " << motlu << finl;
       exit();
     }
@@ -1982,6 +1980,12 @@ PetscErrorCode MyKSPMonitor(KSP SolveurPetsc, PetscInt it, PetscReal residu, voi
 // Solve system
 int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVect& secmem, DoubleVect& solution)
 {
+  if (SolveurPetsc_==nullptr)
+    {
+      // Create solver now just before solve
+      EChaine e(chaine_lue_);
+      create_solver(e);
+    }
 #ifdef PETSCKSP_H
   std::fenv_t fenv;
   std::feholdexcept(&fenv);
