@@ -242,6 +242,12 @@ then
    then
       sed -i "1,$ s?/lib64/libcublas.so?math_libs/lib64/libcublas.so?" $CONFIG || exit -1
    fi
+   TRUST_USE_CHOLMOD_GPU=0 # Link issue
+   if [ "$TRUST_USE_CUDA" = 1 ] && [ "$TRUST_USE_CHOLMOD_GPU" = 1 ]
+   then
+      sed -i "1,$ s?'libsuitesparseconfig.a'?'libsuitesparseconfig.a','libsuitesparse_gpuruntime.a','libgpuqrengine.a'?" $CONFIG || exit -1
+   fi
+   #nedit $CONFIG
 fi
 
 # Hack to have MUMPS sequential:
@@ -265,13 +271,16 @@ with_packages=""
 echo "****************************************"
 
 with_gpu=""
-if [ "$TRUST_USE_GPU" = 1 ]
+
+# Toujours un pb de link en debug avec kokkos-kernels (we enable on cluster only so)
+# Et les performances de kokkos-kernels est moindre (x4 slowdonw on A6000) par rapport aux kernels PETSc CUDA
+ENABLE_KOKKOS=0 && [ "$TRUST_WITHOUT_HOST" = 0 ] && ENABLE_KOKKOS=1
+if [ "$TRUST_USE_GPU" = 1 ] && [ "$ENABLE_KOKKOS" = 1 ]
 then
    # Kokkos #
    with_gpu=$with_gpu" --with-kokkos=1"
    with_gpu=$with_gpu" --with-kokkos-dir=$TRUST_ROOT/lib/src/LIBKOKKOS/$TRUST_ARCH"_opt
-   # Toujours un pb de link en debug avec kokkos-kernels:
-   # add_package kokkos-kernels
+   add_package kokkos-kernels
 fi 
 if [ "$TRUST_USE_CUDA" = 1 ]
 then
@@ -520,15 +529,14 @@ then
    # New (SuiteSparse/Cholmod/UmfPack):
    if [ "$minimal_mumps" = 0 ]
    then
-      if [ "$TRUST_USE_GPU" = 1 ]
+      if [ "$TRUST_USE_CUDA" = 1 ] && [ "$TRUST_USE_CHOLMOD_GPU" = 1 ]
       then
-         # La version GPU (Cholmod) n'est disponible que pour les long (pas pratique...) et cela plante encore sur topaze int64
-         echo "SuiteSparse disabled"
-         #disable_gpu=1 && [ "$TRUST_INT64" = 1 ] && disable_gpu=0
-         #add_package SuiteSparse && with_packages=$with_packages" --download-suitesparse-disablegpu=$disable_gpu"
+         # Cuda support:
+         add_package SuiteSparse 7.10.1
+         with_packages=$with_packages" --with-suitesparse-cuda=1 --with-openmp=1"
       else
-         add_package SuiteSparse
-      fi
+         add_package SuiteSparse 7.7.0
+      fi	  
    fi
    # New (Pastix) pb sous cygwin
    # Test (27/06/15 : probleme pour portabilite sur Ubuntu16 entre autre)
