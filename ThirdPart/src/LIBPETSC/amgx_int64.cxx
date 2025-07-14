@@ -261,20 +261,20 @@ static PetscErrorCode PCSetUp_AMGX(PC pc)
 
     // Extract the CSR data
     PetscBool       done;
-    const PetscInt *colIndices64;
-    const PetscInt *rowOffsets64;
+    const PetscInt *colIndices;
+    const PetscInt *rowOffsets;
     std::vector<int> rowOffsets32;
-    PetscCall(MatGetRowIJ(amgx->localA, 0, PETSC_FALSE, PETSC_FALSE, &amgx->nLocalRows, &rowOffsets64, &colIndices64, &done));
+    PetscCall(MatGetRowIJ(amgx->localA, 0, PETSC_FALSE, PETSC_FALSE, &amgx->nLocalRows, &rowOffsets, &colIndices, &done));
     // Prepare array with int:
     for (int i=0; i<amgx->nLocalRows+1;i++)
-        rowOffsets32.push_back((int)rowOffsets64[i]);
+        rowOffsets32.push_back((int)rowOffsets[i]);
     PetscCheck(done, amgx->comm, PETSC_ERR_PLIB, "MatGetRowIJ was not successful");
     PetscCheck(amgx->nLocalRows < std::numeric_limits<int>::max(), PETSC_COMM_SELF, PETSC_ERR_PLIB, "AmgX restricted to int local rows but nLocalRows = %" PetscInt_FMT " > max<int>", amgx->nLocalRows);
 
     if (is_dev_ptrs) {
-      PetscCallCUDA(cudaMemcpy(&amgx->nnz, &rowOffsets64[amgx->nLocalRows], sizeof(long), cudaMemcpyDefault));
+      PetscCallCUDA(cudaMemcpy(&amgx->nnz, &rowOffsets[amgx->nLocalRows], sizeof(long), cudaMemcpyDefault));
     } else {
-      amgx->nnz = rowOffsets64[amgx->nLocalRows];
+      amgx->nnz = rowOffsets[amgx->nLocalRows];
     }
 
     PetscCheck(amgx->nnz < std::numeric_limits<int>::max(), PETSC_COMM_SELF, PETSC_ERR_PLIB, "Support for 64-bit integer nnz not yet implemented, nnz = %" PetscInt_FMT ".", amgx->nnz);
@@ -298,13 +298,13 @@ static PetscErrorCode PCSetUp_AMGX(PC pc)
     PetscCallAmgX(AMGX_distribution_create(&dist, amgx->cfg));
     //PetscCallAmgX(AMGX_distribution_set_32bit_colindices(dist, true));
     PetscCallAmgX(AMGX_distribution_set_partition_data(dist, AMGX_DIST_PARTITION_OFFSETS, partitionOffsets.data()));
-    PetscCallAmgX(AMGX_matrix_upload_distributed(amgx->A, amgx->nGlobalRows, (int)amgx->nLocalRows, (int)amgx->nnz, amgx->bSize, amgx->bSize, &rowOffsets32[0], colIndices64, amgx->values, NULL, dist));
+    PetscCallAmgX(AMGX_matrix_upload_distributed(amgx->A, amgx->nGlobalRows, (int)amgx->nLocalRows, (int)amgx->nnz, amgx->bSize, amgx->bSize, &rowOffsets32[0], colIndices, amgx->values, NULL, dist));
     PetscCallAmgX(AMGX_solver_setup(amgx->solver, amgx->A));
     PetscCallAmgX(AMGX_vector_bind(amgx->sol, amgx->A));
     PetscCallAmgX(AMGX_vector_bind(amgx->rhs, amgx->A));
 
     PetscInt nlr = 0;
-    PetscCall(MatRestoreRowIJ(amgx->localA, 0, PETSC_FALSE, PETSC_FALSE, &nlr, &rowOffsets64, &colIndices64, &done));
+    PetscCall(MatRestoreRowIJ(amgx->localA, 0, PETSC_FALSE, PETSC_FALSE, &nlr, &rowOffsets, &colIndices, &done));
   } else {
     // The fast path for if the sparsity pattern persists
     PetscCallAmgX(AMGX_matrix_replace_coefficients(amgx->A, amgx->nLocalRows, amgx->nnz, amgx->values, NULL));
@@ -429,7 +429,7 @@ std::string map_reverse_lookup(const std::map<std::string, T> &map, const T &key
   return "";
 }
 
-static PetscErrorCode PCSetFromOptions_AMGX(PC pc, PetscOptionItems *PetscOptionsObject)
+static PetscErrorCode PCSetFromOptions_AMGX(PC pc, PetscOptionItems PetscOptionsObject)
 {
   PC_AMGX      *amgx          = (PC_AMGX *)pc->data;
   constexpr int MAX_PARAM_LEN = 128;

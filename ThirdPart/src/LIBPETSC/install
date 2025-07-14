@@ -299,10 +299,10 @@ then
    echo "CUDA support for PETSc with: "$with_gpu
 elif [ "$TRUST_USE_ROCM" = 1 ]
 then
-   with_gpu="--with-hip --with-hip-arch=$ROCM_ARCH --HIPFLAGS=-fPIC --with-hip-dir=$ROCM_PATH"
+   with_gpu=$with_gpu" --with-hip --with-hip-arch=$ROCM_ARCH --HIPFLAGS=-fPIC --with-hip-dir=$ROCM_PATH"
    echo "ROCM support for PETSc with: "$with_gpu
 else
-   with_gpu="--with-cudac=0" # Disable the Cuda Compiler search
+   with_gpu=$with_gpu" --with-cudac=0" # Disable the Cuda Compiler search
    echo "GPU support is not activated for PETSc "
 fi
 echo "****************************************"
@@ -470,9 +470,14 @@ then
    CONFIG=config/BuildSystem/config/packages/amgx.py
    # Try to hack int32 limitation:
    sed -i "1,$ s?self.requires32bitint = 1?self.requires32bitint = 0?" $CONFIG || exit -1
-   # meld $DIR/amgx.cxx src/ksp/pc/impls/amgx/amgx.cxx
-   cp $DIR/amgx.cxx src/ksp/pc/impls/amgx/amgx.cxx || exit -1
    #nedit $CONFIG
+   diff $DIR/amgx_int32.cxx src/ksp/pc/impls/amgx/amgx.cxx 1>/dev/null 2>&1
+   if [ $? != 0 ]
+   then
+      echo "amgx.cxx changed in PETSc! You need to update your patched version."
+      meld src/ksp/pc/impls/amgx/amgx.cxx $DIR/amgx_int32.cxx $DIR/amgx_int64.cxx   
+   fi
+   cp $DIR/amgx_int64.cxx src/ksp/pc/impls/amgx/amgx.cxx || exit -1
 fi
 
 #############
