@@ -281,13 +281,74 @@ struct Matrice_Morse_View
     symetrique_ = matrice.get_symmetric();
     sorted_ = matrice.sorted_;
   }
-  // Replace double &operator()(int i, int j) by several dedicated function for better performance and fix HSA error on adastra (zero_ on host)
+
   KOKKOS_INLINE_FUNCTION
-  double& operator()(int i, int j) const
+  double& diag(int i) const
   {
-    if (symetrique_!=2 || i!=j) Process::Kokkos_exit("Not implemented yet in Matrice_Morse_View::operator()");
+    if (symetrique_!=2) Process::Kokkos_exit("You are not using a Matrice_Morse_Diag !");
     return coeff_v(tab1_v(i)-1);
   }
+
+  KOKKOS_INLINE_FUNCTION
+  const double& operator()(int i, int j) const
+  {
+    if (symetrique_==2) Process::Kokkos_exit("Error, use Matrice_Morse_View::diag(int i)");
+    if ((symetrique_==1) && ((j-i)<0))
+      {
+        // std::swap(i,j) refused by HIP:  reference to __host__ function 'swap<int>' in __host__ __device__ function
+        // Kokkos::kokkos_swap(i,j); refused by old Kokkos 3.7 (C++14)
+        int k = j;
+        j = i;
+        i = k;
+      }
+    int k1=tab1_v(i)-1;
+    int k2=tab1_v(i+1)-1;
+    /* ToDo Kokkos for faster access:
+    if (sorted_)
+      {
+        XXX
+      }
+    else */
+    for (int k=k1; k<k2; k++)
+      if (tab2_v(k)-1 == j)
+        return coeff_v(k);
+    printf("Error Matrice_Morse_View(%d, %d) not defined!\n", (True_int)i, (True_int)j);
+    Process::Kokkos_exit("Error");
+    return coeff_v(0);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void store(int i, int j, double coeff, bool atomic=false) const
+  {
+    if ((symetrique_==1) && ((j-i)<0))
+      {
+        // std::swap(i,j) refused by HIP:  reference to __host__ function 'swap<int>' in __host__ __device__ function
+        // Kokkos::kokkos_swap(i,j); refused by old Kokkos 3.7 (C++14)
+        int k = j;
+        j = i;
+        i = k;
+      }
+    int k1=tab1_v(i)-1;
+    int k2=tab1_v(i+1)-1;
+    /* ToDo Kokkos for faster access:
+    if (sorted_)
+      {
+        XXX
+      }
+    else */
+    for (int k=k1; k<k2; k++)
+      if (tab2_v(k)-1 == j)
+        {
+          if (atomic) Kokkos::atomic_store(&coeff_v(k), coeff);
+          else coeff_v(k) = coeff;
+          return;
+        }
+    printf("Error Matrice_Morse_View::store(%d, %d, value) not defined!\n", (True_int)i, (True_int)j);
+    Process::Kokkos_exit("Error");
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void atomic_store(int i, int j, double coeff) const { store(i,j,coeff,true); }
 
   KOKKOS_INLINE_FUNCTION
   void atomic_add(int i, int j, double coeff) const { add(i,j,coeff,true); }
@@ -322,10 +383,8 @@ struct Matrice_Morse_View
           else coeff_v(k) += coeff;
           return;
         }
-#ifndef NDEBUG
-    printf("Error Matrice_Morse::operator(%d, %d) not defined!\n", (True_int)i, (True_int)j);
+    printf("Error Matrice_Morse_View::add(%d, %d, value) not defined!\n", (True_int)i, (True_int)j);
     Process::Kokkos_exit("Error");
-#endif
   }
 };
 #endif

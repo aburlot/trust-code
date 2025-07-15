@@ -2243,7 +2243,7 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution(const DoubleTab& transporte_
   const int nb_faces_elem = domaine_VEF.domaine().nb_faces_elem();
   const int nb_comp=transporte_2.line_size();
 
-  DoubleTab Kij(nb_elem_tot,nb_faces_elem,nb_faces_elem);
+  DoubleTrav Kij(nb_elem_tot,nb_faces_elem,nb_faces_elem);
   Kij=0.;
 
   //
@@ -2252,8 +2252,8 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution(const DoubleTab& transporte_
   const Champ_P1NC& la_vitesse=ref_cast( Champ_P1NC, vitesse_.valeur());
   const DoubleTab& vitesse_2=la_vitesse.valeurs();
   const DoubleVect& porosite_face = equation().milieu().porosite_face();
-  DoubleTab transporte_;
-  DoubleTab vitesse_face_;
+  DoubleTrav transporte_;
+  DoubleTrav vitesse_face_;
 
   // soit on a transporte=phi*transporte_ et vitesse=vitesse_
   // soit transporte=transporte_ et vitesse=phi*vitesse_
@@ -2275,51 +2275,49 @@ void Op_Conv_EF_VEF_P1NC_Stab::modifier_pour_Cl (Matrice_Morse& matrice, DoubleT
   Op_Conv_VEF_Face::modifier_pour_Cl(matrice,secmem);
 }
 
-void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_operateur_centre(const DoubleTab& Kij, const DoubleTab& transporte, Matrice_Morse& matrice) const
+void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_operateur_centre(const DoubleTab& tab_Kij, const DoubleTab& transporte, Matrice_Morse& matrice_morse) const
 {
   const Domaine_VEF& domaine_VEF=le_dom_vef.valeur();
   const Domaine_Cl_VEF& domaine_Cl_VEF = la_zcl_vef.valeur();
 
-  const IntTab& elem_faces=domaine_VEF.elem_faces();
-  const IntTab& face_voisins = domaine_VEF.face_voisins();
 
   const int nb_elem_tot=domaine_VEF.nb_elem_tot();
-  const int nb_faces_elem=elem_faces.dimension(1);
+  const int nb_faces_elem=domaine_VEF.elem_faces().dimension(1);
   const int nb_bord=domaine_Cl_VEF.nb_cond_lim();
 
   const int nb_comp=transporte.line_size();
 
-  int elem=0, facei=0,facei_loc=0, facej=0,facej_loc=0;
-  int ligne=0,colonne=0, dim=0, ind_face=0, num1=0,num2=0;
-  int faceToComplete=0, elem_loc=0;
-  double kij=0.,kji=0.;
-  ToDo_Kokkos("critical");
-  for (elem=0; elem<nb_elem_tot; elem++)
-    for (facei_loc=0; facei_loc<nb_faces_elem; facei_loc++)
+  CIntTabView elem_faces = domaine_VEF.elem_faces().view_ro();
+  CDoubleTabView3 Kij = tab_Kij.view_ro<3>();
+  Matrice_Morse_View matrice;
+  matrice.set(matrice_morse);
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
+                       range_2D({0,0}, {nb_elem_tot,nb_faces_elem}), KOKKOS_LAMBDA(
+                         const int elem, const int facei_loc)
+  {
+    int facei = elem_faces(elem, facei_loc);
+
+    for (int facej_loc = facei_loc+1; facej_loc < nb_faces_elem; facej_loc++)
       {
-        facei=elem_faces(elem,facei_loc);
+        int facej = elem_faces(elem, facej_loc);
 
-        for (facej_loc=facei_loc+1; facej_loc<nb_faces_elem; facej_loc++)
+        double kij = Kij(elem, facei_loc, facej_loc);
+        double kji = Kij(elem, facej_loc, facei_loc);
+
+        for (int dim = 0; dim < nb_comp; dim++)
           {
-            facej=elem_faces(elem,facej_loc);
-            assert(facej!=facei);
+            int ligne = facei*nb_comp + dim;
+            int colonne = facej*nb_comp + dim;
 
-            kij=Kij(elem,facei_loc,facej_loc);
-            kji=Kij(elem,facej_loc,facei_loc);
-
-            for (dim=0; dim<nb_comp; dim++)
-              {
-                ligne=facei*nb_comp+dim;
-                colonne=facej*nb_comp+dim;
-
-                //ATTENTION AU SIGNE : ici on code +div(uT)
-                matrice(ligne,ligne)+=kij;
-                matrice(ligne,colonne)-=kij;
-                matrice(colonne,colonne)+=kji;
-                matrice(colonne,ligne)-=kji;
-              }
+            //ATTENTION AU SIGNE : ici on code +div(uT)
+            matrice.atomic_add(ligne, ligne, kij);
+            matrice.atomic_add(ligne, colonne, -kij);
+            matrice.atomic_add(colonne, colonne, kji);
+            matrice.atomic_add(colonne, ligne, -kji);
           }
       }
+  });
+  end_gpu_timer(__KERNEL_NAME__);
 
   //
   //Pour la periodicite
@@ -2329,30 +2327,31 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_operateur_centre(const Doubl
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
       const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
-      num1 = 0;
-      num2=le_bord.nb_faces_tot();//et surtout pas nb_faces sinon on oublie certains coefficients
+      int num1 = 0;
+      int num2=le_bord.nb_faces_tot();//et surtout pas nb_faces sinon on oublie certains coefficients
 
       if (sub_type(Periodique,la_cl.valeur()))
         {
           const Periodique& la_cl_perio = ref_cast(Periodique,la_cl.valeur());
           int faceiAss=0,ind_faceiAss=0;
-
-          for (ind_face=num1; ind_face<num2; ind_face++)
+          const IntTab& face_voisins = domaine_VEF.face_voisins();
+          for (int ind_face=num1; ind_face<num2; ind_face++)
             {
               ind_faceiAss=la_cl_perio.face_associee(ind_face);
 
-              facei=le_bord.num_face(ind_face);
+              int facei=le_bord.num_face(ind_face);
               faceiAss=le_bord.num_face(ind_faceiAss);
 
               //Pour ne parcourir qu'une seule fois les faces perio
               if (facei<faceiAss)
-                for (elem_loc=0; elem_loc<2; elem_loc++)
+                for (int elem_loc=0; elem_loc<2; elem_loc++)
                   {
-                    elem=face_voisins(facei,elem_loc);
+                    int elem=face_voisins(facei,elem_loc);
                     assert(elem!=-1);
 
                     //Calcul du numero local de la face dans "elem"
-                    facei_loc=num_fac_loc(facei,elem_loc);
+                    int facei_loc=num_fac_loc(facei,elem_loc);
+                    int faceToComplete;
                     if (facei_loc!=-1)
                       faceToComplete=faceiAss;
                     else
@@ -2363,23 +2362,23 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_operateur_centre(const Doubl
                       }
 
                     //Calcul des coefficients de la matrice dus a "elem"
-                    for (facej_loc=0; facej_loc<nb_faces_elem; facej_loc++)
+                    for (int facej_loc=0; facej_loc<nb_faces_elem; facej_loc++)
                       {
-                        facej=elem_faces(elem,facej_loc);
+                        int facej=elem_faces(elem,facej_loc);
 
                         if (facej_loc!=facei_loc)
                           {
-                            kij=Kij(elem,facei_loc,facej_loc);
-                            kji=Kij(elem,facej_loc,facei_loc);
+                            double kij=Kij(elem,facei_loc,facej_loc);
+                            //double kji=Kij(elem,facej_loc,facei_loc);
 
-                            for (dim=0; dim<nb_comp; dim++)
+                            for (int dim=0; dim<nb_comp; dim++)
                               {
-                                ligne=faceToComplete*nb_comp+dim;
-                                colonne=facej*nb_comp+dim;
+                                int ligne=faceToComplete*nb_comp+dim;
+                                int colonne=facej*nb_comp+dim;
 
                                 //ATTENTION AU SIGNE : ici on code +div(uT)
-                                matrice(ligne,ligne)+=kij;
-                                matrice(ligne,colonne)-=kij;
+                                matrice_morse(ligne,ligne)+=kij;
+                                matrice_morse(ligne,colonne)-=kij;
                               }
                           }
                       }
@@ -2389,53 +2388,51 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_operateur_centre(const Doubl
     }
 }
 
-void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_diffusion(const DoubleTab& Kij, const DoubleTab& transporte, Matrice_Morse& matrice) const
+void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_diffusion(const DoubleTab& tab_Kij, const DoubleTab& transporte, Matrice_Morse& matrice_morse) const
 {
   const Domaine_VEF& domaine_VEF=le_dom_vef.valeur();
   const Domaine_Cl_VEF& domaine_Cl_VEF = la_zcl_vef.valeur();
-  const IntTab& elem_faces=domaine_VEF.elem_faces();
-  const IntTab& face_voisins = domaine_VEF.face_voisins();
   const int nb_elem_tot=domaine_VEF.nb_elem_tot();
-  const int nb_faces_elem=elem_faces.line_size();
+  const int nb_faces_elem=domaine_VEF.elem_faces().line_size();
   const int nb_bord=domaine_Cl_VEF.nb_cond_lim();
   const int nb_comp=transporte.line_size();
 
-  int elem=0, facei=0,facei_loc=0, facej=0,facej_loc=0;
-  int ligne=0,colonne=0, dim=0, ind_face=0, num1=0,num2=0;
-  int faceToComplete=0, elem_loc=0;
-  double dij=0., coeffij=0.,coeffji=0.;
-  const ArrOfDouble& alpha_tab = alpha_tab_;
-  ToDo_Kokkos("critical");
-  for (elem=0; elem<nb_elem_tot; elem++)
-    for (facei_loc=0; facei_loc<nb_faces_elem; facei_loc++)
+  CIntTabView elem_faces = domaine_VEF.elem_faces().view_ro();
+  CIntTabView face_voisins = domaine_VEF.face_voisins().view_ro();
+  CDoubleArrView alpha_tab = static_cast<const ArrOfDouble&>(alpha_tab_).view_ro();
+  CDoubleTabView3 Kij = tab_Kij.view_ro<3>();
+  Matrice_Morse_View matrice;
+  matrice.set(matrice_morse);
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
+                       range_2D({0,0}, {nb_elem_tot,nb_faces_elem}), KOKKOS_LAMBDA(
+                         const int elem, const int facei_loc)
+  {
+    int facei = elem_faces(elem, facei_loc);
+
+    for (int facej_loc = facei_loc+1; facej_loc < nb_faces_elem; facej_loc++)
       {
-        facei=elem_faces(elem,facei_loc);
+        int facej = elem_faces(elem, facej_loc);
 
-        for (facej_loc=facei_loc+1; facej_loc<nb_faces_elem; facej_loc++)
+        double dij = Dij(elem, facei_loc, facej_loc, Kij);
+
+        double coeffij = alpha_tab(facei)*dij;
+        double coeffji = alpha_tab(facej)*dij;
+
+        for (int dim = 0; dim < nb_comp; dim++)
           {
-            facej=elem_faces(elem,facej_loc);
-            assert(facej!=facei);
+            int ligne = facei*nb_comp + dim;
+            int colonne = facej*nb_comp + dim;
 
-            dij=Dij(elem,facei_loc,facej_loc,Kij);
-            assert(dij>=0);
-
-            coeffij=alpha_tab[facei]*dij;
-            coeffji=alpha_tab[facej]*dij;
-
-            for (dim=0; dim<nb_comp; dim++)
-              {
-                ligne=facei*nb_comp+dim;
-                colonne=facej*nb_comp+dim;
-
-                //ATTENTION AU SIGNE : ici on code +div(uT)
-                //REMARQUE : on utilise la symetrie de l'operateur
-                matrice(ligne,ligne)+=coeffij;
-                matrice(ligne,colonne)-=coeffij;
-                matrice(colonne,colonne)+=coeffji;
-                matrice(colonne,ligne)-=coeffji;
-              }
+            //ATTENTION AU SIGNE : ici on code +div(uT)
+            //REMARQUE : on utilise la symetrie de l'operateur
+            matrice.atomic_add(ligne, ligne, coeffij);
+            matrice.atomic_add(ligne, colonne, -coeffij);
+            matrice.atomic_add(colonne, colonne, coeffji);
+            matrice.atomic_add(colonne, ligne, -coeffji);
           }
       }
+  });
+  end_gpu_timer(__KERNEL_NAME__);
 
   //
   //Pour la periodicite
@@ -2445,29 +2442,30 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_diffusion(const DoubleTab& K
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
       const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
-      num1 = 0;
-      num2=le_bord.nb_faces_tot();//et surtout pas nb_faces() sinon on oublie certains coefficiens
+      int num1 = 0;
+      int num2=le_bord.nb_faces_tot();//et surtout pas nb_faces() sinon on oublie certains coefficiens
 
       if (sub_type(Periodique,la_cl.valeur()))
         {
           const Periodique& la_cl_perio = ref_cast(Periodique,la_cl.valeur());
           int faceiAss=0,ind_faceiAss=0;
 
-          for (ind_face=num1; ind_face<num2; ind_face++)
+          for (int ind_face=num1; ind_face<num2; ind_face++)
             {
-              facei=le_bord.num_face(ind_face);
+              int facei=le_bord.num_face(ind_face);
               ind_faceiAss=la_cl_perio.face_associee(ind_face);
               faceiAss=le_bord.num_face(ind_faceiAss);
 
               //Pour ne parcourir qu'une seule fois les faces perio
               if (facei<faceiAss)
-                for (elem_loc=0; elem_loc<2; elem_loc++)
+                for (int elem_loc=0; elem_loc<2; elem_loc++)
                   {
-                    elem=face_voisins(facei,elem_loc);
+                    int elem=face_voisins(facei,elem_loc);
                     assert(elem!=-1);
 
                     //Calcul du numero local de la face dans "elem"
-                    facei_loc=num_fac_loc(facei,elem_loc);
+                    int facei_loc=num_fac_loc(facei,elem_loc);
+                    int faceToComplete;
                     if (facei_loc!=-1)
                       faceToComplete=faceiAss;
                     else
@@ -2478,26 +2476,26 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_diffusion(const DoubleTab& K
                       }
 
                     //Calcul des coefficients de la matrice dus a "elem"
-                    for (facej_loc=0; facej_loc<nb_faces_elem; facej_loc++)
+                    for (int facej_loc=0; facej_loc<nb_faces_elem; facej_loc++)
                       {
-                        facej=elem_faces(elem,facej_loc);
+                        int facej=elem_faces(elem,facej_loc);
 
                         if (facej_loc!=facei_loc)
                           {
-                            dij=Dij(elem,facei_loc,facej_loc,Kij);
+                            double dij=Dij(elem,facei_loc,facej_loc,tab_Kij);
                             assert(dij>=0);
 
-                            coeffij=alpha_tab[faceToComplete]*dij;
-                            coeffji=alpha_tab[facej]*dij;
+                            double coeffij=alpha_tab_[faceToComplete]*dij;
+                            //double coeffji=alpha_tab_[facej]*dij;
 
-                            for (dim=0; dim<nb_comp; dim++)
+                            for (int dim=0; dim<nb_comp; dim++)
                               {
-                                ligne=faceToComplete*nb_comp+dim;
-                                colonne=facej*nb_comp+dim;
+                                int ligne=faceToComplete*nb_comp+dim;
+                                int colonne=facej*nb_comp+dim;
 
                                 //ATTENTION AU SIGNE : ici on code +div(uT)
-                                matrice(ligne,ligne)+=coeffij;
-                                matrice(ligne,colonne)-=coeffij;
+                                matrice_morse(ligne,ligne)+=coeffij;
+                                matrice_morse(ligne,colonne)-=coeffij;
                               }
                           }
                       }
@@ -2531,15 +2529,12 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_partie_compressible(const Do
   const DoubleVect& porosite_elem = equation().milieu().porosite_elem();
   const DoubleVect& porosite_face = equation().milieu().porosite_face();
 
-  DoubleTab tab_vitesse(vitesse_->valeurs());
+  DoubleTrav tab_vitesse(vitesse_->valeurs());
   for (int i=0; i<tab_vitesse.dimension(0); i++)
     for (int j=0; j<tab_vitesse.line_size(); j++)
       tab_vitesse(i,j)*=porosite_face(i);
 
   const int nb_comp=transporte.line_size();
-  int elem=0,type_elem=0, facei=0,facei_loc=0, faceiAss=0,ind_faceiAss=0;
-  int ligne=0, dim=0, ind_face=0, num1=0,num2=0, faceToComplete=0, elem_loc=0, n_bord=0;
-  double coeff=0., signe=0., div=0.;
 
   double (*formule)(int);
 
@@ -2549,34 +2544,34 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_partie_compressible(const Do
     formule= (dimension==2) ? &formule_2D : &formule_3D;
 
   ToDo_Kokkos("critical");
-  for (elem=0; elem<nb_elem_tot; elem++)
+  for (int elem=0; elem<nb_elem_tot; elem++)
     {
       //Type de l'element : le nombre de faces de Dirichlet
       //qu'il contient
-      type_elem=elem_nb_faces_dirichlet_(elem);
-      coeff=formule(type_elem);
+      int type_elem=elem_nb_faces_dirichlet_(elem);
+      double coeff=formule(type_elem);
 
       //Calcul de la divergence par element
-      div=0.;
-      for (facei_loc=0; facei_loc<nb_faces_elem; facei_loc++)
+      double div=0.;
+      for (int facei_loc=0; facei_loc<nb_faces_elem; facei_loc++)
         {
-          facei=elem_faces(elem,facei_loc);
-          signe=(face_voisins(facei,0)==elem)? 1.:-1.;
+          int facei=elem_faces(elem,facei_loc);
+          int signe=(face_voisins(facei,0)==elem)? 1.:-1.;
 
-          for (dim=0; dim<dimension; dim++)
+          for (int dim=0; dim<dimension; dim++)
             div+=signe*face_normales(facei,dim)*tab_vitesse(facei,dim);
         }
       div*=coeff;
       if (!marq) div/=porosite_elem(elem);
 
       //Calcul de la partie compressible
-      for (facei_loc=0; facei_loc<nb_faces_elem; facei_loc++)
+      for (int facei_loc=0; facei_loc<nb_faces_elem; facei_loc++)
         {
-          facei=elem_faces(elem,facei_loc);
+          int facei=elem_faces(elem,facei_loc);
 
-          for (dim=0; dim<nb_comp; dim++)
+          for (int dim=0; dim<nb_comp; dim++)
             {
-              ligne=facei*nb_comp+dim;
+              int ligne=facei*nb_comp+dim;
               matrice(ligne,ligne)+=div;
             }
         }
@@ -2586,32 +2581,33 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_partie_compressible(const Do
   //Pour la periodicite
   //
   const IntTab& num_fac_loc = domaine_VEF.get_num_fac_loc();
-  for (n_bord=0; n_bord<nb_bord; n_bord++)
+  for (int n_bord=0; n_bord<nb_bord; n_bord++)
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
       const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
-      num1 = 0;
-      num2=le_bord.nb_faces();//pour ne parcourir que les faces reelles
+      int num1 = 0;
+      int num2 = le_bord.nb_faces();//pour ne parcourir que les faces reelles
 
       if (sub_type(Periodique,la_cl.valeur()))
         {
           const Periodique& la_cl_perio = ref_cast(Periodique,la_cl.valeur());
 
-          for (ind_face=num1; ind_face<num2; ind_face++)
+          for (int ind_face=num1; ind_face<num2; ind_face++)
             {
-              facei=le_bord.num_face(ind_face);
-              ind_faceiAss=la_cl_perio.face_associee(ind_face);
-              faceiAss=le_bord.num_face(ind_faceiAss);
+              int facei = le_bord.num_face(ind_face);
+              int ind_faceiAss = la_cl_perio.face_associee(ind_face);
+              int faceiAss = le_bord.num_face(ind_faceiAss);
 
               //Pour ne parcourir qu'une seule fois les faces perio
               if (facei<faceiAss)
-                for (elem_loc=0; elem_loc<2; elem_loc++)
+                for (int elem_loc=0; elem_loc<2; elem_loc++)
                   {
-                    elem=face_voisins(facei,elem_loc);
+                    int elem = face_voisins(facei,elem_loc);
                     assert(elem!=-1);
 
                     //Calcul du numero local de la face dans "elem"
-                    facei_loc=num_fac_loc(facei,elem_loc);
+                    int facei_loc=num_fac_loc(facei,elem_loc);
+                    int faceToComplete;
                     if (facei_loc!=-1)
                       faceToComplete=faceiAss;
                     else
@@ -2623,26 +2619,26 @@ void Op_Conv_EF_VEF_P1NC_Stab::ajouter_contribution_partie_compressible(const Do
 
                     //Type de l'element : le nombre de faces de Dirichlet
                     //qu'il contient
-                    type_elem=elem_nb_faces_dirichlet_(elem);
-                    coeff=formule(type_elem);
+                    int type_elem=elem_nb_faces_dirichlet_(elem);
+                    double coeff=formule(type_elem);
 
                     //Calcul de la divergence par element
-                    div=0.;
+                    double div=0.;
                     for (facei_loc=0; facei_loc<nb_faces_elem; facei_loc++)
                       {
                         facei=elem_faces(elem,facei_loc);
-                        signe=(face_voisins(facei,0)==elem)? 1.:-1.;
+                        int signe=(face_voisins(facei,0)==elem)? 1.:-1.;
 
-                        for (dim=0; dim<dimension; dim++)
+                        for (int dim=0; dim<dimension; dim++)
                           div+=signe*face_normales(facei,dim)*tab_vitesse(facei,dim);
                       }
                     div*=coeff;
                     if (!marq) div/=porosite_elem(elem);
 
                     //Calcul de la partie compressible
-                    for (dim=0; dim<nb_comp; dim++)
+                    for (int dim=0; dim<nb_comp; dim++)
                       {
-                        ligne=faceToComplete*nb_comp+dim;
+                        int ligne=faceToComplete*nb_comp+dim;
                         matrice(ligne,ligne)+=div;
                       }
                   }

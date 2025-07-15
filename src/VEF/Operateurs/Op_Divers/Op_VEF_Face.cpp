@@ -595,16 +595,13 @@ int Op_VEF_Face::impr(Sortie& os, const Operateur_base& op) const
 /////////////////////////////////////////
 // Methode pour l'implicite
 /////////////////////////////////////////
-void modif_matrice_pour_periodique_avant_contribuer(Matrice_Morse& matrice, const Equation_base& eqn)
+void modif_matrice_pour_periodique_avant_contribuer(Matrice_Morse& matrice_morse, const Equation_base& eqn)
 {
-  ToDo_Kokkos("critical");
   const int nb_comp = eqn.inconnue().valeurs().line_size();
   const Domaine_Cl_dis_base& domaine_Cl_VEF = eqn.domaine_Cl_dis();
   const Domaine_VF& domaine_VEF = ref_cast(Domaine_VF, eqn.domaine_dis());
   int nb_bords = domaine_VEF.nb_front_Cl();
-  const IntTab& elem_faces = domaine_VEF.elem_faces();
-  const IntTab& face_voisins = domaine_VEF.face_voisins();
-  int nb_faces_elem = elem_faces.dimension(1);
+  int nb_faces_elem = domaine_VEF.elem_faces().dimension(1);
   for (int n_bord = 0; n_bord < nb_bords; n_bord++)
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
@@ -616,11 +613,18 @@ void modif_matrice_pour_periodique_avant_contribuer(Matrice_Morse& matrice, cons
           const Front_VF& le_bord = ref_cast(Front_VF, la_cl->frontiere_dis());
           int num1 = le_bord.num_premiere_face();
           int num2 = num1 + le_bord.nb_faces() / 2;
-          for (int dir = 0; dir < 2; dir++)
-            for (int num_face = num1; num_face < num2; num_face++)
+          CIntTabView elem_faces = domaine_VEF.elem_faces().view_ro();
+          CIntTabView face_voisins = domaine_VEF.face_voisins().view_ro();
+          CIntArrView face_associee = la_cl_perio.face_associee().view_ro();
+          Matrice_Morse_View matrice;
+          matrice.set(matrice_morse);
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(num1, num2),
+                               KOKKOS_LAMBDA(const int num_face)
+          {
+            for (int dir = 0; dir < 2; dir++)
               {
                 int elem1 = face_voisins(num_face, dir);
-                int fac_asso = la_cl_perio.face_associee(num_face - num1) + num1;
+                int fac_asso = face_associee(num_face - num1) + num1;
                 for (int i = 0; i < nb_faces_elem; i++)
                   {
                     int j = elem_faces(elem1, i);
@@ -635,9 +639,9 @@ void modif_matrice_pour_periodique_avant_contribuer(Matrice_Morse& matrice, cons
                                 assert(matrice(n0, n0perio) == 0);
                                 assert(matrice(n0perio, n0) == 0);
                                 assert(matrice(n0, n0) == matrice(n0perio, n0perio));
-                                double titi = (matrice(n0, n0)) / 2.;
-                                matrice(n0, n0) = titi;
-                                matrice(n0perio, n0perio) = titi;
+                                double coeff = (matrice(n0, n0)) / 2.;
+                                matrice.store(n0, n0, coeff);
+                                matrice.store(n0perio, n0perio, coeff);
                               }
                           }
                         else
@@ -646,46 +650,51 @@ void modif_matrice_pour_periodique_avant_contribuer(Matrice_Morse& matrice, cons
                               {
                                 int j20 = j * nb_comp + nc2;
                                 assert(matrice(n0, j20) == matrice(n0perio, j20));
-                                double titi = (matrice(n0, j20) / 2.);
-                                matrice(n0, j20) = titi;
-                                matrice(n0perio, j20) = titi;
+                                double coeff = (matrice(n0, j20) / 2.);
+                                matrice.store(n0, j20, coeff);
+                                matrice.store(n0perio, j20, coeff);
                               }
                           }
-
                       }
                   }
               }
+          });
+          end_gpu_timer(__KERNEL_NAME__);
         }
+      //  matrice.imprimer(Cerr);
     }
-  //  matrice.imprimer(Cerr);
 }
 
-void modif_matrice_pour_periodique_apres_contribuer(Matrice_Morse& matrice, const Equation_base& eqn)
+void modif_matrice_pour_periodique_apres_contribuer(Matrice_Morse& matrice_morse, const Equation_base& eqn)
 {
   const int nb_comp = eqn.inconnue().valeurs().line_size();
   const Domaine_Cl_dis_base& domaine_Cl_VEF = eqn.domaine_Cl_dis();
   const Domaine_VF& domaine_VEF = ref_cast(Domaine_VF, eqn.domaine_dis());
   int nb_bords = domaine_VEF.nb_front_Cl();
-  const IntTab& elem_faces = domaine_VEF.elem_faces();
-  const IntTab& face_voisins = domaine_VEF.face_voisins();
-  int nb_faces_elem = elem_faces.dimension(1);
+  int nb_faces_elem = domaine_VEF.elem_faces().dimension(1);
   for (int n_bord = 0; n_bord < nb_bords; n_bord++)
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
       if (sub_type(Periodique, la_cl.valeur()))
         {
-          ToDo_Kokkos("Critical");
           const Periodique& la_cl_perio = ref_cast(Periodique, la_cl.valeur());
           // on ne parcourt que la moitie des faces periodiques
           // on copiera a la fin le resultat dans la face associe..
           const Front_VF& le_bord = ref_cast(Front_VF, la_cl->frontiere_dis());
           int num1 = le_bord.num_premiere_face();
           int num2 = num1 + le_bord.nb_faces() / 2;
-          for (int dir = 0; dir < 2; dir++)
-            for (int num_face = num1; num_face < num2; num_face++)
+          CIntTabView elem_faces = domaine_VEF.elem_faces().view_ro();
+          CIntTabView face_voisins = domaine_VEF.face_voisins().view_ro();
+          CIntArrView face_associee = la_cl_perio.face_associee().view_ro();
+          Matrice_Morse_View matrice;
+          matrice.set(matrice_morse);
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(num1, num2),
+                               KOKKOS_LAMBDA(const int num_face)
+          {
+            for (int dir = 0; dir < 2; dir++)
               {
                 int elem1 = face_voisins(num_face, dir);
-                int fac_asso = la_cl_perio.face_associee(num_face - num1) + num1;
+                int fac_asso = face_associee(num_face - num1) + num1;
                 for (int i = 0; i < nb_faces_elem; i++)
                   {
                     int j = elem_faces(elem1, i);
@@ -703,19 +712,20 @@ void modif_matrice_pour_periodique_apres_contribuer(Matrice_Morse& matrice, cons
                                   {
                                     int j0 = num_face * nb_comp + nc2;
                                     int j0perio = fac_asso * nb_comp + nc2;
-                                    matrice(n0, j0) += matrice(n0, j0perio);
-                                    matrice(n0, j0perio) = 0;
-                                    matrice(n0perio, j0perio) += matrice(n0perio, j0);
-                                    matrice(n0perio, j0) = 0;
-                                    double titi = (matrice(n0, j0) + matrice(n0perio, j0perio));
-                                    matrice(n0, j0) = titi;
+                                    matrice.atomic_add(n0, j0, matrice(n0, j0perio));
+                                    matrice.store(n0, j0perio, 0);
+                                    matrice.atomic_add(n0perio, j0perio, matrice(n0perio, j0));
+                                    matrice.store(n0perio, j0, 0);
+                                    double coeff = (matrice(n0, j0) +
+                                                    matrice(n0perio, j0perio));
+                                    matrice.store(n0, j0, coeff);
                                     if (nc != nc2)
                                       {
-                                        matrice(n0perio, j0) = titi;
-                                        matrice(n0perio, j0perio) = 0;
+                                        matrice.store(n0perio, j0, coeff);
+                                        matrice.store(n0perio, j0perio, 0);
                                       }
                                     else
-                                      matrice(n0perio, j0perio) = titi;
+                                      matrice.store(n0perio, j0perio, coeff);
                                   }
                               }
                           }
@@ -724,17 +734,19 @@ void modif_matrice_pour_periodique_apres_contribuer(Matrice_Morse& matrice, cons
                             for (int nc2 = 0; nc2 < nb_comp; nc2++)
                               {
                                 int j20 = j * nb_comp + nc2;
-                                double titi = (matrice(n0, j20) + matrice(n0perio, j20));
-                                matrice(n0, j20) = titi;
-                                matrice(n0perio, j20) = titi;
+                                double coeff = (matrice(n0, j20) + matrice(n0perio, j20));
+                                matrice.store(n0, j20, coeff);
+                                matrice.store(n0perio, j20, coeff);
                               }
                           }
                       }
                   }
               }
+          });
+          end_gpu_timer(__KERNEL_NAME__);
         }
+      //  matrice.imprimer(Cerr);
     }
-  //  matrice.imprimer(Cerr);
 }
 
 /*! @brief divise les coefficients sur les ligne des faces periodiques par 2 en prevision de l'application modifier_matrice_pour_periodique_apres_contribuer qui va sommer les 2 lignes des faces periodiques associees
