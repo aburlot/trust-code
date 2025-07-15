@@ -110,7 +110,7 @@ def showMesh(filename, mesh="dom"):
     field.plot()
 
 
-def showField(filename, plottype, name, 
+def showField(filename, plottype, name,
               plotmesh=True, title="", iteration=-1, size=10, max=None, min=None,):
     """
     Methods to plot a field from a .lata file.
@@ -151,7 +151,7 @@ class Show(object):
     Class Show, which allow to use visit command in a python environment
     """
 
-    def __init__(self, filename="", plottype="", name="", nX=1, nY=1, 
+    def __init__(self, filename="", plottype="", name="", nX=1, nY=1,
                  plotmesh=True, iteration=-1, empty=False, size=10, title="",
                  subtitle="", max=None, min=None, active=True, visitLog=False,
                  verbose=0, show=True):
@@ -360,7 +360,7 @@ class Show(object):
         plottype : str
             The plottype we want (Pseudocolor, vector, ...)
         name : str
-            The name of the field.  
+            The name of the field.
         plotmesh : bool
             If true plot the mesh asociate with .lata file (default=True)
         min : float
@@ -394,16 +394,14 @@ class Show(object):
             )
             f.write("DrawPlots() \n")
             # Boucle if pour roter le plot 3d de 30 degre ,selon l'axe x et y (2 rotations).
+            f.write("p = PseudocolorAttributes()\n")
             if min is not None:
-                f.write("p=PseudocolorAttributes()\n")
-                f.write("p.minFlag=1\n")
-                f.write("p.min=" + str(min) + "\n")
-                f.write("SetPlotOptions(p)\n")
+                f.write("p.minFlag = 1\n")
+                f.write(f"p.min = {min}\n")
             if max is not None:
-                f.write("p=PseudocolorAttributes()\n")
-                f.write("p.maxFlag=1\n")
-                f.write("p.max=" + str(max) + "\n")
-                f.write("SetPlotOptions(p)\n")
+                f.write("p.maxFlag = 1\n")
+                f.write(f"p.max = {max}\n")
+            f.write("SetPlotOptions(p)\n")
 
         saveFile(filename, plottype, name, self.iteration, active=True)
 
@@ -1334,9 +1332,9 @@ class export_lata_base:
         Extract Max of data from a .lata file
 
         Parameters
-        --------- 
+        ---------
         file : str
-            Name of the file (concatenate with saveFile) to register the max value. 
+            Name of the file (concatenate with saveFile) to register the max value.
         iteration : int
             number of the time frame or iteration (default=-1)
 
@@ -1362,7 +1360,7 @@ class export_lata_base:
         Parameters
         ---------
         file : str
-            Name of the file (concatenate with saveFile) to register the min value. 
+            Name of the file (concatenate with saveFile) to register the min value.
         iteration : int
             number of the time frame or iteration (default=-1)
 
@@ -1430,4 +1428,3 @@ def _extractMeshName(plottype, name):
             return match.group(2)
         else:
             raise ValueError("Error: Names of the localisation and mesh must be integrated in the field name")
-
