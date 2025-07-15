@@ -274,7 +274,7 @@ with_gpu=""
 
 # Toujours un pb de link en debug avec kokkos-kernels (we enable on cluster only so)
 # Et les performances de kokkos-kernels est moindre (x4 slowdonw on A6000) par rapport aux kernels PETSc CUDA
-ENABLE_KOKKOS=0 && [ "$TRUST_WITHOUT_HOST" = 0 ] && ENABLE_KOKKOS=1
+ENABLE_KOKKOS=0 #&& [ "$TRUST_WITHOUT_HOST" = 0 ] && ENABLE_KOKKOS=1
 if [ "$TRUST_USE_GPU" = 1 ] && [ "$ENABLE_KOKKOS" = 1 ]
 then
    # Kokkos #
