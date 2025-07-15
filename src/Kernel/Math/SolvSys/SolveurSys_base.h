@@ -70,13 +70,13 @@ public :
 protected :
   int nouvelle_matrice_; // Drapeau pour savoir si un stockage ou une factorisation est a refaire
   bool save_matrice_ = false;     // Drapeau pour savoir si un stockage disque est a refaire
-  bool read_matrix_ = false; // Drapeau pour savoir si une matrice est a lire
   bool return_on_error_ = false; //drapeau pour savoir si on doit faire exit() ou renvoyer -1 si resoudre_
 
   // Pour lecture/stockage des parametres des solveurs:
   Nom chaine_lue_;
   void lecture(Entree&);
 private:
+  bool read_matrix_ = false; // Drapeau pour savoir si une matrice est a lire
   int limpr_;            // Drapeau pour impression ou non de la convergence du solveur
   int schema_temps_limpr_; // Authorization printing flag set by the time scheme
   int echange_ev_resu_;  // User set flag to tell if the solver must do echange_espace_virtuel() on the result.

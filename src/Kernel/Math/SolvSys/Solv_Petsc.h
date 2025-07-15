@@ -324,7 +324,7 @@ inline Solv_Petsc::Solv_Petsc(const Solv_Petsc& org):Solv_Externe::Solv_Externe(
   initialize();
   instance++;
   // Journal()<<"copie solv_petsc "<<instance<<finl;
-  read_matrix_=org.read_matrix();
+  set_read_matrix(org.read_matrix());
   gpu_=org.gpu();
   amgx_=org.amgx();
   option_prefix_=org.option_prefix_;

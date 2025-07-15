@@ -111,6 +111,7 @@ void SolveurSys_base::lecture(Entree& is)
   while (nb_acco!=0)
     {
       is >> nomlu;
+      if ((Motcle)nomlu=="READ_MATRIX") set_read_matrix(true);
       prov<<nomlu<<" ";
       if (nomlu==accolade_ouverte)
         nb_acco++;

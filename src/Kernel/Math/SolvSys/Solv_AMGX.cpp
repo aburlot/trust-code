@@ -61,7 +61,7 @@ void Solv_AMGX::initialize()
 void Solv_AMGX::Create_objects(const Matrice_Morse& mat_morse, int blocksize)
 {
   initialize();
-  if (read_matrix_)
+  if (read_matrix())
     {
       Cerr << "Read_matrix not supported on GPU yet." << finl;
       Process::exit();

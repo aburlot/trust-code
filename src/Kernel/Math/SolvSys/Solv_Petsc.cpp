@@ -868,7 +868,7 @@ void Solv_Petsc::create_solver(Entree& entree)
               }
             case 7:
               {
-                read_matrix_=true;
+                set_read_matrix(true);
                 break;
               }
             case 8:
@@ -2031,7 +2031,7 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
 
       // Matrice morse intermedaire de conversion
       Matrice_Morse matrice_morse_intermediaire;
-      if (read_matrix_)
+      if (read_matrix())
         {
           // Read the PETSc matrix
           RestoreMatrixFromFile();
@@ -2040,7 +2040,7 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
         {
           // Matrice deja au format Petsc
           MatricePetsc_ = ref_cast(Matrice_Petsc, la_matrice).getMat();
-          read_matrix_ = true; // flag reutilise comme si on avait lu la matrice
+          set_read_matrix(true); // flag reutilise comme si on avait lu la matrice
         }
       else
         construit_matrice_morse_intermediaire(la_matrice, matrice_morse_intermediaire);
@@ -2055,7 +2055,7 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
                                            : matrice_morse_intermediaire;
 
       // Verification stencil de la matrice
-      nouveau_stencil_ = (MatricePetsc_ == nullptr || rebuild_matrix_ || read_matrix_ ? true : check_stencil(matrice_morse));
+      nouveau_stencil_ = (MatricePetsc_ == nullptr || rebuild_matrix_ || read_matrix() ? true : check_stencil(matrice_morse));
 
       // Build x and b if necessary
       Create_vectors(secmem);
@@ -2440,7 +2440,7 @@ void Solv_Petsc::check_aij(const Matrice_Morse& mat)
   if (type_pc_==PCEISENSTAT) mataij_=1;
 
   // Reading a Matrix with Hypre (ToDo test if mataij=1 for Hypre is not better, cause here 2 matrix seqsbaij and seqaij)
-  if (read_matrix_ && type_pc_==PCHYPRE) mataij_=1;
+  if (read_matrix() && type_pc_==PCHYPRE) mataij_=1;
 
   // Dans le cas de SUPERLU_DIST pour Cholesky, je n'arrive pas a faire marcher le stockage
   // symetrique donc l'utilisation de SUPERLU_DIST n'est pas encore optimale en RAM...
@@ -2467,7 +2467,7 @@ void Solv_Petsc::check_aij(const Matrice_Morse& mat)
   // so aij is selected instead:
   if (factored_matrix_!="") mataij_=1;
 
-  if (!read_matrix_)
+  if (!read_matrix())
     {
       // Ajout d'un test de verification de la symetrie supposee de la matrice PETSc
       // Ce test a permis de trouver un defaut de parallelisme sur le remplissage
@@ -2531,7 +2531,7 @@ void Solv_Petsc::Create_objects(const Matrice_Morse& mat, int blocksize)
     Create_MatricePetsc(MatricePrecondionnementPetsc, 1, mat);
 
   // Creation de la matrice Petsc si necessaire
-  if (!read_matrix_)
+  if (!read_matrix())
     {
       if (MatricePetsc_!=nullptr) MatDestroy(&MatricePetsc_);
       Create_MatricePetsc(MatricePetsc_, mataij_, mat);
