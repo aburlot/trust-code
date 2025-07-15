@@ -2335,15 +2335,6 @@ void Solv_Petsc::Update_vectors(const DoubleVect& secmem, DoubleVect& solution)
       if (gpu_) statistiques().end_count(gpu_copytodevice_counter_);
       if (reorder_matrix_)
         {
-          Mat Aperm;
-
-          if (!nouveau_stencil_)
-            {
-              MatPermute(MatricePetsc_, rowperm, colperm, &Aperm);
-              MatDestroy(&MatricePetsc_);
-              MatricePetsc_ = Aperm;
-            }
-
           VecPermute(SecondMembrePetsc_, colperm, PETSC_FALSE);
           VecPermute(SolutionPetsc_, colperm, PETSC_FALSE);
         }
@@ -2382,14 +2373,7 @@ void Solv_Petsc::Update_solution(DoubleVect& solution)
     {
       int size=ix.size_array();
       if (reorder_matrix_)
-        {
-          Mat Aperm;
-          MatPermute(MatricePetsc_, inv_rowperm, inv_colperm, &Aperm);
-          MatDestroy(&MatricePetsc_);
-          MatricePetsc_ = Aperm;
-          VecPermute(SolutionPetsc_, inv_rowperm, PETSC_FALSE);
-        }
-//      VecView(SolutionPetsc_, PETSC_VIEWER_STDOUT_WORLD);
+        VecPermute(SolutionPetsc_, rowperm, PETSC_TRUE);
       // ToDo un seul VecGetValues comme VecSetValues
       if (different_partition_)
         {
@@ -3119,12 +3103,10 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
     {
       Mat Aperm;
       MatOrderingType ordering = MATORDERINGRCM;
-      MatGetOrdering(MatricePetsc, ordering, &rowperm, &colperm);
-      ISInvertPermutation(rowperm, PETSC_DECIDE, &inv_rowperm);
-      ISInvertPermutation(colperm, PETSC_DECIDE, &inv_colperm);
-      MatPermute(MatricePetsc, rowperm, colperm, &Aperm);
+      MatGetOrdering(MatricePetsc_, ordering, &rowperm, &colperm);
+      MatPermute(MatricePetsc_, rowperm, colperm, &Aperm);
       MatDestroy(&MatricePetsc_);
-      MatricePetsc = Aperm;
+      MatricePetsc_ = Aperm;
     }
 }
 
@@ -3169,14 +3151,11 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
           const int k1 = tab1[i + 1] - 1;
           for (int k = k0; k < k1; k++)
             {
-              if (coeff[k] != 0)
-                {
-                  coeff_tmp[ncol] = coeff[k];
-                  tab2_tmp[ncol] = renum_array[tab2[k] - 1];
-                  ncol++;
-                }
+              coeff_tmp[ncol] = coeff[k];
+              tab2_tmp[ncol] = renum_array[tab2[k] - 1];
+              ncol++;
             }
-//          assert(ncol == nnz[cpt]);
+          assert(ncol == nnz[cpt]);
           if (journal)
             {
               Journal() << (int)ligne_globale << " ";

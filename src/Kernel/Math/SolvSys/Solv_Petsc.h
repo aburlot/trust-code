@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2025, CEA
+* Copyright (c) 2024, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -201,7 +201,6 @@ protected :
   int reuse_preconditioner_nb_it_max_=-1; // Upper limit of iterations to reuse preconditioner
 #ifdef PETSCKSP_H
   IS rowperm = nullptr, colperm = nullptr;
-  IS inv_rowperm = nullptr, inv_colperm = nullptr;
 #endif
 };
 
@@ -248,9 +247,9 @@ inline void Solv_Petsc::reset()
         DMDestroy(&dm_);
       // Destruction IS
       if (rowperm!=nullptr)
-        ISDestroy(&rowperm), ISDestroy(&inv_rowperm);
+        ISDestroy(&rowperm);
       if (colperm!=nullptr)
-        ISDestroy(&colperm), ISDestroy(&inv_colperm);
+        ISDestroy(&colperm);
     }
   initialize();
 #endif
