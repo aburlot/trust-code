@@ -760,7 +760,7 @@ void Op_Div_VEFP1B_Elem::degres_liberte() const
       int sommet = domaine.get_renum_som_perio(k);
       if (nb_degres_liberte_(sommet) != 0)
         continue;
-      if (!afficher_message && VerifierCoin::expert_only == 0)
+      if (!afficher_message)
         {
           afficher_message = 1;
           Cerr << finl << "Problem with the mesh used for the VEF P1Bulle discretization." << finl;
@@ -858,7 +858,7 @@ void Op_Div_VEFP1B_Elem::degres_liberte() const
       fic.close();
 
     }
-  if (afficher_message && VerifierCoin::expert_only == 0)
+  if (afficher_message)
     {
       Nom nom_fichier(nom_du_cas());
       Cerr << "Look at the .log file of processor " << Process::me() << " to know which nodes" << finl;
@@ -882,10 +882,6 @@ void Op_Div_VEFP1B_Elem::degres_liberte() const
         Cerr << "and BEFORE the keyword \"Discretiser\"." << finl;
       Cerr << "A few cells will be divided into 3 (2D) or 4 (3D)." << finl;
       Cerr << finl;
-      Cerr << "Last possibility, it is possible now for experimented users to not check if there is enough degrees of freedom" << finl;
-      Cerr << "by adding the next line BEFORE the keyword \"Discretiser\":" << finl;
-      Cerr << "VerifierCoin " << domaine.le_nom() << " { expert_only } " << finl;
-      Cerr << "In this case, check the results carefully." << finl;
       Process::exit();
     }
 }

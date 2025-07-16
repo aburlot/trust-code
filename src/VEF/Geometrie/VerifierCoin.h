@@ -32,6 +32,5 @@ class VerifierCoin : public Interprete_geometrique_base
   Declare_instanciable(VerifierCoin);
 public :
   Entree& interpreter_(Entree&) override;
-  static bool expert_only;
 };
 #endif
