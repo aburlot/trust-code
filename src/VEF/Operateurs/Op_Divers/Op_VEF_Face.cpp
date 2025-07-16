@@ -49,15 +49,8 @@ void Op_VEF_Face::dimensionner(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& 
   // Nous commencons par calculer les tailles des tableaux tab1 et tab2.
   // Pour ce faire il faut chercher les faces voisines de la face consideree.
 
-  int num_face;
-  int ndeb = 0;
-  int nfin = le_dom.nb_faces();
-  int nnnn = le_dom.nb_faces_tot();
-  nfin = nnnn;
-  int i, j, k, kk;
-  int elem1, elem2;
+  int nfin = le_dom.nb_faces_tot();
   int nb_faces_elem = le_dom.domaine().nb_faces_elem();
-  //const Conds_lim& les_cl = le_dom_cl.les_conditions_limites();
   const int nb_comp = le_dom_cl.equation().inconnue().valeurs().line_size();
   la_matrice.dimensionner(nfin * nb_comp, nfin * nb_comp, 0);
 
@@ -73,21 +66,21 @@ void Op_VEF_Face::dimensionner(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& 
   // voisines[i] = {j t.q j>i et M(i,j) est non nul }
 
   //  IntVect rang_voisin(nfin*nb_comp);
-  IntVect rang_voisin(nnnn * nb_comp);
+  IntTrav rang_voisin(nfin * nb_comp);
   rang_voisin = nb_comp;
 
   // On traite toutes les faces
-
-  for (num_face = 0; num_face < nfin; num_face++)
+  int j;
+  for (int num_face = 0; num_face < nfin; num_face++)
     {
-      elem1 = face_voisins(num_face, 0);
-      elem2 = face_voisins(num_face, 1);
+      int elem1 = face_voisins(num_face, 0);
+      int elem2 = face_voisins(num_face, 1);
 
-      for (i = 0; i < nb_faces_elem; i++)
+      for (int i = 0; i < nb_faces_elem; i++)
         {
           if ((j = elem_faces(elem1, i)) != num_face)
             {
-              for (k = 0; k < nb_comp; k++)
+              for (int k = 0; k < nb_comp; k++)
                 {
                   rang_voisin(num_face * nb_comp + k) += nb_comp;
                 }
@@ -95,7 +88,7 @@ void Op_VEF_Face::dimensionner(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& 
           if (elem2 != -1)
             if ((j = elem_faces(elem2, i)) != num_face)
               {
-                for (k = 0; k < nb_comp; k++)
+                for (int k = 0; k < nb_comp; k++)
                   {
                     rang_voisin(num_face * nb_comp + k) += nb_comp;
                   }
@@ -107,20 +100,20 @@ void Op_VEF_Face::dimensionner(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& 
   // nous dimensionnons tab1 et tab2 au nombre de faces
 
   tab1(0) = 1;
-  for (num_face = ndeb; num_face < nfin; num_face++)
+  for (int num_face = 0; num_face < nfin; num_face++)
     {
-      for (k = 0; k < nb_comp; k++)
+      for (int k = 0; k < nb_comp; k++)
         {
           tab1(num_face * nb_comp + 1 + k) = rang_voisin(num_face * nb_comp + k) + tab1(num_face * nb_comp + k);
         }
     }
   la_matrice.dimensionner(nfin * nb_comp, tab1(nfin * nb_comp) - 1);
 
-  for (num_face = 0; num_face < nfin; num_face++)
+  for (int num_face = 0; num_face < nfin; num_face++)
     {
-      for (k = 0; k < nb_comp; k++)
+      for (int k = 0; k < nb_comp; k++)
         {
-          for (kk = 0; kk < nb_comp; kk++)
+          for (int kk = 0; kk < nb_comp; kk++)
             {
               int modulo = (k + kk) % nb_comp;
               tab2[tab1[num_face * nb_comp + k] - 1 + kk] = num_face * nb_comp + 1 + modulo;
@@ -130,18 +123,18 @@ void Op_VEF_Face::dimensionner(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& 
     }
 
   // On traite toutes les faces
-  for (num_face = 0; num_face < nfin; num_face++)
+  for (int num_face = 0; num_face < nfin; num_face++)
     {
-      elem1 = face_voisins(num_face, 0);
-      elem2 = face_voisins(num_face, 1);
+      int elem1 = face_voisins(num_face, 0);
+      int elem2 = face_voisins(num_face, 1);
 
-      for (i = 0; i < nb_faces_elem; i++)
+      for (int i = 0; i < nb_faces_elem; i++)
         {
           if ((j = elem_faces(elem1, i)) != num_face)
             {
-              for (k = 0; k < nb_comp; k++)
+              for (int k = 0; k < nb_comp; k++)
                 {
-                  for (kk = 0; kk < nb_comp; kk++)
+                  for (int kk = 0; kk < nb_comp; kk++)
                     {
                       int modulo = (k + kk) % nb_comp;
                       tab2[rang_voisin[num_face * nb_comp + k] + kk] = j * nb_comp + 1 + modulo;
@@ -150,18 +143,20 @@ void Op_VEF_Face::dimensionner(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& 
                 }
             }
           if (elem2 != -1)
-            if ((j = elem_faces(elem2, i)) != num_face)
-              {
-                for (k = 0; k < nb_comp; k++)
-                  {
-                    for (kk = 0; kk < nb_comp; kk++)
-                      {
-                        int modulo = (k + kk) % nb_comp;
-                        tab2[rang_voisin[num_face * nb_comp + k] + kk] = j * nb_comp + 1 + modulo;
-                      }
-                    rang_voisin[num_face * nb_comp + k] += nb_comp;
-                  }
-              }
+            {
+              if ((j = elem_faces(elem2, i)) != num_face)
+                {
+                  for (int k = 0; k < nb_comp; k++)
+                    {
+                      for (int kk = 0; kk < nb_comp; kk++)
+                        {
+                          int modulo = (k + kk) % nb_comp;
+                          tab2[rang_voisin[num_face * nb_comp + k] + kk] = j * nb_comp + 1 + modulo;
+                        }
+                      rang_voisin[num_face * nb_comp + k] += nb_comp;
+                    }
+                }
+            }
         }
     }
 }
