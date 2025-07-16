@@ -45,6 +45,9 @@ public:
   inline bool has_emissivite() const { return emissivite_.non_nul(); }
   inline bool has_h_imp() const { return h_imp_.non_nul(); }
 
+  const DoubleTab& text(double temps=DMAXFLOAT) const;
+  const DoubleTab& himp(double temps=DMAXFLOAT) const;
+  const DoubleTab& eps(double temps=DMAXFLOAT) const;
   virtual double T_ext(int num) const;
   virtual double T_ext(int num,int k) const;
   virtual double h_imp(int num) const;
@@ -87,6 +90,11 @@ public:
 
 protected :
   OWN_PTR(Champ_front_base) h_imp_, emissivite_ /* si Echange_externe_radiatif */;
+private:
+  // Stocke toutes les valeurs sur les faces (utile pour GPU):
+  mutable DoubleTab text_;
+  mutable DoubleTab himp_;
+  mutable DoubleTab eps_;
 };
 
 #endif /* Echange_impose_base_included */

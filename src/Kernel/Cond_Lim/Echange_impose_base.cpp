@@ -254,3 +254,81 @@ void Echange_impose_base::associer_fr_dis_base(const Frontiere_dis_base& fr)
     emissivite_->associer_fr_dis_base(fr);
   Cond_lim_base::associer_fr_dis_base(fr);
 }
+
+const DoubleTab& Echange_impose_base::text(double temps) const
+{
+  if (temps==DMAXFLOAT) temps = le_champ_front->get_temps_defaut();
+  const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());
+  // ToDo factorize in Champ_front_base::valeurs_face()
+  int size = le_champ_front->valeurs().dimension(0) == 1 ? le_bord.nb_faces_tot() : le_champ_front->valeurs().dimension_tot(0);
+  if (size>0)
+    {
+      bool update = le_champ_front->instationnaire();
+      if (text_.dimension(0) != size)
+        {
+          text_.resize(size, le_champ_front->valeurs().dimension(1));
+          update = true;
+        }
+      update = true;  // Provisoire
+      if (update)
+        {
+          int nb_comp = text_.dimension(1);
+          for (int face = 0; face < size; face++)
+            for (int comp = 0; comp < nb_comp; comp++)
+              text_(face, comp) = T_ext(face, comp);
+        }
+    }
+  return text_;
+}
+
+const DoubleTab& Echange_impose_base::himp(double temps) const
+{
+  if (temps==DMAXFLOAT) temps = le_champ_front->get_temps_defaut();
+  const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());
+  // ToDo factorize in Champ_front_base::valeurs_face()
+  int size = le_champ_front->valeurs().dimension(0) == 1 ? le_bord.nb_faces_tot() : le_champ_front->valeurs().dimension_tot(0);
+  if (size>0)
+    {
+      bool update = le_champ_front->instationnaire();
+      if (himp_.dimension(0) != size)
+        {
+          himp_.resize(size, le_champ_front->valeurs().dimension(1));
+          update = true;
+        }
+      update = true;  // Provisoire
+      if (update)
+        {
+          int nb_comp = himp_.dimension(1);
+          for (int face = 0; face < size; face++)
+            for (int comp = 0; comp < nb_comp; comp++)
+              himp_(face, comp) = h_imp(face, comp);
+        }
+    }
+  return himp_;
+}
+
+const DoubleTab& Echange_impose_base::eps(double temps) const
+{
+  if (temps==DMAXFLOAT) temps = le_champ_front->get_temps_defaut();
+  const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());
+  // ToDo factorize in Champ_front_base::valeurs_face()
+  int size = le_champ_front->valeurs().dimension(0) == 1 ? le_bord.nb_faces_tot() : le_champ_front->valeurs().dimension_tot(0);
+  if (size>0)
+    {
+      bool update = le_champ_front->instationnaire();
+      if (eps_.dimension(0) != size)
+        {
+          eps_.resize(size, le_champ_front->valeurs().dimension(1));
+          update = true;
+        }
+      update = true;  // Provisoire
+      if (update)
+        {
+          int nb_comp = eps_.dimension(1);
+          for (int face = 0; face < size; face++)
+            for (int comp = 0; comp < nb_comp; comp++)
+              eps_(face, comp) = emissivite(face, comp);
+        }
+    }
+  return eps_;
+}

@@ -229,23 +229,34 @@ void Op_Diff_VEF_Face::ajouter_cas_scalaire(const DoubleTab& tab_inconnue,
         }
       else if (sub_type(Echange_externe_impose,la_cl.valeur()))
         {
-          ToDo_Kokkos("critical");
           const Echange_externe_impose& la_cl_paroi = ref_cast(Echange_externe_impose, la_cl.valeur());
-          const DoubleVect& surface = domaine_VEF.face_surfaces();
-          for (int face=ndeb; face<nfin; face++)
-            {
-              double flux=la_cl_paroi.h_imp(face-ndeb)*(la_cl_paroi.T_ext(face-ndeb)-tab_inconnue(face))*surface(face);
-              tab_resu[face] += flux;
-              tab_flux_bords(face) = flux;
+          const double coeff = COEFF_STEFAN_BOLTZMANN;
+          const bool has_emissivity = la_cl_paroi.has_emissivite();
+          CDoubleArrView surface = domaine_VEF.face_surfaces().view_ro();
+          CDoubleArrView text = static_cast<const ArrOfDouble&>(la_cl_paroi.text()).view_ro();
+          CDoubleArrView himp = static_cast<const ArrOfDouble&>(la_cl_paroi.himp()).view_ro();
+          CDoubleArrView eps;
+          if (has_emissivity) eps = static_cast<const ArrOfDouble&>(la_cl_paroi.eps()).view_ro();
+          CDoubleArrView inconnue = static_cast<const ArrOfDouble&>(tab_inconnue).view_ro();
+          DoubleArrView resu = static_cast<ArrOfDouble&>(tab_resu).view_rw();
+          DoubleArrView flux_bords = static_cast<ArrOfDouble&>(tab_flux_bords).view_wo();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(ndeb, nfin), KOKKOS_LAMBDA (const int face)
+          {
+            int ind_face = face - ndeb;
+            double flux = himp(ind_face)*(text(ind_face)-inconnue(face))*surface(face);
+            resu[face] += flux;
+            flux_bords(face) = flux;
 
-              if (la_cl_paroi.has_emissivite())
-                {
-                  const double text = la_cl_paroi.T_ext(face - ndeb), T = tab_inconnue(face);
-                  flux = COEFF_STEFAN_BOLTZMANN * la_cl_paroi.emissivite(face - ndeb) * (text * text * text * text - T * T * T * T) * domaine_VEF.face_surfaces(face);
-                  tab_resu[face] += flux;
-                  tab_flux_bords(face) += flux;
-                }
-            }
+            if (has_emissivity)
+              {
+                double T = inconnue(face);
+                double t_ext = text(ind_face);
+                flux = coeff * eps(ind_face) * (t_ext * t_ext * t_ext * t_ext - T * T * T * T) * surface(face);
+                resu[face] += flux;
+                flux_bords(face) += flux;
+              }
+          });
+          end_gpu_timer(__KERNEL_NAME__);
         }
       else if (sub_type(Echange_couplage_thermique, la_cl.valeur()))
         {
@@ -830,8 +841,8 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
   end_gpu_timer(__KERNEL_NAME__);
 
   int premiere_face_int = domaine_VEF.premiere_face_int();
-  DoubleVect tab_h_impose(premiere_face_int);
-  DoubleVect tab_derivee_flux_exterieur_imposee(premiere_face_int);
+  DoubleTrav tab_h_impose(premiere_face_int);
+  DoubleTrav tab_derivee_flux_exterieur_imposee(premiere_face_int);
 
   // Neumann: remplir les tableaux avec les conditions aux
   // bords pour le kernel Kokkos
@@ -845,19 +856,24 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
           const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
           int ndeb = le_bord.num_premiere_face();
           int nfin = ndeb + le_bord.nb_faces();
-          ToDo_Kokkos("critical");
-          for (int face = ndeb; face < nfin; face++)
-            {
-              tab_h_impose(face) = la_cl_paroi.h_imp(face - ndeb);
-
-              if (la_cl_paroi.has_emissivite())
-                {
-                  const DoubleTab& inconnue = equation().inconnue().valeurs();
-
-                  const double T = inconnue(face);
-                  tab_h_impose(face) = 4 * COEFF_STEFAN_BOLTZMANN * la_cl_paroi.emissivite(face - ndeb) * T * T * T;
-                }
-            }
+          const double coeff = COEFF_STEFAN_BOLTZMANN;
+          const bool has_emissivity = la_cl_paroi.has_emissivite();
+          CDoubleArrView inconnue = static_cast<const ArrOfDouble&>(equation().inconnue().valeurs()).view_ro();
+          CDoubleArrView himp = static_cast<const ArrOfDouble&>(la_cl_paroi.himp()).view_ro();
+          CDoubleArrView eps;
+          if (has_emissivity) eps = static_cast<const ArrOfDouble&>(la_cl_paroi.eps()).view_ro();
+          DoubleArrView h_impose = static_cast<ArrOfDouble&>(tab_h_impose).view_wo();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(ndeb, nfin), KOKKOS_LAMBDA(const int face)
+          {
+            int ind_face = face - ndeb;
+            h_impose(face) = himp(ind_face);
+            if (has_emissivity)
+              {
+                const double T = inconnue(face);
+                h_impose(face) = 4 * coeff * eps(ind_face) * T * T * T;
+              }
+          });
+          end_gpu_timer(__KERNEL_NAME__);
         }
       else if (sub_type(Echange_couplage_thermique, la_cl.valeur()))
         {
@@ -875,8 +891,8 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
         }
     }
 
-  CDoubleArrView h_impose = tab_h_impose.view_ro();
-  CDoubleArrView derivee_flux_exterieur_imposee = tab_derivee_flux_exterieur_imposee.view_ro();
+  CDoubleArrView h_impose = static_cast<const ArrOfDouble&>(tab_h_impose).view_ro();
+  CDoubleArrView derivee_flux_exterieur_imposee = static_cast<const ArrOfDouble&>(tab_derivee_flux_exterieur_imposee).view_ro();
   CDoubleArrView face_surfaces = domaine_VEF.face_surfaces().view_ro();
 
   // Neumann: calcul des contributions aux bords
