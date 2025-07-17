@@ -168,6 +168,10 @@ void Energie_Multiphase::assembler_blocs_avec_inertie(matrices_t matrices, Doubl
   if (evanescence_.non_nul()) evanescence_->ajouter_blocs(matrices, secmem, semi_impl);
 }
 
+void Energie_Multiphase::calculer_alpha_rho_e_conv(const Objet_U& obj, DoubleTab& val, DoubleTab& bval, tabs_t& deriv)
+{
+  calculer_alpha_rho_e(obj, val, bval, deriv);
+}
 
 void Energie_Multiphase::calculer_alpha_rho_e(const Objet_U& obj, DoubleTab& val, DoubleTab& bval, tabs_t& deriv)
 {

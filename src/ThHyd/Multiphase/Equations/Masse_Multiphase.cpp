@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -302,4 +302,21 @@ void Masse_Multiphase::calculer_alpha_rho(const Objet_U& obj, DoubleTab& val, Do
         for (der.resize(nl, N), i = 0; i < nl; i++)
           for (n = 0; n < N; n++) der(i, n) = d_c.second(i, n) * alpha(i, n);
       }
+}
+
+void Masse_Multiphase::calculer_alpha_rho_conv(const Objet_U& obj, DoubleTab& val, DoubleTab& bval, tabs_t& deriv)
+{
+  calculer_alpha_rho(obj, val, bval, deriv);
+}
+
+void Masse_Multiphase::init_champ_convecte() const
+{
+  if (champ_convecte_.non_nul()) return; //deja fait
+  int Nt = inconnue().nb_valeurs_temporelles(), Nl = inconnue().valeurs().size_reelle_ok() ? inconnue().valeurs().dimension(0) : -1, Nc = inconnue().valeurs().line_size();
+  //champ_convecte_ : meme type / support que l'inconnue
+  discretisation().creer_champ(champ_convecte_, domaine_dis(), inconnue().que_suis_je(), "N/A", "N/A", Nc, Nl, Nt, schema_temps().temps_courant());
+  champ_convecte_->associer_eqn(*this);
+  auto nom_fonc = get_fonc_champ_convecte();
+  champ_convecte_->nommer(nom_fonc.first);
+  champ_convecte_->init_champ_calcule(*this, nom_fonc.second);
 }

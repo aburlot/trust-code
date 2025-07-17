@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -70,6 +70,22 @@ public :
   {
     return { "alpha_rho", calculer_alpha_rho };
   }
+
+  static void calculer_alpha_rho_conv(const Objet_U& obj, DoubleTab& val, DoubleTab& bval, tabs_t& deriv);
+  std::pair<std::string, fonc_calc_t> get_fonc_champ_convecte() const
+  {
+    return { "alpha_rho_conv", calculer_alpha_rho_conv };
+  }
+
+  Champ_Inc_base& champ_convecte() const override //par defaut le champ conserve
+  {
+    return champ_convecte_.valeur();
+  }
+  int has_champ_convecte() const override
+  {
+    return champ_convecte_.non_nul();
+  }
+  void init_champ_convecte() const override; //a appeller dans le completer() des operateurs/sources qui auront besoin de champ_convecte_
 
   /////////////////////////////////////////////////////
   const Motcle& domaine_application() const override;
