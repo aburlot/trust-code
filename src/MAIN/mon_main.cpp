@@ -181,8 +181,8 @@ void mon_main::init_parallel(const int argc, char **argv, bool with_mpi, bool ch
       True_int argc2 = argc;
       Kokkos::initialize(argc2, argv);
     }
-  Nom arguments_info="";
-  arguments_info +="Kokkos initialized!\n";
+  Nom arguments_info = "";
+  arguments_info += "Kokkos initialized!\n";
 
 #ifdef TRUST_USE_CUDA
   //init_cuda(); Desactive car crash crash sur topaze ToDo OpenMP
@@ -190,7 +190,7 @@ void mon_main::init_parallel(const int argc, char **argv, bool with_mpi, bool ch
   bool must_mpi_initialize = true;
   if (with_petsc)
     {
-      if (init_petsc(argc, argv, with_mpi,trio_began_mpi_))
+      if (init_petsc(argc, argv, with_mpi, trio_began_mpi_))
         {
           must_mpi_initialize = false; // Deja fait par Petsc
           arguments_info += "Petsc initialization succeeded.\n";
@@ -248,7 +248,12 @@ void mon_main::init_parallel(const int argc, char **argv, bool with_mpi, bool ch
         Cerr << "Kokkos initialized after MPI !" << finl;
     }
   if (Process::je_suis_maitre())
-    Cerr << "You can run --kokkos-help option." << finl;
+    {
+#ifdef TRUST_USE_GPU
+      Kokkos::print_configuration(std::cerr, true);
+#endif
+      Cerr << "You can run --kokkos-help option." << finl;
+    }
 }
 
 void mon_main::finalize()

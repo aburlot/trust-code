@@ -36,7 +36,7 @@ int main() {
 
     Kokkos::initialize();
     {  
-        
+    Kokkos::print_configuration(std::cout, true);        
     int FLOPS=0;
     double SEC=0;
     for (int sample=0;sample<samples;sample++)
