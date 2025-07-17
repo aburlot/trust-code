@@ -3100,24 +3100,33 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   // et si on supprime les zeros de la matrice, lors d'un update on peut avoir une allocation -> erreur
   if (mataij_)
     {
-      if (clean_matrix_) MatSetOption(MatricePetsc, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE); // Ne stocke pas les zeros
-      if (verbose)
+      if (clean_matrix_)
         {
-          ArrOfDouble nonzeros(2); // Pas ArrOfInt car nonzeros peut depasser 2^32 facilement - on n'a pas besoin d'un compte exact
-          nonzeros[0] = 0;
-          nonzeros[1] = mat_morse.nb_coeff();
-          for (int i=0; i<nonzeros[1]; i++)
-            if (mat_morse.get_coeff()(i)!=0)
-              nonzeros[0]+=1;
-          mp_sum_for_each_item(nonzeros);
-          if (nonzeros[1] > 0)
+          MatSetOption(MatricePetsc, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE); // Ne stocke pas les zeros
+          if (verbose)
             {
-              double ratio = 1 - (double) nonzeros[0] / (double) nonzeros[1];
-              if (ratio > 0.2) Cout << "Warning! Trust matrix contains a lot of useless stored zeros: " << (int) (ratio * 100) << "% (" << nonzeros[0] << "/" << nonzeros[1] << ")" << finl;
+              ArrOfDouble nonzeros(2); // Pas ArrOfInt car nonzeros peut depasser 2^32 facilement - on n'a pas besoin d'un compte exact
+              nonzeros[0] = 0;
+              nonzeros[1] = mat_morse.nb_coeff();
+              for (int i = 0; i < nonzeros[1]; i++)
+                if (mat_morse.get_coeff()(i) != 0)
+                  nonzeros[0] += 1;
+              mp_sum_for_each_item(nonzeros);
+              if (nonzeros[1] > 0)
+                {
+                  double ratio = 1 - (double) nonzeros[0] / (double) nonzeros[1];
+                  if (ratio > 0.2)
+                    Cout << "Warning! Trust matrix contains a lot of useless stored zeros: " << (int) (ratio * 100)
+                         << "% (" << nonzeros[1] - nonzeros[0] << "/" << nonzeros[1] << ")" << finl;
+                }
+              int zero_discarded = (int) (std::lrint(nonzeros[1] - nonzeros[0]));
+              if (zero_discarded)
+                Cout << "[Petsc] Discarding " << zero_discarded
+                     << " zeros from TRUST matrix into the PETSc matrix ..." << finl;
             }
-          int zero_discarded = (int)(std::lrint(nonzeros[1] - nonzeros[0]));
-          if (zero_discarded) Cout << "[Petsc] Discarding " << zero_discarded << " zeros from TRUST matrix into the PETSc matrix ..." << finl;
         }
+      else
+        MatSetOption(MatricePetsc, MAT_IGNORE_ZERO_ENTRIES, PETSC_FALSE); // Ne stocke pas les zeros
     }
   // Genere une erreur (ou pas) si une case de la matrice est remplie sans allocation auparavant:
   MatSetOption(MatricePetsc, MAT_NEW_NONZERO_ALLOCATION_ERR, allow_realloc_ ? PETSC_FALSE : PETSC_TRUE);
@@ -3282,8 +3291,13 @@ bool Solv_Petsc::check_stencil(const Matrice_Morse& mat_morse)
               int nnz_row = 0;
               const int k0 = tab1[i] - 1;
               const int k1 = tab1[i + 1] - 1;
-              for (int k = k0; k < k1; k++)
-                if (coeff[k] != 0) nnz_row++;
+              if (clean_matrix_)
+                {
+                  for (int k = k0; k < k1; k++)
+                    if (coeff[k] != 0) nnz_row++;
+                }
+              else
+                nnz_row += k1 - k0;
               const PetscInt kk0 = rowOffsets[RowLocal];
               const PetscInt kk1 = rowOffsets[RowLocal + 1];
               if (nnz_row != (int)(kk1 - kk0))
