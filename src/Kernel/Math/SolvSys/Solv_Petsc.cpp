@@ -2055,7 +2055,19 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
                                            : matrice_morse_intermediaire;
 
       // Verification stencil de la matrice
-      nouveau_stencil_ = (MatricePetsc_ == nullptr || rebuild_matrix_ || read_matrix() ? true : check_stencil(matrice_morse));
+      if (matrice_morse.morse_matrix_structure_has_changed_!=-1)
+        {
+          // If stencil state is defined in matrix, use it ! Avoid expensive comparison on host
+          nouveau_stencil_ = matrice_morse.morse_matrix_structure_has_changed_;
+          if (!nouveau_stencil_) clean_matrix_=0; // If stencil is constant, we need to store zero
+        }
+      else
+        // Else detect if the stencil changed:
+        nouveau_stencil_ = check_stencil(matrice_morse);
+
+      // Cas speciaux:
+      if (MatricePetsc_ == nullptr || rebuild_matrix_ || read_matrix())
+        nouveau_stencil_ = true;
 
       // Build x and b if necessary
       Create_vectors(secmem);
@@ -2071,9 +2083,12 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
       /* reglage de BlockSize avec le line_size() du second membre */
       if (limpr() == 1)
         {
+          MatInfo info;
+          MatGetInfo(MatricePetsc_, MAT_GLOBAL_SUM, &info);
+          PetscInt nnz = (PetscInt)info.nz_used;
           Cout << "Order of the PETSc matrix : " << nb_rows_tot_ << " (~ "
                << (petsc_cpus_selection_ ? (int) (nb_rows_tot_ / petsc_nb_cpus_) : nb_rows_)
-               << " unknowns per PETSc process ) " << (nouveau_stencil_ ? "New stencil." : "Same stencil.") << finl;
+               << " unknowns per PETSc process ) " << (nouveau_stencil_ ? "New stencil." : "Same stencil.") << " nnz= " << nnz << " " << matrice_morse.get_coeff().size() << finl;
         }
     }
   // Update PETSc Vec (vectors) for RHS and solution

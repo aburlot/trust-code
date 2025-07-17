@@ -188,7 +188,7 @@ public :
   bool is_sorted_stencil() const;
   bool is_diagonal();
 
-  mutable int morse_matrix_structure_has_changed_; // Flag if matrix structure changes
+  mutable int morse_matrix_structure_has_changed_=-1; // Flag if matrix structure changes
   mutable int sorted_; //1 si le stencil est classe : obtenu en appellant sort_stencil()
 
 protected :
@@ -265,28 +265,36 @@ inline double& Matrice_Morse::operator()(int i, int j)
 }
 
 // Kokkos: First (and quick) implementation of a Matrix view. Future: Kokkos kernels ?
+// ToDo: rename tab1_, comment + factorize algorithm in each method, +implement sorted
 #ifdef KOKKOS
 struct Matrice_Morse_View
 {
-  CIntArrView tab1_v;
-  CIntArrView tab2_v;
-  mutable DoubleArrView coeff_v;
+private:
+  CIntArrView tab1_;
+  CIntArrView tab2_;
+  mutable DoubleArrView coeff_;
   int symetrique_ = 0;
   int sorted_ = 0;
+public:
   void set(Matrice_Morse& matrice)
   {
-    tab1_v = matrice.get_tab1().view_ro();
-    tab2_v = matrice.get_tab2().view_ro();
-    coeff_v = matrice.get_set_coeff().view_rw();
+    tab1_ = matrice.get_tab1().view_ro();
+    tab2_ = matrice.get_tab2().view_ro();
+    coeff_ = matrice.get_set_coeff().view_rw();
     symetrique_ = matrice.get_symmetric();
     sorted_ = matrice.sorted_;
   }
+  /*
+  KOKKOS_INLINE_FUNCTION int tab1(int i) const { return tab1_(i); }
+  KOKKOS_INLINE_FUNCTION int tab2(int i) const { return tab2_(i); }
+  KOKKOS_INLINE_FUNCTION double& coeff(int i) { return coeff_(i); }
+   */
 
   KOKKOS_INLINE_FUNCTION
   double& diag(int i) const
   {
     if (symetrique_!=2) Process::Kokkos_exit("You are not using a Matrice_Morse_Diag !");
-    return coeff_v(tab1_v(i)-1);
+    return coeff_(tab1_(i)-1);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -301,8 +309,8 @@ struct Matrice_Morse_View
         j = i;
         i = k;
       }
-    int k1=tab1_v(i)-1;
-    int k2=tab1_v(i+1)-1;
+    int k1=tab1_(i)-1;
+    int k2=tab1_(i+1)-1;
     /* ToDo Kokkos for faster access:
     if (sorted_)
       {
@@ -310,11 +318,11 @@ struct Matrice_Morse_View
       }
     else */
     for (int k=k1; k<k2; k++)
-      if (tab2_v(k)-1 == j)
-        return coeff_v(k);
+      if (tab2_(k)-1 == j)
+        return coeff_(k);
     printf("Error Matrice_Morse_View(%d, %d) not defined!\n", (True_int)i, (True_int)j);
     Process::Kokkos_exit("Error");
-    return coeff_v(0);
+    return coeff_(0);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -328,8 +336,8 @@ struct Matrice_Morse_View
         j = i;
         i = k;
       }
-    int k1=tab1_v(i)-1;
-    int k2=tab1_v(i+1)-1;
+    int k1=tab1_(i)-1;
+    int k2=tab1_(i+1)-1;
     /* ToDo Kokkos for faster access:
     if (sorted_)
       {
@@ -337,10 +345,10 @@ struct Matrice_Morse_View
       }
     else */
     for (int k=k1; k<k2; k++)
-      if (tab2_v(k)-1 == j)
+      if (tab2_(k)-1 == j)
         {
-          if (atomic) Kokkos::atomic_store(&coeff_v(k), coeff);
-          else coeff_v(k) = coeff;
+          if (atomic) Kokkos::atomic_store(&coeff_(k), coeff);
+          else coeff_(k) = coeff;
           return;
         }
     printf("Error Matrice_Morse_View::store(%d, %d, value) not defined!\n", (True_int)i, (True_int)j);
@@ -366,21 +374,21 @@ struct Matrice_Morse_View
         j = i;
         i = k;
       }
-    int k1=tab1_v(i)-1;
-    int k2=tab1_v(i+1)-1;
+    int k1=tab1_(i)-1;
+    int k2=tab1_(i+1)-1;
     /* ToDo Kokkos for faster access:
     if (sorted_)
       {
         int k = (int) (std::lower_bound(tab2_.addr() + k1, tab2_.addr() + k2, j + 1) - tab2_.addr());
-        if (k < k2 && tab2_v[k] == j + 1)
-          return coeff_v[k];
+        if (k < k2 && tab2_[k] == j + 1)
+          return coeff_[k];
       }
     else */
     for (int k=k1; k<k2; k++)
-      if (tab2_v(k)-1 == j)
+      if (tab2_(k)-1 == j)
         {
-          if (atomic) Kokkos::atomic_add(&coeff_v(k), coeff);
-          else coeff_v(k) += coeff;
+          if (atomic) Kokkos::atomic_add(&coeff_(k), coeff);
+          else coeff_(k) += coeff;
           return;
         }
     printf("Error Matrice_Morse_View::add(%d, %d, value) not defined!\n", (True_int)i, (True_int)j);
