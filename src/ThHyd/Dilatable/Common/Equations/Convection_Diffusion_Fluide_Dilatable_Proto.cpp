@@ -218,7 +218,7 @@ DoubleTab& Convection_Diffusion_Fluide_Dilatable_Proto::derivee_en_temps_inco_sa
 
 void Convection_Diffusion_Fluide_Dilatable_Proto::assembler_impl
 ( Convection_Diffusion_Fluide_Dilatable_base& eqn,
-  Matrice_Morse& matrice, const DoubleTab& inco, DoubleTab& resu)
+  Matrice_Morse& matrice_morse, const DoubleTab& inco, DoubleTab& resu)
 {
   /*
    * ATEENTION : THIS IS A GENERIC METHOD THAT IS USED TO SOLVE IMPLICITLY A THERMAL OR SPECIES
@@ -245,52 +245,65 @@ void Convection_Diffusion_Fluide_Dilatable_Proto::assembler_impl
   const int n = tab_rho.dimension(0);
 
   // ajout diffusion (avec rho, D et Y / ou lambda et T)
-  eqn.operateur(0).l_op_base().contribuer_a_avec(inco, matrice );
+  eqn.operateur(0).l_op_base().contribuer_a_avec(inco, matrice_morse);
 
   // Add source term (if any)
-  eqn.sources().contribuer_a_avec(inco,matrice);
+  eqn.sources().contribuer_a_avec(inco,matrice_morse);
 
-  const IntVect& tab1= matrice.get_tab1();
-  DoubleVect& coeff=matrice.get_set_coeff();
-  DoubleVect coeff_diffusif(coeff);
+  DoubleTrav tab_coeff_diffusif(matrice_morse.get_set_coeff());
+  tab_coeff_diffusif = matrice_morse.get_set_coeff();
 
   // on calcule les coefficients de l'op de convection on obtient les coeff de div (rho*u*Y)
   // ou div(rho*u*T). dans le cas thermique, il faudrait multiplier par cp puis divisier par rho cp
   // on le fera d'un coup...
-  coeff=0.;
-  eqn.operateur(1).l_op_base().contribuer_a_avec(inco, matrice );
+  matrice_morse.get_set_coeff()=0.;
+  eqn.operateur(1).l_op_base().contribuer_a_avec(inco, matrice_morse);
 
   // on calcule div(rho * u)
-  DoubleTrav derivee2(resu);
-  calculer_div_u_ou_div_rhou(derivee2);
+  DoubleTrav tab_derivee2(resu);
+  calculer_div_u_ou_div_rhou(tab_derivee2);
 
   if (!is_thermal()) //espece
     {
+      ToDo_Kokkos("critical");
+      const IntVect& tab1= matrice_morse.get_tab1();
+      DoubleVect& coeff=matrice_morse.get_set_coeff();
       for (int som=0 ; som<n ; som++)
         {
           double inv_rho = 1. / tab_rho(som);
-          for (int k=tab1(som)-1; k<tab1(som+1)-1; k++) coeff(k)= (coeff(k)*inv_rho+coeff_diffusif(k)*inv_rho);
+          for (int k=tab1(som)-1; k<tab1(som+1)-1; k++)
+            coeff(k)= (coeff(k)*inv_rho+tab_coeff_diffusif(k)*inv_rho);
 
-          matrice(som,som)+=derivee2(som)*inv_rho;
+          matrice_morse(som,som)+=tab_derivee2(som)*inv_rho;
         }
     }
   else if (is_thermal() && fluide_dil.type_fluide()=="Gaz_Parfait")
     {
       fluide_dil.update_rho_cp(eqn.schema_temps().temps_courant());
-      const DoubleTab& rhoCp = eqn.get_champ("rho_cp_comme_T").valeurs();
+      // ToDo add tab1, tab2, coeff() methods to Matrice_morse_View avoid list of accessors...
+      CDoubleArrView rhoCp = static_cast<const ArrOfDouble&>(eqn.get_champ("rho_cp_comme_T").valeurs()).view_ro();
+      CDoubleArrView rho = static_cast<const ArrOfDouble&>(tab_rho).view_ro();
+      CDoubleArrView derivee2 = static_cast<const ArrOfDouble&>(tab_derivee2).view_ro();
+      CIntArrView tab1 = matrice_morse.get_tab1().view_ro();
+      CDoubleArrView coeff_diffusif = static_cast<const ArrOfDouble&>(tab_coeff_diffusif).view_ro();
+      DoubleArrView coeff = matrice_morse.get_set_coeff().view_wo();
+      bool is_not_generic = !is_generic();
+      Matrice_Morse_View matrice;
+      matrice.set(matrice_morse);
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(0, n), KOKKOS_LAMBDA(const int som)
+      {
+        double inv_rho = 1. / rho(som);
+        if (is_not_generic) inv_rho = 1.;
+        double rapport = 1. / rhoCp(som);
 
-      for (int som=0 ; som<n ; som++)
-        {
-          double inv_rho = 1. / tab_rho(som);
-          if (!is_generic()) inv_rho = 1.;
-          double rapport = 1. / rhoCp(som);
+        // il faut multiplier toute la ligne de la matrice par rapport
+        for (int k=tab1(som)-1; k<tab1(som+1)-1; k++)
+          coeff(k)= (coeff(k)*inv_rho+coeff_diffusif(k)*rapport);
 
-          // il faut multiplier toute la ligne de la matrice par rapport
-          for (int k=tab1(som)-1; k<tab1(som+1)-1; k++) coeff(k)= (coeff(k)*inv_rho+coeff_diffusif(k)*rapport);
-
-          // ajout de Tdiv(rhou )/rho
-          matrice(som,som) += derivee2(som)*inv_rho;
-        }
+        // ajout de Tdiv(rhou )/rho
+        matrice.add(som,som,derivee2(som)*inv_rho);
+      });
+      end_gpu_timer(__KERNEL_NAME__);
     }
   else
     {
@@ -301,7 +314,7 @@ void Convection_Diffusion_Fluide_Dilatable_Proto::assembler_impl
   // on a la matrice approchee on recalcule le residu;
   resu=0;
   derivee_en_temps_inco_sans_solveur_masse_impl(eqn,resu,false /* implicit */);
-  matrice.ajouter_multvect(inco,resu);
+  matrice_morse.ajouter_multvect(inco,resu);
 
   if (test_op)
     {
