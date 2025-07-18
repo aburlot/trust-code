@@ -89,7 +89,7 @@ void diviser_par_rho_np1_face(Equation_base& eqn,DoubleTab& tab)
   const DoubleTab& rho = fluide_dil.rho_face_np1();
   int nbdim = tab.nb_dim();
   int taille_0_tot = tab.dimension_tot(0);
-
+  ToDo_Kokkos("critical impl");
   if (nbdim==1)
     for (int i=0; i<taille_0_tot; i++)
       tab(i) /= rho(i);

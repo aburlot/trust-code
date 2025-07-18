@@ -99,10 +99,12 @@ double EDO_Pression_th_VEF_Gaz_Parfait::resoudre(double Pth_n)
       // Calcul de masse_n et masse_np1
       DoubleVect tmp;
       tmp.copy(tempn, RESIZE_OPTIONS::NOCOPY_NOINIT); // copier uniquement la structure
+      ToDo_Kokkos("critical impl");
       for (int i = 0; i < nb_faces; i++)
         tmp[i] = 1. / tempn[i];
       const double masse_n = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tmp, FAUX_EN_PERIO);
-      for (int i = 0; i < nb_faces; i++)
+        ToDo_Kokkos("critical impl");
+        for (int i = 0; i < nb_faces; i++)
         tmp[i] = 1. / tempnp1[i];
       const double masse_np1 = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tmp, FAUX_EN_PERIO);
 
@@ -116,7 +118,8 @@ double EDO_Pression_th_VEF_Gaz_Parfait::resoudre(double Pth_n)
               const Front_VF& la_front_dis = ref_cast(Front_VF, la_cl.frontiere_dis());
               int ndeb = la_front_dis.num_premiere_face();
               int nfin = ndeb + la_front_dis.nb_faces();
-              for (int face = ndeb; face < nfin; face++)
+                ToDo_Kokkos("critical impl");
+                for (int face = ndeb; face < nfin; face++)
                 {
                   double debit_v = 0;
                   for (int d = 0; d < dimension; d++)

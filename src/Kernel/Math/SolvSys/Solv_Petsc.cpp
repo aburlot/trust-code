@@ -3198,6 +3198,7 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
   const ArrOfDouble& coeff = mat_morse.get_coeff();
   cpt = 0;
   const int n = tab1.size_array() - 1;
+  ToDo_Kokkos("critical impl");
   for(int i=0; i < n; i++)
     {
       if (items_to_keep_[i])
