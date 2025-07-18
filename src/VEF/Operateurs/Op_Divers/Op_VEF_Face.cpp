@@ -165,202 +165,173 @@ void Op_VEF_Face::dimensionner(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& 
  *
  */
 
-void Op_VEF_Face::modifier_pour_Cl(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& le_dom_cl, Matrice_Morse& la_matrice, DoubleTab& secmem) const
+void Op_VEF_Face::modifier_pour_Cl(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& le_dom_cl, Matrice_Morse& la_matrice, DoubleTab& tab_secmem) const
 {
   // Dimensionnement de la matrice qui devra recevoir les coefficients provenant de
   // la convection, de la diffusion pour le cas des faces.
   // Cette matrice a une structure de matrice morse.
   // Nous commencons par calculer les tailles des tableaux tab1 et tab2.
   const Conds_lim& les_cl = le_dom_cl.les_conditions_limites();
-  const IntVect& tab1 = la_matrice.get_tab1();
-  DoubleVect& coeff = la_matrice.get_set_coeff();
   const DoubleTab& champ_inconnue = le_dom_cl.equation().inconnue().valeurs();
   const int nb_comp = champ_inconnue.line_size();
   ArrOfDouble normale(nb_comp);
   for (const auto &itr : les_cl)
     {
-      const Cond_lim& la_cl = itr;
-      if (sub_type(Dirichlet, la_cl.valeur()))
+      const Cond_lim_base& la_cl = itr.valeur();
+      const Front_VF& la_front_dis = ref_cast(Front_VF, la_cl.frontiere_dis());
+      int nfaces = la_front_dis.nb_faces_tot();
+      if (sub_type(Dirichlet, la_cl) || sub_type(Dirichlet_homogene, la_cl))
         {
-          const Dirichlet& la_cl_Dirichlet = ref_cast(Dirichlet, la_cl.valeur());
-          const Front_VF& la_front_dis = ref_cast(Front_VF, la_cl->frontiere_dis());
-          int nfaces = la_front_dis.nb_faces();
+          bool has_val_imp = sub_type(Dirichlet, la_cl);
+          CDoubleTabView val_imp;
+          if (has_val_imp) val_imp = ref_cast(Dirichlet, la_cl).val_imp().view_ro();
+          CIntArrView tab1 = la_matrice.get_tab1().view_ro();
+          CIntArrView num_face = la_front_dis.num_face().view_ro();
+          DoubleArrView coeff = la_matrice.get_set_coeff().view_wo();
+          DoubleTabView secmem = tab_secmem.view_wo();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nfaces, KOKKOS_LAMBDA(const int ind_face)
+          {
+            int face = num_face(ind_face);
+            for (int comp = 0; comp < nb_comp; comp++)
+              {
+                int idiag = tab1[face * nb_comp + comp] - 1;
+                coeff[idiag] = 1;
+                // pour les voisins
+                int nbvois = tab1[face * nb_comp + 1 + comp] - tab1[face * nb_comp + comp];
+                for (int k = 1; k < nbvois; k++)
+                  coeff[idiag + k] = 0;
+                // pour le second membre
+                int j = nb_comp == 1 ? 0 : comp;
+                secmem(face, j) = has_val_imp ? val_imp(ind_face, j) : 0.;
+              }
+          });
+          end_gpu_timer(__KERNEL_NAME__);
+        }
+      else if (sub_type(Symetrie, la_cl) && le_dom_cl.equation().inconnue().nature_du_champ() == vectoriel)
+        {
+          const IntVect& tab1 = la_matrice.get_tab1();
+          const IntVect& tab2 = la_matrice.get_tab2();
+          const DoubleTab& face_normales = le_dom.face_normales();
+          ArrOfDouble somme(la_matrice.nb_colonnes()); // On dimensionne au plus grand
           ToDo_Kokkos("critical");
           for (int ind_face = 0; ind_face < nfaces; ind_face++)
             {
               int face = la_front_dis.num_face(ind_face);
+              double max_coef = 0;
+              int ind_max = -1;
+              double n2 = 0;
               for (int comp = 0; comp < nb_comp; comp++)
                 {
-                  int idiag = tab1[face * nb_comp + comp] - 1;
-                  coeff[idiag] = 1;
-                  // pour les voisins
-                  int nbvois = tab1[face * nb_comp + 1 + comp] - tab1[face * nb_comp + comp];
-                  for (int k = 1; k < nbvois; k++)
+                  normale[comp] = face_normales(face, comp);
+                  if (std::fabs(normale[comp]) > std::fabs(max_coef))
                     {
-                      coeff[idiag + k] = 0;
+                      max_coef = normale[comp];
+                      ind_max = comp;
                     }
-                  // pour le second membre
-                  if (nb_comp == 1)
-                    secmem(face) = la_cl_Dirichlet.val_imp(ind_face, 0);
-                  else
-                    secmem(face, comp) = la_cl_Dirichlet.val_imp(ind_face, comp);
+                  n2 += normale[comp] * normale[comp];
                 }
-            }
-        }
-      if (sub_type(Dirichlet_homogene, la_cl.valeur()))
-        {
-          const Dirichlet_homogene& la_cl_Dirichlet_homogene = ref_cast(Dirichlet_homogene, la_cl.valeur());
-          const Front_VF& la_front_dis = ref_cast(Front_VF, la_cl->frontiere_dis());
-          int nfaces = la_front_dis.nb_faces_tot();
-          for (int ind_face = 0; ind_face < nfaces; ind_face++)
-            {
-              int face = la_front_dis.num_face(ind_face);
-              ToDo_Kokkos("critical");
+              normale /= sqrt(n2);
+              max_coef = normale[ind_max];
+
+              // On commence par recalculer secmem=secmem-A *present pour pouvoir modifier A (on en profite pour projeter)
+              int nb_coeff_ligne = tab1[face * nb_comp + 1] - tab1[face * nb_comp];
+              for (int k = 0; k < nb_coeff_ligne; k++)
+                {
+                  for (int comp = 0; comp < nb_comp; comp++)
+                    {
+                      int j = tab2[tab1[face * nb_comp + comp] - 1 + k] - 1;
+                      //assert(j!=(face*nb_comp+comp));
+                      //if ((j>=(face*nb_comp))&&(j<(face*nb_comp+nb_comp)))
+                      const double coef_ij = la_matrice(face * nb_comp + comp, j);
+                      int face2 = j / nb_comp;
+                      int comp2 = j - face2 * nb_comp;
+                      tab_secmem(face, comp) -= coef_ij * champ_inconnue(face2, comp2);
+                    }
+                }
+              double somme_b = 0;
+
+              for (int comp = 0; comp < nb_comp; comp++)
+                somme_b += tab_secmem(face, comp) * normale[comp];
+
+              // on retire secmem.n n
+              for (int comp = 0; comp < nb_comp; comp++)
+                tab_secmem(face, comp) -= somme_b * normale[comp];
+
+              // on doit remettre la meme diagonale partout on prend la moyenne
+              double ref = 0;
               for (int comp = 0; comp < nb_comp; comp++)
                 {
-                  int idiag = tab1[face * nb_comp + comp] - 1;
-                  coeff[idiag] = 1;
-                  // pour les voisins
-                  int nbvois = tab1[face * nb_comp + 1 + comp] - tab1[face * nb_comp + comp];
-                  for (int k = 1; k < nbvois; k++)
-                    {
-                      coeff[idiag + k] = 0;
-                    }
-                  // pour le second membre
-                  if (nb_comp == 1)
-                    secmem(face) = la_cl_Dirichlet_homogene.val_imp(ind_face, 0);
-                  else
-                    secmem(face, comp) = la_cl_Dirichlet_homogene.val_imp(ind_face, comp);
+                  int j0 = face * nb_comp + comp;
+                  ref += la_matrice(j0, j0);
                 }
-            }
-        }
-      if (sub_type(Symetrie, la_cl.valeur()))
-        if (le_dom_cl.equation().inconnue().nature_du_champ() == vectoriel)
-          {
-            const IntVect& tab2 = la_matrice.get_tab2();
-            const Front_VF& la_front_dis = ref_cast(Front_VF, la_cl->frontiere_dis());
-            const DoubleTab& face_normales = le_dom.face_normales();
-            int nfaces = la_front_dis.nb_faces_tot();
-            ArrOfDouble somme(la_matrice.nb_colonnes()); // On dimensionne au plus grand
-            ToDo_Kokkos("critical");
-            for (int ind_face = 0; ind_face < nfaces; ind_face++)
+              ref /= nb_comp;
+
+              for (int comp = 0; comp < nb_comp; comp++)
+                {
+                  int j0 = face * nb_comp + comp;
+                  double rap = ref / la_matrice(j0, j0);
+                  for (int k = 0; k < nb_coeff_ligne; k++)
+                    {
+                      int j = tab2[tab1[j0] - 1 + k] - 1;
+                      la_matrice(j0, j) *= rap;
+                    }
+                  assert(est_egal(la_matrice(j0, j0), ref));
+                }
+              // on annule tous les coef extra diagonaux du bloc
+              //
+              for (int k = 1; k < nb_coeff_ligne; k++)
+                {
+                  for (int comp = 0; comp < nb_comp; comp++)
+                    {
+                      int j = tab2[tab1[face * nb_comp + comp] - 1 + k] - 1;
+                      assert(j != (face * nb_comp + comp));
+                      if ((j >= (face * nb_comp)) && (j < (face * nb_comp + nb_comp)))
+                        la_matrice(face * nb_comp + comp, j) = 0;
+                    }
+                }
+
+              // pour les blocs extra diagonaux on assure que Aij.ni=0
+              //ArrOfDouble somme(nb_coeff_ligne);
+              for (int k = 0; k < nb_coeff_ligne; k++)
+                {
+                  somme[k] = 0;
+                  int j = tab2[tab1[face * nb_comp] - 1 + k] - 1;
+
+                  // le coeff j doit exister sur les nb_comp lignes
+                  double dsomme = 0;
+                  for (int comp = 0; comp < nb_comp; comp++)
+                    dsomme += la_matrice(face * nb_comp + comp, j) * normale[comp];
+
+                  // on retire somme ni
+
+                  for (int comp = 0; comp < nb_comp; comp++)
+                    // on modifie que les coefficients ne faisant pas intervenir u(face,comp)
+                    if ((j < (face * nb_comp)) || (j >= (face * nb_comp + nb_comp)))
+                      la_matrice(face * nb_comp + comp, j) -= (dsomme) * normale[comp];
+                }
+              // Finalement on recalcule secmem=secmem+A*champ_inconnue (A a ete beaucoup modiife)
+              for (int k = 0; k < nb_coeff_ligne; k++)
+                {
+                  for (int comp = 0; comp < nb_comp; comp++)
+                    {
+                      int j = tab2[tab1[face * nb_comp + comp] - 1 + k] - 1;
+                      int face2 = j / nb_comp;
+                      int comp2 = j - face2 * nb_comp;
+                      const double coef_ij = la_matrice(face * nb_comp + comp, j);
+                      tab_secmem(face, comp) += coef_ij * champ_inconnue(face2, comp2);
+                    }
+                }
               {
-                int face = la_front_dis.num_face(ind_face);
-                double max_coef = 0;
-                int ind_max = -1;
-                double n2 = 0;
+                // verification
+                double somme_c = 0;
                 for (int comp = 0; comp < nb_comp; comp++)
-                  {
-                    normale[comp] = face_normales(face, comp);
-                    if (std::fabs(normale[comp]) > std::fabs(max_coef))
-                      {
-                        max_coef = normale[comp];
-                        ind_max = comp;
-                      }
-                    n2 += normale[comp] * normale[comp];
-                  }
-                normale /= sqrt(n2);
-                max_coef = normale[ind_max];
-
-                // On commence par recalculer secmem=secmem-A *present pour pouvoir modifier A (on en profite pour projeter)
-                int nb_coeff_ligne = tab1[face * nb_comp + 1] - tab1[face * nb_comp];
-                for (int k = 0; k < nb_coeff_ligne; k++)
-                  {
-                    for (int comp = 0; comp < nb_comp; comp++)
-                      {
-                        int j = tab2[tab1[face * nb_comp + comp] - 1 + k] - 1;
-                        //assert(j!=(face*nb_comp+comp));
-                        //if ((j>=(face*nb_comp))&&(j<(face*nb_comp+nb_comp)))
-                        const double coef_ij = la_matrice(face * nb_comp + comp, j);
-                        int face2 = j / nb_comp;
-                        int comp2 = j - face2 * nb_comp;
-                        secmem(face, comp) -= coef_ij * champ_inconnue(face2, comp2);
-                      }
-                  }
-                double somme_b = 0;
-
-                for (int comp = 0; comp < nb_comp; comp++)
-                  somme_b += secmem(face, comp) * normale[comp];
-
+                  somme_c += tab_secmem(face, comp) * normale[comp];
                 // on retire secmem.n n
                 for (int comp = 0; comp < nb_comp; comp++)
-                  secmem(face, comp) -= somme_b * normale[comp];
-
-                // on doit remettre la meme diagonale partout on prend la moyenne
-                double ref = 0;
-                for (int comp = 0; comp < nb_comp; comp++)
-                  {
-                    int j0 = face * nb_comp + comp;
-                    ref += la_matrice(j0, j0);
-                  }
-                ref /= nb_comp;
-
-                for (int comp = 0; comp < nb_comp; comp++)
-                  {
-                    int j0 = face * nb_comp + comp;
-                    double rap = ref / la_matrice(j0, j0);
-                    for (int k = 0; k < nb_coeff_ligne; k++)
-                      {
-                        int j = tab2[tab1[j0] - 1 + k] - 1;
-                        la_matrice(j0, j) *= rap;
-                      }
-                    assert(est_egal(la_matrice(j0, j0), ref));
-                  }
-                // on annule tous les coef extra diagonaux du bloc
-                //
-                for (int k = 1; k < nb_coeff_ligne; k++)
-                  {
-                    for (int comp = 0; comp < nb_comp; comp++)
-                      {
-                        int j = tab2[tab1[face * nb_comp + comp] - 1 + k] - 1;
-                        assert(j != (face * nb_comp + comp));
-                        if ((j >= (face * nb_comp)) && (j < (face * nb_comp + nb_comp)))
-                          la_matrice(face * nb_comp + comp, j) = 0;
-                      }
-                  }
-
-                // pour les blocs extra diagonaux on assure que Aij.ni=0
-                //ArrOfDouble somme(nb_coeff_ligne);
-                for (int k = 0; k < nb_coeff_ligne; k++)
-                  {
-                    somme[k] = 0;
-                    int j = tab2[tab1[face * nb_comp] - 1 + k] - 1;
-
-                    // le coeff j doit exister sur les nb_comp lignes
-                    double dsomme = 0;
-                    for (int comp = 0; comp < nb_comp; comp++)
-                      dsomme += la_matrice(face * nb_comp + comp, j) * normale[comp];
-
-                    // on retire somme ni
-
-                    for (int comp = 0; comp < nb_comp; comp++)
-                      // on modifie que les coefficients ne faisant pas intervenir u(face,comp)
-                      if ((j < (face * nb_comp)) || (j >= (face * nb_comp + nb_comp)))
-                        la_matrice(face * nb_comp + comp, j) -= (dsomme) * normale[comp];
-                  }
-                // Finalement on recalcule secmem=secmem+A*champ_inconnue (A a ete beaucoup modiife)
-                for (int k = 0; k < nb_coeff_ligne; k++)
-                  {
-                    for (int comp = 0; comp < nb_comp; comp++)
-                      {
-                        int j = tab2[tab1[face * nb_comp + comp] - 1 + k] - 1;
-                        int face2 = j / nb_comp;
-                        int comp2 = j - face2 * nb_comp;
-                        const double coef_ij = la_matrice(face * nb_comp + comp, j);
-                        secmem(face, comp) += coef_ij * champ_inconnue(face2, comp2);
-                      }
-                  }
-                {
-                  // verification
-                  double somme_c = 0;
-                  for (int comp = 0; comp < nb_comp; comp++)
-                    somme_c += secmem(face, comp) * normale[comp];
-                  // on retire secmem.n n
-                  for (int comp = 0; comp < nb_comp; comp++)
-                    secmem(face, comp) -= somme_c * normale[comp];
-                }
+                  tab_secmem(face, comp) -= somme_c * normale[comp];
               }
-          }
+            }
+        }
     }
 }
 
