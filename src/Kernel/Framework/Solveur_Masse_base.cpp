@@ -123,86 +123,103 @@ DoubleTab& Solveur_Masse_base::appliquer(DoubleTab& x) const
 }
 
 // Add M/dt into matrix
-Matrice_Base& Solveur_Masse_base::ajouter_masse(double dt, Matrice_Base& matrice, int penalisation) const
+Matrice_Base& Solveur_Masse_base::ajouter_masse(double dt, Matrice_Base& matrice, int penalisation_flag) const
 {
   Matrice_Morse& matmo=ref_cast(Matrice_Morse, matrice);
   if (has_interface_blocs())
     {
-      penalisation_flag_ = penalisation;
+      penalisation_flag_ = penalisation_flag;
       DoubleTrav inco(equation().inconnue().valeurs());
       ajouter_blocs({{ equation().inconnue().le_nom().getString(), &matmo }}, inco, dt, {}, 0); //on tente ajouter_blocs()
       return matrice;
     }
 
-  DoubleTrav diag(equation().inconnue().valeurs());
-  const int sz = equation().inconnue().valeurs().dimension_tot(0) * diag.line_size();
-  diag=1.;
-  appliquer(diag); // M-1
+  DoubleTrav tab_diag(equation().inconnue().valeurs());
+  const int sz = equation().inconnue().valeurs().dimension_tot(0) * tab_diag.line_size();
+  tab_diag=1.;
+  appliquer(tab_diag); // M-1
   int prems=0;
-  if(penalisation)
+  if(penalisation_flag)
     {
+      ToDo_Kokkos("critical");
       if (penalisation_==0)
         {
           double penal=0;
           for(int i=0; i<sz; i++)
             penal=std::max(penal, matmo(i,i));
           penal=mp_max(penal);
-          penalisation_=(mp_max_vect(diag)/dt + penal)*1.e3;
+          penalisation_=(mp_max_vect(tab_diag)/dt + penal)*1.e3;
           prems=1;
+        }
+      for(int i=0; i<sz; i++)
+        {
+          if (tab_diag.addr()[i]==0)
+            {
+              if(prems)
+                {
+                  matmo(i,i)+=penalisation_;
+                  prems=0;
+                }
+              matmo(i,i)+=penalisation_/dt;
+            }
+          else
+            matmo(i,i)+=1./(tab_diag.addr()[i]*dt); // M/dt
         }
     }
   else
-    penalisation_=0;
-  for(int i=0; i<sz; i++)
     {
-      if (diag.addr()[i]==0)
-        {
-          if(prems)
-            {
-              matmo(i,i)+=penalisation_;
-              prems=0;
-            }
-          matmo(i,i)+=penalisation_/dt;
-        }
-      else
-        matmo(i,i)+=1./(diag.addr()[i]*dt); // M/dt
+      CDoubleArrView diag = static_cast<const ArrOfDouble&>(tab_diag).view_ro();
+      Matrice_Morse_View mat;
+      mat.set(matmo);
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), sz, KOKKOS_LAMBDA(
+                             const int i)
+      {
+        if (diag(i) != 0)
+          mat.add(i, i, 1. / (diag(i) * dt)); // M/dt
+      });
+      end_gpu_timer(__KERNEL_NAME__);
     }
   return matrice;
 }
 
 // Add M*y/dt to x
-DoubleTab& Solveur_Masse_base::ajouter_masse(double dt, DoubleTab& x, const DoubleTab& y, int penalisation) const
+DoubleTab& Solveur_Masse_base::ajouter_masse(double dt, DoubleTab& tab_x, const DoubleTab& tab_y, int penalisation_flag) const
 {
   if (has_interface_blocs())
     {
-      penalisation_flag_ = penalisation;
+      penalisation_flag_ = penalisation_flag;
       const std::string& nom_inco = equation().inconnue().le_nom().getString();
-      ajouter_blocs({}, x, dt, {{nom_inco,y}}, 0); //on tente ajouter_blocs()
-      return x;
+      ajouter_blocs({}, tab_x, dt, {{nom_inco,tab_y}}, 0); //on tente ajouter_blocs()
+      return tab_x;
     }
 
-  int sz=y.size();
-  DoubleTab diag;
-  diag.copy(equation().inconnue().valeurs(), RESIZE_OPTIONS::NOCOPY_NOINIT);
-  diag=1.;
-  appliquer(diag); // M-1
-  if (penalisation)
+  int sz=tab_y.size();
+  DoubleTrav tab_diag;
+  tab_diag.copy(equation().inconnue().valeurs(), RESIZE_OPTIONS::NOCOPY_NOINIT);
+  tab_diag=1.;
+  appliquer(tab_diag); // M-1
+  if (penalisation_flag)
     {
       if (penalisation_==0)
-        penalisation_ = mp_max_vect(diag)*1.e3;
+        penalisation_ = mp_max_vect(tab_diag)*1.e3;
     }
   else
     penalisation_=1;
 
-  for(int i=0; i<sz; i++)
-    {
-      if (diag.addr()[i]==0)
-        x.addr()[i]=penalisation_*y.addr()[i];
-      else
-        x.addr()[i]+=1./(diag.addr()[i]*dt)*y.addr()[i];
-    }
+  double penalisation = penalisation_;
+  CDoubleArrView diag = static_cast<const ArrOfDouble&>(tab_diag).view_ro();
+  CDoubleArrView y = static_cast<const ArrOfDouble&>(tab_y).view_ro();
+  DoubleArrView x = static_cast<ArrOfDouble&>(tab_x).view_rw();
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), sz, KOKKOS_LAMBDA(const int i)
+  {
+    if (diag(i)==0)
+      x(i)=penalisation*y(i);
+    else
+      x(i)+=1./(diag(i)*dt)*y(i);
+  });
+  end_gpu_timer(__KERNEL_NAME__);
   //x.echange_espace_virtuel();Debog::verifier("Solveur_Masse::ajouter_masse",x);
-  return x;
+  return tab_x;
 }
 
 Matrice_Base& Solveur_Masse_base::ajouter_masse_dt_local(DoubleVect& dt_locaux, Matrice_Base& matrice, int penalisation) const
@@ -227,7 +244,7 @@ Matrice_Base& Solveur_Masse_base::ajouter_masse_dt_local(DoubleVect& dt_locaux, 
     }
   else
     penalisation_=0;
-
+  ToDo_Kokkos("critical");
   for(int i=0; i<sz; i++)
     {
       if (diag.addr()[i]==0)
@@ -259,6 +276,7 @@ DoubleTab& Solveur_Masse_base::ajouter_masse_dt_local(DoubleVect& dt_locaux, Dou
     }
   else
     penalisation_=1;
+  ToDo_Kokkos("critical");
   for(int i=0; i<sz; i++)
     {
       if (diag.addr()[i]==0)
@@ -267,10 +285,6 @@ DoubleTab& Solveur_Masse_base::ajouter_masse_dt_local(DoubleVect& dt_locaux, Dou
         x.addr()[i]+=1./(diag.addr()[i]*dt_locaux[i])*y.addr()[i];
 
     }
-  //x.echange_espace_virtuel();
-
-  //test
-
   return x;
 }
 
@@ -288,6 +302,7 @@ void Solveur_Masse_base::get_masse_dt_local(DoubleVect& m_dt_locaux, DoubleVect&
     }
   else
     penalisation_=1;
+  ToDo_Kokkos("critical");
   for(int i=0; i<sz; i++)
     {
       if (diag.addr()[i]==0)
@@ -316,6 +331,7 @@ void Solveur_Masse_base::get_masse_divide_by_local_dt(DoubleVect& m_dt_locaux, D
     }
   else
     penalisation_=1;
+  ToDo_Kokkos("critical");
   for(int i=0; i<sz; i++)
     {
       if (diag.addr()[i]==0)

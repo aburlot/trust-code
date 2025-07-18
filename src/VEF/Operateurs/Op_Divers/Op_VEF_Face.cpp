@@ -68,9 +68,9 @@ void Op_VEF_Face::dimensionner(const Domaine_VEF& le_dom, const Domaine_Cl_VEF& 
   //  IntVect rang_voisin(nfin*nb_comp);
   IntTrav rang_voisin(nfin * nb_comp);
   rang_voisin = nb_comp;
-
   // On traite toutes les faces
   int j;
+  ToDo_Kokkos("Port with kokkos ? It will be called once...");
   for (int num_face = 0; num_face < nfin; num_face++)
     {
       int elem1 = face_voisins(num_face, 0);
@@ -185,6 +185,7 @@ void Op_VEF_Face::modifier_pour_Cl(const Domaine_VEF& le_dom, const Domaine_Cl_V
           const Dirichlet& la_cl_Dirichlet = ref_cast(Dirichlet, la_cl.valeur());
           const Front_VF& la_front_dis = ref_cast(Front_VF, la_cl->frontiere_dis());
           int nfaces = la_front_dis.nb_faces();
+          ToDo_Kokkos("critical");
           for (int ind_face = 0; ind_face < nfaces; ind_face++)
             {
               int face = la_front_dis.num_face(ind_face);
@@ -214,6 +215,7 @@ void Op_VEF_Face::modifier_pour_Cl(const Domaine_VEF& le_dom, const Domaine_Cl_V
           for (int ind_face = 0; ind_face < nfaces; ind_face++)
             {
               int face = la_front_dis.num_face(ind_face);
+              ToDo_Kokkos("critical");
               for (int comp = 0; comp < nb_comp; comp++)
                 {
                   int idiag = tab1[face * nb_comp + comp] - 1;
@@ -240,6 +242,7 @@ void Op_VEF_Face::modifier_pour_Cl(const Domaine_VEF& le_dom, const Domaine_Cl_V
             const DoubleTab& face_normales = le_dom.face_normales();
             int nfaces = la_front_dis.nb_faces_tot();
             ArrOfDouble somme(la_matrice.nb_colonnes()); // On dimensionne au plus grand
+            ToDo_Kokkos("critical");
             for (int ind_face = 0; ind_face < nfaces; ind_face++)
               {
                 int face = la_front_dis.num_face(ind_face);
