@@ -83,23 +83,32 @@ Entree& Simple::lire(const Motcle& motlu,Entree& is)
   return is;
 }
 
-void diviser_par_rho_np1_face(Equation_base& eqn,DoubleTab& tab)
+void diviser_par_rho_np1_face(Equation_base& eqn,DoubleTab& tab_array)
 {
   Fluide_Dilatable_base& fluide_dil = ref_cast(Fluide_Dilatable_base,eqn.milieu());
-  const DoubleTab& rho = fluide_dil.rho_face_np1();
-  int nbdim = tab.nb_dim();
-  int taille_0_tot = tab.dimension_tot(0);
-  ToDo_Kokkos("critical impl");
+  int nbdim = tab_array.nb_dim();
+  int taille_0_tot = tab_array.dimension_tot(0);
+  int dim = tab_array.dimension(1);
+  CDoubleArrView rho = static_cast<const ArrOfDouble&>(fluide_dil.rho_face_np1()).view_ro();
   if (nbdim==1)
-    for (int i=0; i<taille_0_tot; i++)
-      tab(i) /= rho(i);
+    {
+      DoubleArrView array = static_cast<ArrOfDouble&>(tab_array).view_rw();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(0, taille_0_tot), KOKKOS_LAMBDA(const int i)
+      {
+        for (int j = 0; j < dim; j++)
+          array(i) /= rho(i);
+      });
+    }
   else
     {
-      int dim = tab.dimension(1);
-      for (int i=0; i<taille_0_tot; i++)
+      DoubleTabView array = tab_array.view_rw();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(0, taille_0_tot), KOKKOS_LAMBDA(const int i)
+      {
         for (int j=0; j<dim; j++)
-          tab(i,j) /= rho(i);
+          array(i,j) /= rho(i);
+      });
     }
+  end_gpu_timer(__KERNEL_NAME__);
 }
 
 void iterer_eqn_expl(Equation_base& eqn,int nb_iter,double dt,DoubleTab& current,DoubleTab& dudt,
