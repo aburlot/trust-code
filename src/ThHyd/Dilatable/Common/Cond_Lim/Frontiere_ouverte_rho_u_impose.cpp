@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2023, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -51,7 +51,7 @@ double Frontiere_ouverte_rho_u_impose::val_imp_au_temps(double temps, int i) con
 
 double Frontiere_ouverte_rho_u_impose::val_imp_au_temps(double temps, int i, int j) const
 {
-  double rho_u, rho;
+  double rho_u;
   int ndeb = le_champ_front->frontiere_dis().frontiere().num_premiere_face();
   const DoubleTab& tab_rho_u = le_champ_front->valeurs_au_temps(temps);
   assert(tab_rho_u.nb_dim() == 2);
@@ -61,6 +61,41 @@ double Frontiere_ouverte_rho_u_impose::val_imp_au_temps(double temps, int i, int
   else
     rho_u = tab_rho_u(i, j);
 
-  rho = le_fluide->rho_face_np1()(i + ndeb);
+  double rho = le_fluide->rho_face_np1()(i + ndeb);
   return rho_u / rho;
 }
+
+const DoubleTab& Frontiere_ouverte_rho_u_impose::tab_val_imp(double temps) const
+{
+  if (temps==DMAXFLOAT) temps = le_champ_front->get_temps_defaut();
+  const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());
+  // ToDo factorize in Champ_front_base::valeurs_face()
+  int size = le_champ_front->valeurs().dimension(0) == 1 ? le_bord.nb_faces_tot() : le_champ_front->valeurs().dimension_tot(0);
+  if (size>0)
+    {
+      bool update = le_champ_front->instationnaire();
+      if (tab_.dimension(0) != size)
+        {
+          tab_.resize(size, le_champ_front->valeurs().dimension(1));
+          update = true;
+        }
+      update = true;  // Provisoire
+      if (update)
+        {
+          int ndeb = le_champ_front->frontiere_dis().frontiere().num_premiere_face();
+          int nb_comp = tab_.dimension(1);
+          CDoubleTabView rho_u = le_champ_front->valeurs_au_temps(temps).view_ro();
+          CDoubleArrView rho_face_np1 = static_cast<const ArrOfDouble&>(le_fluide->rho_face_np1()).view_ro();
+          DoubleTabView tab = tab_.view_wo();
+          bool uniform = (int)rho_u.extent(0) == 1;
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), size, KOKKOS_LAMBDA (const int face)
+          {
+            for (int comp = 0; comp < nb_comp; comp++)
+              tab(face, comp) = rho_u(uniform ? 0 : face, comp) / rho_face_np1(face + ndeb);
+          });
+          end_gpu_timer(__KERNEL_NAME__);
+        }
+    }
+  return tab_;
+}
+

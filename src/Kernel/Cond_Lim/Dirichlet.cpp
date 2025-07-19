@@ -70,7 +70,7 @@ double Dirichlet::val_imp_au_temps(double temps, int i) const
  * on the field at the boundary. It provides methods to retrieve the imposed values
  * at specified times and components of the field.
  */
-const DoubleTab& Dirichlet::val_imp(double temps) const
+const DoubleTab& Dirichlet::tab_val_imp(double temps) const
 {
   if (temps==DMAXFLOAT) temps = le_champ_front->get_temps_defaut();
   const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());

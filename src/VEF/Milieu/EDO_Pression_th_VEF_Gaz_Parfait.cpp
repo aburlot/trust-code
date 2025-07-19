@@ -133,7 +133,7 @@ double EDO_Pression_th_VEF_Gaz_Parfait::resoudre(double Pth_n)
               int ndeb = la_front_dis.num_premiere_face();
               int nfin = ndeb + la_front_dis.nb_faces();
               int dim = Objet_U::dimension;
-              CDoubleTabView val_imp = diri.val_imp(futur).view_ro();
+              CDoubleTabView val_imp = diri.tab_val_imp(futur).view_ro();
               CDoubleTabView face_normales = le_dom->face_normales().view_ro();
               CIntTabView face_voisins = le_dom->face_voisins().view_ro();
               double debit = 0;

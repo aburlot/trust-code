@@ -436,7 +436,7 @@ void Domaine_Cl_VEF::imposer_cond_lim(Champ_Inc_base& ch, double temps)
           else if (sub_type(Dirichlet_entree_fluide, la_cl))
             {
               const Dirichlet_entree_fluide& la_cl_diri = ref_cast(Dirichlet_entree_fluide, la_cl);
-              CDoubleTabView val_imp = la_cl_diri.val_imp(temps).view_ro();
+              CDoubleTabView val_imp = la_cl_diri.tab_val_imp(temps).view_ro();
               if (nb_comp == 1)
                 {
                   DoubleArrView tab = static_cast<ArrOfDouble&>(ch_tab).view_wo();
@@ -460,7 +460,7 @@ void Domaine_Cl_VEF::imposer_cond_lim(Champ_Inc_base& ch, double temps)
           else if (sub_type(Scalaire_impose_paroi, la_cl))
             {
               const Scalaire_impose_paroi& la_cl_diri = ref_cast(Scalaire_impose_paroi, la_cl);
-              CDoubleTabView val_imp = la_cl_diri.val_imp(temps).view_ro();
+              CDoubleTabView val_imp = la_cl_diri.tab_val_imp(temps).view_ro();
               if (nb_comp == 1)
                 {
                   DoubleArrView tab = static_cast<ArrOfDouble&>(ch_tab).view_wo();
@@ -539,7 +539,7 @@ void Domaine_Cl_VEF::imposer_cond_lim(Champ_Inc_base& ch, double temps)
                 }
               else
                 {
-                  CDoubleTabView val_imp = la_cl_diri.val_imp(temps).view_ro();
+                  CDoubleTabView val_imp = la_cl_diri.tab_val_imp(temps).view_ro();
                   DoubleTabView tab = ch_tab.view_wo();
                   Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(ndeb, nfin), KOKKOS_LAMBDA(const int num_face)
                   {

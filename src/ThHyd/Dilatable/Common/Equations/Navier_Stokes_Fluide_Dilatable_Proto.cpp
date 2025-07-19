@@ -490,7 +490,7 @@ void Navier_Stokes_Fluide_Dilatable_Proto::update_vpoint_on_boundaries(const Nav
           else // VEF //
             {
               int dim = Objet_U::dimension;
-              CDoubleTabView val_imp = diri.val_imp().view_ro();
+              CDoubleTabView val_imp = diri.tab_val_imp().view_ro();
               CDoubleArrView rho_face_np1 = static_cast<const ArrOfDouble&>(tab_rho_face_np1).view_ro();
               CDoubleArrView rho_face_n = static_cast<const ArrOfDouble&>(tab_rho_face_n).view_ro();
               CDoubleTabView vit = tab_vit.view_ro();

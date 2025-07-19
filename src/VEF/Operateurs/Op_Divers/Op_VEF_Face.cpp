@@ -184,7 +184,7 @@ void Op_VEF_Face::modifier_pour_Cl(const Domaine_VEF& le_dom, const Domaine_Cl_V
         {
           bool has_val_imp = sub_type(Dirichlet, la_cl);
           CDoubleTabView val_imp;
-          if (has_val_imp) val_imp = ref_cast(Dirichlet, la_cl).val_imp().view_ro();
+          if (has_val_imp) val_imp = ref_cast(Dirichlet, la_cl).tab_val_imp().view_ro();
           CIntArrView tab1 = la_matrice.get_tab1().view_ro();
           CIntArrView num_face = la_front_dis.num_face().view_ro();
           DoubleArrView coeff = la_matrice.get_set_coeff().view_wo();

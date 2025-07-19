@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -35,6 +35,7 @@ public :
   int compatible_avec_eqn(const Equation_base&) const override;
   double val_imp_au_temps(double temps, int i) const override;
   double val_imp_au_temps(double temps, int i, int j) const override;
+  const DoubleTab& tab_val_imp(double temps=DMAXFLOAT) const override;
 
 protected :
   OBS_PTR(Fluide_Dilatable_base) le_fluide;
