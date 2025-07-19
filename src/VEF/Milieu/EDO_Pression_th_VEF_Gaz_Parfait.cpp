@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -46,8 +46,8 @@ double EDO_Pression_th_VEF_Gaz_Parfait::resoudre(double Pth_n)
   double present = le_fluide_->vitesse().equation().schema_temps().temps_courant();
   double dt = le_fluide_->vitesse().equation().schema_temps().pas_de_temps();
   double futur = present + dt;
-  const DoubleTab& tempnp1 = le_fluide_->inco_chaleur().valeurs(futur);    // T(n+1)
-  const DoubleTab& tempn = le_fluide_->inco_chaleur().valeurs(present);    // T(n)
+  const DoubleTab& tab_tempnp1 = le_fluide_->inco_chaleur().valeurs(futur);    // T(n+1)
+  const DoubleTab& tab_tempn = le_fluide_->inco_chaleur().valeurs(present);    // T(n)
   int nb_faces = le_dom->nb_faces();
   double Pth = 0;
 
@@ -55,16 +55,21 @@ double EDO_Pression_th_VEF_Gaz_Parfait::resoudre(double Pth_n)
 
   if (traitPth == 0)   // EDO
     {
-
       const DoubleTab& tab_rho = le_fluide_->masse_volumique().valeurs();       // n+1/2
-
       const double rho_moy = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tab_rho, FAUX_EN_PERIO);
-      DoubleVect tmp(tab_rho); // copie de rho
-      assert(tmp.size() == nb_faces);
+      DoubleTrav tab_tmp(tab_rho); // copie de rho
+      tab_tmp = tab_rho;
+      assert(tab_tmp.size() == nb_faces);
       const double invdt = 1. / dt;
-      for (int i = 0; i < nb_faces; i++)
+      CDoubleArrView tempn = static_cast<const ArrOfDouble&>(tab_tempn).view_ro();
+      CDoubleArrView tempnp1 = static_cast<const ArrOfDouble&>(tab_tempnp1).view_ro();
+      DoubleArrView tmp = static_cast<ArrOfDouble&>(tab_tmp).view_wo();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(0, nb_faces), KOKKOS_LAMBDA(const int i)
+      {
         tmp[i] *= (tempnp1[i] - tempn[i]) / tempnp1[i] * invdt;
-      double S = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tmp, FAUX_EN_PERIO);
+      });
+      end_gpu_timer(__KERNEL_NAME__);
+      double S = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tab_tmp, FAUX_EN_PERIO);
 
       //////////////////
       S /= rho_moy;
@@ -97,16 +102,25 @@ double EDO_Pression_th_VEF_Gaz_Parfait::resoudre(double Pth_n)
       le_fluide_->calculer_masse_volumique();
 
       // Calcul de masse_n et masse_np1
-      DoubleVect tmp;
-      tmp.copy(tempn, RESIZE_OPTIONS::NOCOPY_NOINIT); // copier uniquement la structure
-      ToDo_Kokkos("critical impl");
-      for (int i = 0; i < nb_faces; i++)
-        tmp[i] = 1. / tempn[i];
-      const double masse_n = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tmp, FAUX_EN_PERIO);
-        ToDo_Kokkos("critical impl");
-        for (int i = 0; i < nb_faces; i++)
-        tmp[i] = 1. / tempnp1[i];
-      const double masse_np1 = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tmp, FAUX_EN_PERIO);
+      DoubleTrav tab_tmp;
+      tab_tmp.copy(tab_tempn, RESIZE_OPTIONS::NOCOPY_NOINIT); // copier uniquement la structure
+
+      CDoubleArrView tempn = static_cast<const ArrOfDouble&>(tab_tempn).view_ro();
+      DoubleArrView tmp = static_cast<ArrOfDouble&>(tab_tmp).view_wo();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(0, nb_faces), KOKKOS_LAMBDA(const int i)
+      {
+        tmp(i) = 1. / tempn(i);
+      });
+      end_gpu_timer(__KERNEL_NAME__);
+      const double masse_n = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tab_tmp, FAUX_EN_PERIO);
+
+      CDoubleArrView tempnp1 = static_cast<const ArrOfDouble&>(tab_tempnp1).view_ro();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), range_1D(0, nb_faces), KOKKOS_LAMBDA(const int i)
+      {
+        tmp(i) = 1. / tempnp1(i);
+      });
+      end_gpu_timer(__KERNEL_NAME__);
+      const double masse_np1 = Champ_P1NC::calculer_integrale_volumique(domaine_vef, tab_tmp, FAUX_EN_PERIO);
 
       // Calcul de debit_u_imp et debit_rho_u_imp
       for (int n_bord = 0; n_bord < le_dom->nb_front_Cl(); n_bord++)
@@ -118,20 +132,26 @@ double EDO_Pression_th_VEF_Gaz_Parfait::resoudre(double Pth_n)
               const Front_VF& la_front_dis = ref_cast(Front_VF, la_cl.frontiere_dis());
               int ndeb = la_front_dis.num_premiere_face();
               int nfin = ndeb + la_front_dis.nb_faces();
-                ToDo_Kokkos("critical impl");
-                for (int face = ndeb; face < nfin; face++)
-                {
-                  double debit_v = 0;
-                  for (int d = 0; d < dimension; d++)
-                    debit_v += le_dom->face_normales(face, d) * diri.val_imp_au_temps(futur, face - ndeb, d) / tempnp1(face);
-                  int n0 = le_dom->face_voisins(face, 0);
-                  if (n0 == -1)
-                    debit_v = -debit_v;
-                  if (sub_type(Frontiere_ouverte_rho_u_impose, la_cl))
-                    debit_rho_u_imp += debit_v;
-                  else
-                    debit_u_imp += debit_v;
-                }
+              int dim = Objet_U::dimension;
+              CDoubleTabView val_imp = diri.val_imp(futur).view_ro();
+              CDoubleTabView face_normales = le_dom->face_normales().view_ro();
+              CIntTabView face_voisins = le_dom->face_voisins().view_ro();
+              double debit = 0;
+              Kokkos::parallel_reduce(start_gpu_timer(__KERNEL_NAME__), range_1D(ndeb, nfin), KOKKOS_LAMBDA(const int face, double& debit_local)
+              {
+                double debit_v = 0;
+                for (int d = 0; d < dim; d++)
+                  debit_v += face_normales(face, d) * val_imp(face - ndeb, d) / tempnp1(face);
+                int n0 = face_voisins(face, 0);
+                if (n0 == -1)
+                  debit_v = -debit_v;
+                debit_local += debit_v;
+              }, debit);
+              end_gpu_timer(__KERNEL_NAME__);
+              if (sub_type(Frontiere_ouverte_rho_u_impose, la_cl))
+                debit_rho_u_imp += debit;
+              else
+                debit_u_imp += debit;
             }
           else if (sub_type(Neumann_sortie_libre, la_cl))
             {
