@@ -2802,6 +2802,7 @@ void Solv_Petsc::Create_objects(const Matrice_Morse& mat, int blocksize)
 void Solv_Petsc::Create_vectors(const DoubleVect& b)
 {
   if (SecondMembrePetsc_!=nullptr) return; // Deja construit
+
   if (gpu_)
     {
       // For GPU solvers, allocate 2 arrays on device to avoid 2 H2D and 1 D2H copy later during each solve.
@@ -2990,49 +2991,6 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   else     // Normal use: partition of PETSc matrix is dicted by TRUST matrix:
     MatSetSizes(MatricePetsc, nb_rows_, nb_rows_, PETSC_DECIDE, PETSC_DECIDE);
 
-  //////////////////////////////////////////////
-  // Determination du nombre d'elements non nuls
-  //////////////////////////////////////////////
-  ArrOfPetscInt nnz(nb_rows_);
-  ArrOfPetscInt d_nnz(nb_rows_);
-  ArrOfPetscInt o_nnz(nb_rows_);
-  //nnz = 0;
-  //d_nnz = 0;
-  //o_nnz = 0;
-  ArrOfTID& renum_array = renum_;  // tableau vu comme lineaire
-  const PetscInt premiere_colonne_globale = decalage_local_global_;
-  const PetscInt derniere_colonne_globale = nb_rows_ + decalage_local_global_;
-  const ArrOfInt& tab1 = mat_morse.get_tab1();
-  const ArrOfInt& tab2 = mat_morse.get_tab2();
-  //const ArrOfDouble& coeff = mat_morse.get_coeff();
-  int cpt = 0;
-  const int n = tab1.size_array() - 1;
-  for (int i = 0; i < n; i++)
-    {
-      if (items_to_keep_[i])
-        {
-          const int k0 = tab1[i] - 1;
-          const int k1 = tab1[i + 1] - 1;
-          nnz[cpt] = k1 - k0; // Nombre d'elements non nuls sur la ligne i
-          for (int k = k0; k < k1; k++)
-            {
-              const int colonne_locale = tab2[k] - 1;
-              const PetscInt colonne_globale = renum_array[colonne_locale];
-              if (colonne_globale >= premiere_colonne_globale && colonne_globale < derniere_colonne_globale)
-                d_nnz[cpt]++;
-              else
-                o_nnz[cpt]++;
-            }
-          cpt++;
-        }
-    }
-
-  if (journal)
-    {
-      Journal() << "nnz=" << nnz << finl;
-      Journal() << "d_nnz=" << d_nnz << finl;
-      Journal() << "o_nnz=" << o_nnz << finl;
-    }
   /************************/
   /* Typage de la matrice */
   /************************/
@@ -3073,44 +3031,125 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   /********************************************/
   /* Preallocation de la taille de la matrice */
   /********************************************/
-  // TRES important pour la vitesse de construction de la matrice
-  if (mataij == 0)
+  bool use_coo = mat_morse.get_coeff().isDataOnDevice();
+  if (use_coo)
     {
-      if (different_partition_)
+      // We preallocate on host (should ne done once)
+      Cerr << "Precallocating the matrix on GPU..." << finl;
+      const ArrOfInt& tab1 = mat_morse.get_tab1();
+      const ArrOfInt& tab2 = mat_morse.get_tab2();
+      const int n = tab1.size_array() - 1;
+      PetscInt nnz = 0; // ToDo compute and store this info somewhere:
+      for (int i = 0; i < n; i++)
         {
-          // If partition of TRUST and PETSc differs, difficult to preallocate the matrix finely so:
-          // ToDo, try to optimize:
-          int nz = Process::mp_max((nnz.size_array() == 0 ? 0 : (int)max_array(nnz)));  // max_array always an int: max numb of zeros on a line
-          MatSeqSBAIJSetPreallocation(MatricePetsc, block_size_, nz, PETSC_NULLPTR);
-          MatMPISBAIJSetPreallocation(MatricePetsc, block_size_, nz, PETSC_NULLPTR, nz, PETSC_NULLPTR);
+          if (items_to_keep_[i])
+            nnz += tab1[i + 1] - tab1[i];
         }
-      else
+      // COO format:
+      PetscInt* coo_i;
+      PetscInt* coo_j;
+      PetscMalloc2(nnz, &coo_i, nnz, &coo_j);
+      ArrOfTID& renum_array = renum_;  // tableau vu comme lineaire
+      int ligne_locale = 0;
+      nnz = 0;
+      for (int i = 0; i < n; i++)
         {
-          MatSeqSBAIJSetPreallocation(MatricePetsc, block_size_, PETSC_DEFAULT, nnz.addr());
-          // Test on nb_rows==0 is to avoid PAR_docond_anisoproc hangs
-          MatMPISBAIJSetPreallocation(MatricePetsc, block_size_, (nb_rows_ == 0 ? 0 : PETSC_DEFAULT), d_nnz.addr(),
-                                      (nb_rows_ == 0 ? 0 : PETSC_DEFAULT), o_nnz.addr());
+          if (items_to_keep_[i])
+            {
+              const int k0 = tab1[i] - 1;
+              const int k1 = tab1[i + 1] - 1;
+              for (int k = k0; k < k1; k++)
+                {
+                  const int colonne_locale = tab2[k] - 1;
+                  const PetscInt ligne_globale = ligne_locale + decalage_local_global_;
+                  const PetscInt colonne_globale = renum_array[colonne_locale];
+                  coo_i[nnz] = ligne_globale;
+                  coo_j[nnz] = colonne_globale;
+                  nnz++;
+                }
+              ligne_locale++;
+            }
         }
+      MatSetPreallocationCOO(MatricePetsc, nnz, coo_i, coo_j);
+      PetscFree2(coo_i, coo_j);
     }
   else
     {
-      if (different_partition_)
+      ArrOfPetscInt nnz(nb_rows_);
+      ArrOfPetscInt d_nnz(nb_rows_);
+      ArrOfPetscInt o_nnz(nb_rows_);
+      ArrOfTID& renum_array = renum_;  // tableau vu comme lineaire
+      const PetscInt premiere_colonne_globale = decalage_local_global_;
+      const PetscInt derniere_colonne_globale = nb_rows_ + decalage_local_global_;
+      const ArrOfInt& tab1 = mat_morse.get_tab1();
+      const ArrOfInt& tab2 = mat_morse.get_tab2();
+      int cpt = 0;
+      const int n = tab1.size_array() - 1;
+      for (int i = 0; i < n; i++)
         {
-          // If partition of TRUST and PETSc differs, difficult to preallocate the matrix finely so:
-          // ToDo, try to optimize:
-          int nz = Process::mp_max((nnz.size_array() == 0 ? 0 : (int)max_array(nnz)));   // max_array always an int: max numb of zeros on a line
-          MatSeqAIJSetPreallocation(MatricePetsc, nz, PETSC_NULLPTR);
-          MatMPIAIJSetPreallocation(MatricePetsc, nz, PETSC_NULLPTR, nz, PETSC_NULLPTR);
+          if (items_to_keep_[i])
+            {
+              const int k0 = tab1[i] - 1;
+              const int k1 = tab1[i + 1] - 1;
+              nnz[cpt] = k1 - k0; // Nombre d'elements non nuls sur la ligne i
+              for (int k = k0; k < k1; k++)
+                {
+                  const int colonne_locale = tab2[k] - 1;
+                  const PetscInt colonne_globale = renum_array[colonne_locale];
+                  if (colonne_globale >= premiere_colonne_globale && colonne_globale < derniere_colonne_globale)
+                    d_nnz[cpt]++;
+                  else
+                    o_nnz[cpt]++;
+                }
+              cpt++;
+            }
+        }
+      if (journal)
+        {
+          Journal() << "nnz=" << nnz << finl;
+          Journal() << "d_nnz=" << d_nnz << finl;
+          Journal() << "o_nnz=" << o_nnz << finl;
+        }
+      // TRES important pour la vitesse de construction de la matrice
+      if (mataij == 0)
+        {
+          if (different_partition_)
+            {
+              // If partition of TRUST and PETSc differs, difficult to preallocate the matrix finely so:
+              // ToDo, try to optimize:
+              int nz = Process::mp_max((nnz.size_array() == 0 ? 0 : (int) max_array(
+                                          nnz)));  // max_array always an int: max numb of zeros on a line
+              MatSeqSBAIJSetPreallocation(MatricePetsc, block_size_, nz, PETSC_NULLPTR);
+              MatMPISBAIJSetPreallocation(MatricePetsc, block_size_, nz, PETSC_NULLPTR, nz, PETSC_NULLPTR);
+            }
+          else
+            {
+              MatSeqSBAIJSetPreallocation(MatricePetsc, block_size_, PETSC_DEFAULT, nnz.addr());
+              // Test on nb_rows==0 is to avoid PAR_docond_anisoproc hangs
+              MatMPISBAIJSetPreallocation(MatricePetsc, block_size_, (nb_rows_ == 0 ? 0 : PETSC_DEFAULT), d_nnz.addr(),
+                                          (nb_rows_ == 0 ? 0 : PETSC_DEFAULT), o_nnz.addr());
+            }
         }
       else
         {
-          MatSeqAIJSetPreallocation(MatricePetsc, PETSC_DEFAULT, nnz.addr());
-          // Test on nb_rows==0 is to avoid PAR_docond_anisoproc hangs
-          MatMPIAIJSetPreallocation(MatricePetsc, (nb_rows_ == 0 ? 0 : PETSC_DEFAULT), d_nnz.addr(),
-                                    (nb_rows_ == 0 ? 0 : PETSC_DEFAULT), o_nnz.addr());
+          if (different_partition_)
+            {
+              // If partition of TRUST and PETSc differs, difficult to preallocate the matrix finely so:
+              // ToDo, try to optimize:
+              int nz = Process::mp_max((nnz.size_array() == 0 ? 0 : (int) max_array(
+                                          nnz)));   // max_array always an int: max numb of zeros on a line
+              MatSeqAIJSetPreallocation(MatricePetsc, nz, PETSC_NULLPTR);
+              MatMPIAIJSetPreallocation(MatricePetsc, nz, PETSC_NULLPTR, nz, PETSC_NULLPTR);
+            }
+          else
+            {
+              MatSeqAIJSetPreallocation(MatricePetsc, PETSC_DEFAULT, nnz.addr());
+              // Test on nb_rows==0 is to avoid PAR_docond_anisoproc hangs
+              MatMPIAIJSetPreallocation(MatricePetsc, (nb_rows_ == 0 ? 0 : PETSC_DEFAULT), d_nnz.addr(),
+                                        (nb_rows_ == 0 ? 0 : PETSC_DEFAULT), o_nnz.addr());
+            }
         }
     }
-
   // ToDo: nettoyer la matrice TRUST en amont... Car le nnz des matrices peut varier (ex: implicite, Hyd_Cx_impl ou PolyMAC_P0P1NC)
   // et si on supprime les zeros de la matrice, lors d'un update on peut avoir une allocation -> erreur
   if (mataij_)
@@ -3176,66 +3215,100 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
   /*****************************/
   /* Remplissage de la matrice */
   /*****************************/
-  // ligne par ligne avec un tableau coeff et tab2 qui contiennent
-  // les coefficients et les colonnes globales pour chaque ligne
-  // On dimensionne ces tableaux a la taille la plus grande possible
-  // ToDo : recalcul de nnz utile ?
-  ArrOfInt nnz(nb_rows_);
-  nnz = 0;
-  ArrOfTID& renum_array = renum_;  // tab seen as a flat array (can't use ArrOfPetscInt& because of C++ ref cast...)
-  const ArrOfInt& tab1 = mat_morse.get_tab1();
-  const ArrOfInt& tab2 = mat_morse.get_tab2();
-  int cpt = 0;
-  for (int i = 0; i < tab1.size_array() - 1; i++)
-    if (items_to_keep_[i])
-      {
-        nnz[cpt] = tab1[i + 1] - tab1[i]; // Nombre d'elements non nuls sur la ligne i
-        cpt++;
-      }
-  int size = (nb_rows_ == 0 ? 0 : max_array(nnz)); // Test sur nb_rows si nul (cas proc vide) car sinon max_array plante
-  ArrOfDouble coeff_tmp(size);
-  ArrOfPetscInt tab2_tmp(size);
-  const ArrOfDouble& coeff = mat_morse.get_coeff();
-  cpt = 0;
-  const int n = tab1.size_array() - 1;
-  ToDo_Kokkos("critical impl");
-  for(int i=0; i < n; i++)
+  bool use_coo = mat_morse.get_coeff().isDataOnDevice();
+  if (use_coo)
     {
-      if (items_to_keep_[i])
+      Cerr << "We fill the matrix on GPU..." << finl;
+      const ArrOfInt& tab1 = mat_morse.get_tab1();
+      const ArrOfDouble& tab_coeff = mat_morse.get_coeff();
+      const int n = tab1.size_array() - 1;
+      PetscInt nnz = 0; // ToDo compute and store this info somewhere:
+      for (int i = 0; i < n; i++)
         {
-          PetscInt ligne_globale = cpt + decalage_local_global_;
-          int ncol = 0;
-          const int k0 = tab1[i] - 1;
-          const int k1 = tab1[i + 1] - 1;
-          for (int k = k0; k < k1; k++)
+          if (items_to_keep_[i])
+            nnz += tab1[i + 1] - tab1[i];
+        }
+      DoubleTrav coeff(nnz);
+      nnz = 0;
+      for (int i = 0; i < n; i++)
+        {
+          if (items_to_keep_[i])
             {
-              coeff_tmp[ncol] = coeff[k];
-              tab2_tmp[ncol] = renum_array[tab2[k] - 1];
-              ncol++;
+              const int k0 = tab1[i] - 1;
+              const int k1 = tab1[i + 1] - 1;
+              for (int k = k0; k < k1; k++)
+                {
+                  coeff[nnz] = tab_coeff[k];
+                  nnz++;
+                }
             }
-          assert(ncol == nnz[cpt]);
-          if (journal)
+        }
+      MatSetValuesCOO(MatricePetsc, coeff.data(), INSERT_VALUES);
+    }
+  else
+    {
+      // ligne par ligne avec un tableau coeff et tab2 qui contiennent
+      // les coefficients et les colonnes globales pour chaque ligne
+      // On dimensionne ces tableaux a la taille la plus grande possible
+      // ToDo : recalcul de nnz utile ?
+      ArrOfInt nnz(nb_rows_);
+      nnz = 0;
+      ArrOfTID& renum_array = renum_;  // tab seen as a flat array (can't use ArrOfPetscInt& because of C++ ref cast...)
+      const ArrOfInt& tab1 = mat_morse.get_tab1();
+      const ArrOfInt& tab2 = mat_morse.get_tab2();
+      int cpt = 0;
+      for (int i = 0; i < tab1.size_array() - 1; i++)
+        if (items_to_keep_[i])
+          {
+            nnz[cpt] = tab1[i + 1] - tab1[i]; // Nombre d'elements non nuls sur la ligne i
+            cpt++;
+          }
+      // Test sur nb_rows si nul (cas proc vide) car sinon max_array plante:
+      int size = (nb_rows_ == 0 ? 0 : max_array(nnz));
+      ArrOfDouble coeff_tmp(size);
+      ArrOfPetscInt tab2_tmp(size);
+      const ArrOfDouble& coeff = mat_morse.get_coeff();
+      cpt = 0;
+      const int n = tab1.size_array() - 1;
+      for (int i = 0; i < n; i++)
+        {
+          if (items_to_keep_[i])
             {
-              Journal() << (int)ligne_globale << " ";
-              for (int j = 0; j < ncol; j++) Journal() << coeff_tmp[j] << " ";
-              Journal() << finl;
+              PetscInt ligne_globale = cpt + decalage_local_global_;
+              int ncol = 0;
+              const int k0 = tab1[i] - 1;
+              const int k1 = tab1[i + 1] - 1;
+              for (int k = k0; k < k1; k++)
+                {
+                  coeff_tmp[ncol] = coeff[k];
+                  tab2_tmp[ncol] = renum_array[tab2[k] - 1];
+                  ncol++;
+                }
+//          assert(ncol == nnz[cpt]);
+              if (journal)
+                {
+                  Journal() << (int) ligne_globale << " ";
+                  for (int j = 0; j < ncol; j++) Journal() << coeff_tmp[j] << " ";
+                  Journal() << finl;
+                }
+              try
+                {
+                  MatSetValues(MatricePetsc, 1, &ligne_globale, ncol, tab2_tmp.addr(), coeff_tmp.addr(),
+                               INSERT_VALUES);
+                }
+              catch (...)
+                {
+                  // ToDo: changer car PETSc est en C: pas d'exception lancee
+                  Cerr << "We detect that the PETSc matrix coefficients are changed without pre-allocation." << finl;
+                  Cerr << "Try one of the following option:" << finl;
+                  Cerr << "- Rebuild the matrix each time instead of updating the coefficients (slower)." << finl;
+                  Cerr << "enable_allocation : Enable re-allocation of coefficients (slow)." << finl;
+                  Cerr << "- Discard new coefficients (risk!)" << finl;
+                  Cerr << "Try the two options and select the costly one." << finl;
+                  Process::exit();
+                }
+              cpt++;
             }
-          try
-            {
-              MatSetValues(MatricePetsc, 1, &ligne_globale, ncol, tab2_tmp.addr(), coeff_tmp.addr(), INSERT_VALUES);
-            }
-          catch(...)
-            {
-              // ToDo: changer car PETSc est en C: pas d'exception lancee
-              Cerr << "We detect that the PETSc matrix coefficients are changed without pre-allocation." << finl;
-              Cerr << "Try one of the following option:" << finl;
-              Cerr << "- Rebuild the matrix each time instead of updating the coefficients (slower)." << finl;
-              Cerr << "enable_allocation : Enable re-allocation of coefficients (slow)." << finl;
-              Cerr << "- Discard new coefficients (risk!)" << finl;
-              Cerr << "Try the two options and select the costly one." << finl;
-              Process::exit();
-            }
-          cpt++;
         }
     }
   /****************************/
