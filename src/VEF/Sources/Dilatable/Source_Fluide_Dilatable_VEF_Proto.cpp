@@ -45,13 +45,12 @@ void Source_Fluide_Dilatable_VEF_Proto::ajouter_impl(const Equation_base& eqn,co
                                                      const DoubleTab& tab_rho, DoubleTab& resu) const
 {
   const int nb_faces = le_dom->nb_faces(), premiere_face_interne = le_dom->premiere_face_int();
-  const DoubleVect& volumes_entrelaces = le_dom->volumes_entrelaces();
-  const DoubleVect& porosite_face = le_dom_Cl->equation().milieu().porosite_face();
-  const IntTab& face_voisins = le_dom->face_voisins();
-  const DoubleTab& face_normales = le_dom->face_normales(), xp = le_dom->xp(), xv = le_dom->xv();
-
   if (eqn.discretisation().que_suis_je()=="VEF")
     {
+      const IntTab& face_voisins = le_dom->face_voisins();
+      const DoubleTab& face_normales = le_dom->face_normales();
+      const DoubleTab& xp = le_dom->xp();
+      const DoubleTab& xv = le_dom->xv();
       ToDo_Kokkos("critical in VEF P0");
       // Boucle faces bord
       for (int num_cl=0 ; num_cl<le_dom->nb_front_Cl() ; num_cl++)
@@ -103,8 +102,8 @@ void Source_Fluide_Dilatable_VEF_Proto::ajouter_impl(const Equation_base& eqn,co
   else if (eqn.discretisation().que_suis_je()=="VEFPreP1B")
     {
       CDoubleArrView g_v = g.view_ro();
-      CDoubleArrView porosite_face_v = porosite_face.view_ro();
-      CDoubleArrView volumes_entrelaces_v = volumes_entrelaces.view_ro();
+      CDoubleArrView porosite_face_v = le_dom_Cl->equation().milieu().porosite_face().view_ro();
+      CDoubleArrView volumes_entrelaces_v = le_dom->volumes_entrelaces().view_ro();
       CDoubleArrView tab_rho_v = static_cast<const DoubleVect&>(tab_rho).view_ro();
       DoubleTabView resu_v = resu.view_rw();
       // Boucle faces bord
