@@ -154,7 +154,7 @@ void Solv_Externe::construit_matrice_morse_intermediaire(const Matrice_Base& la_
     }
 }
 
-const ArrOfInt& Solv_Externe::indice_coeff_to_keep(const Matrice_Morse matrice_morse)
+const ArrOfInt& Solv_Externe::indice_coeff_to_keep(const Matrice_Morse& matrice_morse)
 {
   if (!indice_coeff_to_keep_.size_array())
     {

@@ -205,7 +205,8 @@ bool gmres_right_unpreconditionned=true;
 // Lecture et creation du solveur
 void Solv_Petsc::create_solver(Entree& entree)
 {
-  if (amgx_ || std::getenv("TRUST_PETSC_VERBOSE")) verbose = true;
+  if (amgx_ || gpu_ || std::getenv("TRUST_PETSC_VERBOSE"))
+    verbose = true;
 #ifdef PETSCKSP_H
   if(!std::is_same<PetscInt, trustIdType>::value)
     Process::exit("Type mismatch!!! PetscInt and trustIdType should be equal!!! PETSc not compiled in 64b??");
@@ -1056,7 +1057,7 @@ void Solv_Petsc::create_solver(Entree& entree)
               break;
             case 25:
               is >> flag;
-              clean_matrix_ = (bool)flag;
+              mat_ignore_zero_entries_ = (bool)flag;
               break;
             case 27:
               set_reuse_preconditioner(true);
@@ -2059,7 +2060,8 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
         {
           // If stencil state is defined in matrix, use it ! Avoid expensive comparison on host
           nouveau_stencil_ = matrice_morse.morse_matrix_structure_has_changed_;
-          if (!nouveau_stencil_) clean_matrix_=0; // If stencil is constant, we need to store zero
+          if (!nouveau_stencil_)
+            mat_ignore_zero_entries_=false; // If stencil is constant, we need to store zero
         }
       else
         // Else detect if the stencil changed:
@@ -3034,17 +3036,15 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   bool use_coo = mat_morse.get_coeff().isDataOnDevice();
   if (use_coo)
     {
-      // We preallocate on host (should ne done once)
-      Cerr << "Precallocating the matrix on GPU..." << finl;
+      if (verbose) Cout << "[Petsc] Using COO to preallocate the matrix on the device." << finl;
+      // We preallocate on host (should be done once during the first time-step)
+      // Is it possible to preallocate on device ? ToDo: view on ArrOfTID
+      // MatSetPreallocationCOOLocal seems to fail (several test cases crash in //)
       const ArrOfInt& tab1 = mat_morse.get_tab1();
       const ArrOfInt& tab2 = mat_morse.get_tab2();
       const int n = tab1.size_array() - 1;
-      PetscInt nnz = 0; // ToDo compute and store this info somewhere:
-      for (int i = 0; i < n; i++)
-        {
-          if (items_to_keep_[i])
-            nnz += tab1[i + 1] - tab1[i];
-        }
+      const ArrOfInt& tab_indice = indice_coeff_to_keep(mat_morse);
+      PetscInt nnz = tab_indice.size_array();
       // COO format:
       PetscInt* coo_i;
       PetscInt* coo_j;
@@ -3154,7 +3154,7 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   // et si on supprime les zeros de la matrice, lors d'un update on peut avoir une allocation -> erreur
   if (mataij_)
     {
-      if (clean_matrix_)
+      if (mat_ignore_zero_entries_)
         {
           MatSetOption(MatricePetsc, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE); // Ne stocke pas les zeros
           if (verbose)
@@ -3218,18 +3218,37 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
   bool use_coo = mat_morse.get_coeff().isDataOnDevice();
   if (use_coo)
     {
-      Cerr << "Update matrix on GPU..." << finl;
-      int nnz = indice_coeff_to_keep(mat_morse).size_array();
-      DoubleTrav tab_v(nnz); // ToDo faire une vue Kokkos stockee dans Solv_Externe ?
-      CDoubleArrView coeff = mat_morse.get_coeff().view_ro();
-      CIntArrView indice = indice_coeff_to_keep(mat_morse).view_ro();
-      DoubleArrView v = static_cast<ArrOfDouble&>(tab_v).view_wo();
-      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nnz, KOKKOS_LAMBDA(const int i)
-      {
-        v[i] = coeff[indice[i]];
-      });
-      end_gpu_timer(__KERNEL_NAME__);
-      MatSetValuesCOO(MatricePetsc, v.data(), INSERT_VALUES);
+      if (verbose) Cout << "[Petsc] Using COO to fill the matrix on the device." << finl;
+      const ArrOfInt& tab_indice = indice_coeff_to_keep(mat_morse);
+      const ArrOfDouble& tab_coeff = mat_morse.get_coeff();
+      PetscInt nnz = tab_indice.size_array();
+      bool use_device_pointer = true;
+      if (use_device_pointer)
+        {
+          // Use managed memory that works across contexts
+          // This memory is accessible from both Kokkos and PETSc contexts
+#ifdef PETSC_HAVE_CUDA
+          Kokkos::View<PetscScalar*, Kokkos::CudaUVMSpace> v("v", nnz);
+#endif
+#ifdef PETSC_HAVE_HIP
+          Kokkos::View<PetscScalar*, Kokkos::HIPManagedSpace> v("v", nnz);
+#endif
+          CDoubleArrView coeff = tab_coeff.view_ro();
+          CIntArrView indice = tab_indice.view_ro();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nnz, KOKKOS_LAMBDA(const int i)
+          {
+            v[i] = coeff[indice[i]];
+          });
+          end_gpu_timer(__KERNEL_NAME__);
+          MatSetValuesCOO(MatricePetsc, v.data(), INSERT_VALUES);
+        }
+      else
+        {
+          DoubleTrav v(nnz);
+          for (int i = 0; i < nnz; i++)
+            v[i] = tab_coeff(tab_indice(i));
+          MatSetValuesCOO(MatricePetsc, v.data(), INSERT_VALUES);
+        }
     }
   else
     {
@@ -3296,12 +3315,12 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
               cpt++;
             }
         }
+      /****************************/
+      /* Assemblage de la matrice */
+      /****************************/
+      MatAssemblyBegin(MatricePetsc, MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(MatricePetsc, MAT_FINAL_ASSEMBLY);
     }
-  /****************************/
-  /* Assemblage de la matrice */
-  /****************************/
-  MatAssemblyBegin(MatricePetsc, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(MatricePetsc, MAT_FINAL_ASSEMBLY);
 
 #ifndef NDEBUG
   if (mataij_)
@@ -3366,7 +3385,7 @@ bool Solv_Petsc::check_stencil(const Matrice_Morse& mat_morse)
               int nnz_row = 0;
               const int k0 = tab1[i] - 1;
               const int k1 = tab1[i + 1] - 1;
-              if (clean_matrix_)
+              if (mat_ignore_zero_entries_)
                 {
                   for (int k = k0; k < k1; k++)
                     if (coeff[k] != 0) nnz_row++;

@@ -1881,11 +1881,12 @@ void Equation_base::dimensionner_matrice(Matrice_Morse& matrice)
           matrice.sort_stencil();
           matrice_stockee.sorted_ = 1;
         }
+      matrice.morse_matrix_structure_has_changed_=0; // stencil will not change anymore
       matrice_stockee.get_set_tab1().ref_array(matrice.get_set_tab1());
       matrice_stockee.get_set_tab2().ref_array(matrice.get_set_tab2());
       matrice_stockee.get_set_coeff().ref_array(matrice.get_set_coeff());
       matrice_stockee.set_nb_columns(matrice.nb_colonnes());
-      matrice_stockee.morse_matrix_structure_has_changed_=0; // stencil will not change anymore
+      matrice_stockee.morse_matrix_structure_has_changed_=matrice.morse_matrix_structure_has_changed_;
       matrice_init = 1;
     }
 }
@@ -1908,6 +1909,7 @@ void Equation_base::dimensionner_matrice_sans_mem(Matrice_Morse& matrice)
       matrice.get_set_tab2().ref_array(matrice_stockee.get_set_tab2());
       matrice.get_set_coeff().ref_array(matrice_stockee.get_set_coeff());
       matrice.set_nb_columns(matrice_stockee.nb_colonnes());
+      matrice.morse_matrix_structure_has_changed_ = matrice_stockee.morse_matrix_structure_has_changed_;
       return;
     }
 

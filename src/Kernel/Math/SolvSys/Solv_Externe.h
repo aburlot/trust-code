@@ -49,7 +49,7 @@ protected:
   void Update_lhs_rhs(const DoubleVect& b, DoubleVect& x);
   template<typename ExecSpace>
   void Update_solution(DoubleVect& x);
-  const ArrOfInt& indice_coeff_to_keep(const Matrice_Morse);
+  const ArrOfInt& indice_coeff_to_keep(const Matrice_Morse&);
 
   TIDTab renum_;                // Tableau de renumerotation globale lignes matrice TRUST -> matrice CSR
   IntTab index_;                // Tableau de renumerotation locale

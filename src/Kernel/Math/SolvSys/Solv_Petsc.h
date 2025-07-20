@@ -193,7 +193,7 @@ protected :
   bool ignore_new_nonzero_ = false;
   bool rebuild_matrix_ = false;
   bool allow_realloc_ = true;
-  bool clean_matrix_= true;
+  bool mat_ignore_zero_entries_= true;
   bool reduce_ram_ = false;
   bool verbose = false; // Timing
   bool reorder_matrix_ = false;
@@ -292,7 +292,7 @@ inline void Solv_Petsc::initialize()
   ignore_new_nonzero_ = false;
   rebuild_matrix_ = false;
   allow_realloc_ = true;
-  clean_matrix_ = true;
+  mat_ignore_zero_entries_ = true;
   reorder_matrix_ = false;
   reduce_ram_ = false;
   if (instance==-1)
