@@ -2439,7 +2439,7 @@ void Solv_Petsc::Update_solution(DoubleVect& solution)
   if (verbose) Cout << finl << "[Petsc] Time to update solution: \t" << Statistiques::get_time_now() - start << finl;
 }
 
-void Solv_Petsc::check_aij(const Matrice_Morse& mat)
+void Solv_Petsc::check_aij(const Matrice_Morse& matrice)
 {
   /*******************/
   /* Setting mataij_ */
@@ -2504,9 +2504,9 @@ void Solv_Petsc::check_aij(const Matrice_Morse& mat)
             {
               Mat MatricePetscComplete;
               // On construit une matrice PETSc complete sans hypothese sur la symetrie
-              Create_MatricePetsc(MatricePetscComplete, 1, mat);
+              Create_MatricePetsc(MatricePetscComplete, 1, matrice);
               Mat MatricePetsc;
-              Create_MatricePetsc(MatricePetsc, mataij_, mat);
+              Create_MatricePetsc(MatricePetsc, mataij_, matrice);
               PetscBool matrices_identiques;
               // On teste l'egalite des 2 matrices en faisant n produits matrice-vecteur
               int n = 10;
@@ -3218,32 +3218,18 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
   bool use_coo = mat_morse.get_coeff().isDataOnDevice();
   if (use_coo)
     {
-      Cerr << "We fill the matrix on GPU..." << finl;
-      const ArrOfInt& tab1 = mat_morse.get_tab1();
-      const ArrOfDouble& tab_coeff = mat_morse.get_coeff();
-      const int n = tab1.size_array() - 1;
-      PetscInt nnz = 0; // ToDo compute and store this info somewhere:
-      for (int i = 0; i < n; i++)
-        {
-          if (items_to_keep_[i])
-            nnz += tab1[i + 1] - tab1[i];
-        }
-      DoubleTrav coeff(nnz);
-      nnz = 0;
-      for (int i = 0; i < n; i++)
-        {
-          if (items_to_keep_[i])
-            {
-              const int k0 = tab1[i] - 1;
-              const int k1 = tab1[i + 1] - 1;
-              for (int k = k0; k < k1; k++)
-                {
-                  coeff[nnz] = tab_coeff[k];
-                  nnz++;
-                }
-            }
-        }
-      MatSetValuesCOO(MatricePetsc, coeff.data(), INSERT_VALUES);
+      Cerr << "Update matrix on GPU..." << finl;
+      int nnz = indice_coeff_to_keep(mat_morse).size_array();
+      DoubleTrav tab_v(nnz); // ToDo faire une vue Kokkos stockee dans Solv_Externe ?
+      CDoubleArrView coeff = mat_morse.get_coeff().view_ro();
+      CIntArrView indice = indice_coeff_to_keep(mat_morse).view_ro();
+      DoubleArrView v = static_cast<ArrOfDouble&>(tab_v).view_wo();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nnz, KOKKOS_LAMBDA(const int i)
+      {
+        v[i] = coeff[indice[i]];
+      });
+      end_gpu_timer(__KERNEL_NAME__);
+      MatSetValuesCOO(MatricePetsc, v.data(), INSERT_VALUES);
     }
   else
     {

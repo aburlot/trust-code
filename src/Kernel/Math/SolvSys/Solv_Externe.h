@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -49,6 +49,7 @@ protected:
   void Update_lhs_rhs(const DoubleVect& b, DoubleVect& x);
   template<typename ExecSpace>
   void Update_solution(DoubleVect& x);
+  const ArrOfInt& indice_coeff_to_keep(const Matrice_Morse);
 
   TIDTab renum_;                // Tableau de renumerotation globale lignes matrice TRUST -> matrice CSR
   IntTab index_;                // Tableau de renumerotation locale
@@ -62,6 +63,8 @@ protected:
   int secmem_sz_;               // (Local) second member size
   ArrOfDouble lhs_;             // Premier membre sans les items communs
   ArrOfDouble rhs_;             // Second membre sans les items communs
+private:
+  ArrOfInt indice_coeff_to_keep_; // Coefficients de la matrice CSR a garder dans la matrice TRUST
 };
 
 

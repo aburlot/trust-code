@@ -154,6 +154,38 @@ void Solv_Externe::construit_matrice_morse_intermediaire(const Matrice_Base& la_
     }
 }
 
+const ArrOfInt& Solv_Externe::indice_coeff_to_keep(const Matrice_Morse matrice_morse)
+{
+  if (!indice_coeff_to_keep_.size_array())
+    {
+      // Build indice_coeff_to_keep_
+      const ArrOfInt& tab1 = matrice_morse.get_tab1();
+      const int n = tab1.size_array() - 1;
+      int nnz = 0;
+      for (int i = 0; i < n; i++)
+        {
+          if (items_to_keep_[i])
+            nnz += tab1[i + 1] - tab1[i];
+        }
+      indice_coeff_to_keep_.resize(nnz);
+      nnz = 0;
+      for (int i = 0; i < n; i++)
+        {
+          if (items_to_keep_[i])
+            {
+              const int k0 = tab1[i] - 1;
+              const int k1 = tab1[i + 1] - 1;
+              for (int k = k0; k < k1; k++)
+                {
+                  indice_coeff_to_keep_[nnz] = k;
+                  nnz++;
+                }
+            }
+        }
+    }
+  return indice_coeff_to_keep_;
+}
+
 void Solv_Externe::Create_lhs_rhs_onDevice()
 {
   lhs_.resize(nb_rows_);
