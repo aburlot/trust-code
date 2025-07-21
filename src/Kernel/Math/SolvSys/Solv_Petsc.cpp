@@ -2090,7 +2090,7 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
           PetscInt nnz = (PetscInt)info.nz_used;
           Cout << "Order of the PETSc matrix : " << nb_rows_tot_ << " (~ "
                << (petsc_cpus_selection_ ? (int) (nb_rows_tot_ / petsc_nb_cpus_) : nb_rows_)
-               << " unknowns per PETSc process ) " << (nouveau_stencil_ ? "New stencil." : "Same stencil.") << " nnz= " << nnz << " " << matrice_morse.get_coeff().size() << finl;
+               << " unknowns per PETSc process ) " << (nouveau_stencil_ ? "New stencil." : "Same stencil.") << " nnz= " << nnz << finl;
         }
     }
   // Update PETSc Vec (vectors) for RHS and solution
@@ -3033,7 +3033,8 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   /********************************************/
   /* Preallocation de la taille de la matrice */
   /********************************************/
-  bool use_coo = mat_morse.get_coeff().isDataOnDevice();
+  // Use fast PETSc matrix assembly on the device only if TRUST matrix is on the device AND we use a PETSc GPU solver:
+  bool use_coo = mat_morse.get_coeff().isDataOnDevice() && gpu_;
   if (use_coo)
     {
       if (verbose) Cout << "[Petsc] Using COO to preallocate the matrix on the device." << finl;
@@ -3215,40 +3216,24 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
   /*****************************/
   /* Remplissage de la matrice */
   /*****************************/
-  bool use_coo = mat_morse.get_coeff().isDataOnDevice();
+  // Use fast PETSc matrix assembly on the device only if TRUST matrix is on the device AND we use a PETSc GPU solver:
+  bool use_coo = mat_morse.get_coeff().isDataOnDevice() && gpu_;
   if (use_coo)
     {
       if (verbose) Cout << "[Petsc] Using COO to fill the matrix on the device." << finl;
       const ArrOfInt& tab_indice = indice_coeff_to_keep(mat_morse);
       const ArrOfDouble& tab_coeff = mat_morse.get_coeff();
-      PetscInt nnz = tab_indice.size_array();
-      bool use_device_pointer = true;
-      if (use_device_pointer)
-        {
-          // Use managed memory that works across contexts
-          // This memory is accessible from both Kokkos and PETSc contexts
-#ifdef PETSC_HAVE_CUDA
-          Kokkos::View<PetscScalar*, Kokkos::CudaUVMSpace> v("v", nnz);
-#endif
-#ifdef PETSC_HAVE_HIP
-          Kokkos::View<PetscScalar*, Kokkos::HIPManagedSpace> v("v", nnz);
-#endif
-          CDoubleArrView coeff = tab_coeff.view_ro();
-          CIntArrView indice = tab_indice.view_ro();
-          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nnz, KOKKOS_LAMBDA(const int i)
-          {
-            v[i] = coeff[indice[i]];
-          });
-          end_gpu_timer(__KERNEL_NAME__);
-          MatSetValuesCOO(MatricePetsc, v.data(), INSERT_VALUES);
-        }
-      else
-        {
-          DoubleTrav v(nnz);
-          for (int i = 0; i < nnz; i++)
-            v[i] = tab_coeff(tab_indice(i));
-          MatSetValuesCOO(MatricePetsc, v.data(), INSERT_VALUES);
-        }
+      int nnz = tab_indice.size_array();
+      DoubleTrav tab_v(nnz);
+      CDoubleArrView coeff = tab_coeff.view_ro();
+      CIntArrView indice = tab_indice.view_ro();
+      DoubleArrView v = static_cast<ArrOfDouble&>(tab_v).view_wo();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nnz, KOKKOS_LAMBDA(const int i)
+      {
+        v[i] = coeff[indice[i]];
+      });
+      end_gpu_timer(__KERNEL_NAME__);
+      MatSetValuesCOO(MatricePetsc, v.data(), INSERT_VALUES);
     }
   else
     {
