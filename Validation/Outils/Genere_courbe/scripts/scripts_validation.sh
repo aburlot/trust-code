@@ -472,13 +472,15 @@ genere_new_rap_old_rap()
 #
 # Generate the validation makefile, potentially using Salloc. 
 # Also generate a CTest file containing all the logic for the run, report generation and comparison of all PRMS.
+# ^^^ line above is wrong. the CTest file is generated from scripts in the trust_jenkins git repository
 #
-echo "def Generate_makefile_validation [ -without_deps_exe ] [ -parallel_sjob ] [<time_file>]"
+echo "def Generate_makefile_validation [ -without_deps_exe ] [ -parallel_sjob ] [ -timeout val ] [<time_file>]"
 Generate_makefile_validation()
 {
     deps="\$(exec)"
     [ "$1" = "-without_deps_exe" ] && deps="" && shift
     [ "$1" = "-parallel_sjob" ] && parallel="1" && shift
+    [ "$1" = "-timeout" ] && shift && USE_TIMEOUT="1" && TIMEOUT=$1 && shift
     SCRIPT_ROOT=$TRUST_ROOT/Validation/Outils/Genere_courbe/scripts
     LANCE=$SCRIPT_ROOT/Lance_gen_fiche
     source $LANCE
@@ -513,6 +515,11 @@ Generate_makefile_validation()
                if [ "x$max_nb_proc" = "x" ]; then max_nb_proc=1; fi
             fi
             lance="$TRUST_ROOT/bin/Sjob/Salloc -n $max_nb_proc $LANCE"
+            
+            if [ "${USE_TIMEOUT}" = "1" ]; then
+                lance="$TRUST_ROOT/bin/Sjob/Salloc -n $max_nb_proc -t ${TIMEOUT} $LANCE"
+            fi
+            
             echo $lance
         else
             echo $LANCE
