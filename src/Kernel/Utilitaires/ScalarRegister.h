@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2022, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -37,6 +37,9 @@ public :
 
   int getOutputIntValue(const Nom& name) const;
   double getOutputDoubleValue(const Nom& name) const;
+
+  bool checkOutputIntEntry(const Nom& name) const;
+  bool checkOutputDoubleEntry(const Nom& name) const;
 
   void setInputIntValue(const Nom& name, const int& val);
   void setInputDoubleValue(const Nom& name, const double& val);

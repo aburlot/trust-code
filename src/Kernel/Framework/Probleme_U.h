@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -69,6 +69,7 @@ public :
   virtual void getOutputField(const Nom& nameField, ICoCo::TrioField& afield) const;
   virtual void setInputIntValue(const Nom& name, const int& val);
   virtual int getOutputIntValue(const Nom& name) const;
+  virtual bool checkOutputIntEntry(const Nom& name) const;
 
   virtual void setInputDoubleValue(const Nom& name, const double val);
 

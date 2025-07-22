@@ -584,3 +584,8 @@ int Probleme_U::getOutputIntValue(const Nom& name) const
 {
   return reg_.getOutputIntValue(name);
 }
+
+bool Probleme_U::checkOutputIntEntry(const Nom& name) const
+{
+  return reg_.checkOutputIntEntry(name);
+}

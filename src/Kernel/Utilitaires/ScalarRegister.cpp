@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2022, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -54,4 +54,25 @@ double ScalarRegister::getOutputDoubleValue(const Nom& name) const
     }
 }
 
+bool ScalarRegister::checkOutputIntEntry(const Nom& name) const
+{
+  std::string nom = name.getString();
+  if (int_reg.find(nom)!= int_reg.end())
+    return true;
+  else
+    {
+      return false;
+    }
+}
+
+bool ScalarRegister::checkOutputDoubleEntry(const Nom& name) const
+{
+  std::string nom = name.getString();
+  if (double_reg.find(nom)!= double_reg.end())
+    return true;
+  else
+    {
+      return false;
+    }
+}
 
