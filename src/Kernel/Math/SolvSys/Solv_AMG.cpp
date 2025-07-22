@@ -71,7 +71,7 @@ Entree& Solv_AMG::readOn(Entree& is)
       else if (motcle=="ATOL") is >> atol_;
       else if (motcle=="ST") is >> st_;
       else if (motcle=="IMPR") impr_ = true;
-      else if (motcle=="READ_MATRIX") set_read_matrix(true);
+      else if (motcle=="READ_MATRIX") solveur_->set_read_matrix(true);
       else if (motcle=="SEUIL") Process::exit("Use atol 'absolute tolerance' instead of seuil.");
       else
         {
@@ -251,6 +251,7 @@ int Solv_AMG::resoudre_systeme(const Matrice_Base& mat, const DoubleVect& b, Dou
         ref_cast(Solv_Petsc_GPU, solveur_.valeur()).create_solver(entree);
       else
         Process::exit("Unsupported case in Solv_AMG::readOn");
+      solveur_->set_read_matrix(read_matrix());
     }
   return solveur_.resoudre_systeme(mat, b, x);
 }

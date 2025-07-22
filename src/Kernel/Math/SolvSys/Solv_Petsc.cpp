@@ -1223,11 +1223,9 @@ void Solv_Petsc::create_solver(Entree& entree)
                 //add_option("pc_hypre_parasails_sym","SPD"); // Matrice symetrique definie positive. PL: comment cela a pu marcher avant ? La matrice n'est pas toujours symetrique.
                 check_not_defined(omega);
                 check_not_defined(ordering);
-#ifdef INT_is_64_
                 KSPType type_ksp;
                 KSPGetType(SolveurPetsc_, &type_ksp);
-                if ((Nom)type_ksp==KSPCG) Process::exit("SPAI preconditioner is not supported anymore. If you want to keep this precond, try using BICGSTAB solver insted of GCP.");
-#endif
+                Process::exit("SPAI preconditioner is not supported anymore.");
                 break;
               }
             case 5:
@@ -1981,12 +1979,9 @@ PetscErrorCode MyKSPMonitor(KSP SolveurPetsc, PetscInt it, PetscReal residu, voi
 // Solve system
 int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVect& secmem, DoubleVect& solution)
 {
-  if (SolveurPetsc_==nullptr)
-    {
-      // Create solver now just before solve
-      EChaine e(chaine_lue_);
-      create_solver(e);
-    }
+  // Create solver now just before solve if not created:
+  if (SolveurPetsc_==nullptr) create_solver();
+
 #ifdef PETSCKSP_H
   std::fenv_t fenv;
   std::feholdexcept(&fenv);
@@ -2055,21 +2050,15 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
       const Matrice_Morse& matrice_morse = la_matrice_est_morse_non_symetrique ? ref_cast(Matrice_Morse, la_matrice)
                                            : matrice_morse_intermediaire;
 
-      // Verification stencil de la matrice
-      if (matrice_morse.morse_matrix_structure_has_changed_!=-1)
-        {
-          // If stencil state is defined in matrix, use it ! Avoid expensive comparison on host
-          nouveau_stencil_ = matrice_morse.morse_matrix_structure_has_changed_;
-          if (!nouveau_stencil_)
-            mat_ignore_zero_entries_=false; // If stencil is constant, we need to store zero
-        }
-      else
-        // Else detect if the stencil changed:
-        nouveau_stencil_ = check_stencil(matrice_morse);
-
-      // Cas speciaux:
+      // Detect if the stencil state:
       if (MatricePetsc_ == nullptr || rebuild_matrix_ || read_matrix())
         nouveau_stencil_ = true;
+      else
+        nouveau_stencil_ = matrice_morse.constant_stencil() ? false : detect_new_stencil(matrice_morse);
+
+      // If stencil is set constant, we need to store zero:
+      if (matrice_morse.constant_stencil())
+        mat_ignore_zero_entries_ = false;
 
       // Build x and b if necessary
       Create_vectors(secmem);
@@ -3331,7 +3320,7 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
   if (verbose) Cout << "[Petsc] Time to fill the matrix: \t" << Statistiques::get_time_now() - start << finl;
 }
 
-bool Solv_Petsc::check_stencil(const Matrice_Morse& mat_morse)
+bool Solv_Petsc::detect_new_stencil(const Matrice_Morse& mat_morse)
 {
   // Est ce un nouveau stencil ?
   double start = Statistiques::get_time_now();

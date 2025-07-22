@@ -165,7 +165,7 @@ void Solv_AMGX::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse)
 }
 
 // Check and return true if new stencil
-bool Solv_AMGX::check_stencil(const Matrice_Morse& mat_morse)
+bool Solv_AMGX::detect_new_stencil(const Matrice_Morse& mat_morse)
 {
   True_int num_devices = 0;
   cudaGetDeviceCount(&num_devices);

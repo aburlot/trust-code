@@ -52,8 +52,15 @@ public :
 
   inline Solv_Petsc();
   inline ~Solv_Petsc() override;
+  // Method which be called to create solver from chaine_lue_
+  inline void create_solver()
+  {
+    EChaine e(chaine_lue_);
+    create_solver(e);
+  }
   inline int solveur_direct() const override
   {
+    if (SolveurPetsc_==nullptr) Process::exit("Can't call to Solv_Petsc::solveur_direct() yet.");
     return (solveur_direct_>0);
   };
   int resoudre_systeme(const Matrice_Base&, const DoubleVect&, DoubleVect& ) override;
@@ -68,8 +75,8 @@ public :
   {
     // ToDo: regler option_prefix_ et numero_solveur dans create_solver et initialize...
     reset();
-    EChaine ech(name);
     Cout << "Setting PETSc solver: " << name << finl;
+    EChaine ech(name);
     create_solver(ech);
   }
 #endif
@@ -85,6 +92,7 @@ public :
   };
   inline PCstruct& get_precond_user()
   {
+    if (pc_user_.pc_shell.est_nul()) create_solver();
     return pc_user_;
   }
   inline bool amgx() const
@@ -97,12 +105,7 @@ public :
   };
   PetscErrorCode set_convergence_test(PetscErrorCode (*converge)(KSP,PetscInt,PetscReal,KSPConvergedReason*,void*),void *cctx,PetscErrorCode (*destroy)(void*))
   {
-    if (SolveurPetsc_==nullptr)
-      {
-        // Create solver now just before solve
-        EChaine e(chaine_lue_);
-        create_solver(e);
-      }
+    if (SolveurPetsc_==nullptr) create_solver();
     return KSPSetConvergenceTest(SolveurPetsc_, converge, cctx, destroy);
   }
   // Timers:
@@ -111,7 +114,7 @@ public :
   void set_rtol(const double& rtol)
   {
     seuil_relatif_ = rtol;
-    KSPSetTolerances(SolveurPetsc_, seuil_relatif_, seuil_, (divtol_==0 ? PETSC_DEFAULT : divtol_), nb_it_max_);
+    if (SolveurPetsc_!=nullptr) KSPSetTolerances(SolveurPetsc_, seuil_relatif_, seuil_, (divtol_==0 ? PETSC_DEFAULT : divtol_), nb_it_max_);
   }
 #endif
   static int instance;               // Nombre d'instances en cours de la classe
@@ -132,7 +135,7 @@ protected :
   virtual void Update_solution(DoubleVect& solution);
   virtual int solve(ArrOfDouble& residual); // Solve Ax=b and return residual
   virtual void finalize() {};
-  virtual bool check_stencil(const Matrice_Morse&);
+  virtual bool detect_new_stencil(const Matrice_Morse&);
   bool nouveau_stencil()
   {
     return nouveau_stencil_;

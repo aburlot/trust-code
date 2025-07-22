@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -39,7 +39,7 @@ protected :
   void Update_vectors(const DoubleVect& secmem, DoubleVect& solution) override;
   void Update_solution(DoubleVect& solution) override;
   void Update_matrix(Mat&, const Matrice_Morse&) override;
-  bool check_stencil(const Matrice_Morse&) override;
+  bool detect_new_stencil(const Matrice_Morse&) override;
   int solve(ArrOfDouble& residual) override;
   int nbiter(ArrOfDouble& residual);
   void initialize();

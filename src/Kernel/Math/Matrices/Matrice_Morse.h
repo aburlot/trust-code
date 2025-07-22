@@ -185,10 +185,10 @@ public :
   void assert_check_morse_matrix_structure() const;
   void assert_check_sorted_morse_matrix_structure() const;
   void sort_stencil();
+  bool& constant_stencil() const { return constant_stencil_; };
   bool is_sorted_stencil() const;
   bool is_diagonal();
 
-  mutable int morse_matrix_structure_has_changed_=-1; // Flag if matrix structure changes
   mutable int sorted_; //1 si le stencil est classe : obtenu en appellant sort_stencil()
 
 protected :
@@ -196,6 +196,7 @@ protected :
   IntVect tab2_;
   DoubleVect coeff_;
 
+  mutable int morse_matrix_structure_has_changed_=-1; // Flag if matrix structure changes
   int m_;          // Number of columns
   int symetrique_; // Pour inliner operator()(i,j) afin d'optimiser
 
@@ -204,6 +205,7 @@ protected :
 
 private :
   double zero_;
+  mutable bool constant_stencil_=false; // Flag set by equation that the stencil matrix will NOT change
 };
 
 int Matrice_Morse_test();
