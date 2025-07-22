@@ -14,10 +14,14 @@ La relation parent/enfant reste coherente lors du fonctionnement du serveur et l
  -> si Nb=-1, on arrete le serveur directement sans tuer les jobs en cours
  -> si Nb=-2, on tue tous les jobs proprement, puis on quitte le serveur.
 
-* Salloc [ -n N ] commande 
+* Salloc [ -n N ] [ -t TIMEOUT ] commande 
 -> demande N procs, attend leur disponibilite et lance la commande  
 -> si N > Nb, et que N <= PROC_MAX alors on autorise quand meme le job a tourner, voir commandes avancees ci-dessous.
-
+-> -t TIMEOUT permet de définir un temps d'execution maximal (avec l'outil timeout de linux). 
+   Valeur au format <nombre>[unité]. Par exemple 10m ou 600.
+   Unités de temps: s/m/h/d. Par défaut, utilise s si aucun spécifié.
+   Si les options -n et -t sont utilisées en même temps, elles doivent être dans cet ordre (-t après -n).
+    
 * Squeue
  -> affiche les jobs, leur parent eventuels en cas d'appel recursif de Salloc, une version courte de la commande invoquee et le status:
 	R    Running

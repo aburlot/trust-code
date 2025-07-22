@@ -5,7 +5,10 @@ DIR=`dirname $0`
 DIR=`(cd $DIR;pwd)`
 
 usage="Usage: $0 <nb_proc>"
-[ "$1" = "" ] && echo $usage
+# exit if incorrect usage
+# because forgetting nb_proc launches an unusable Sserver 
+# that cannot be interacted with and is hard to kill
+[ "$1" = "" ] && echo $usage && exit 1
 if [ $1 -le -1 ]; then
    echo Stopping server ...
    if [ $1 -le -2 ]; then

@@ -5,11 +5,20 @@ DIR=`(cd $DIR;pwd)`
 #trap "python3 $DIR/lib/client.py finish $$;exit 1" HUP INT PIPE QUIT TERM KILL ABRT
 trap "python3 $DIR/lib/client.py finish $$;exit 1"  INT PIPE QUIT TERM KILL ABRT
 NB=1
+TIMEOUT=0
+# these two parameters must come in correct order if both are specified
+# we must not consume all arguments, otherwise I'd do a while loop.
 if [ $1 = "-n" ]; then
   shift
   NB=$1
   shift
 fi
+if [ $1 = "-t" ]; then
+  shift
+  TIMEOUT=$1
+  shift
+fi
+
 
 if [ "$RUNNING_IN_SALLOC" != "" ]; then
   PERE=$RUNNING_IN_SALLOC
@@ -20,7 +29,7 @@ export RUNNING_IN_SALLOC=$$
 python3 $DIR/lib/client.py srun $NB $$ $PERE "$@"
 status=$?
 [ $status -ne 0 ] && echo ERROR: problem with Sserver or job killed!!! Exiting. && exit -1
-eval "$@"
+eval timeout -k 1 $TIMEOUT $@
 status=$?
 python3 $DIR/lib/client.py finish $$
 exit $status
