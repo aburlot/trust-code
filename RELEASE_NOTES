@@ -1,3 +1,4 @@
+XX/XX/25 (TRUST) Change       : When diffusion is implicited on a flow with null velocity initial condition, first time step is based on diffusive time step not dt_max
 XX/XX/25 (TRUST) Fix          : Large slowdown on GPU when Extraire_plan was used to create a 2D domain for lightweight postprocessing
 XX/XX/25 (TRUST) Solver       : AMG wrapper solver detect block-structure matrix in VEF, which dramatically improves convergence, especially on meshes with high amplitude for cell volumes
 --------------------------------------------------------------------------------------------------

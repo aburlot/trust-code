@@ -1202,30 +1202,21 @@ void Equation_base::get_noms_champs_postraitables(Noms& noms, Option opt) const
 double Equation_base::calculer_pas_de_temps() const
 {
   bool harmonic_calculation = true;
-  double dt_op;
-  double dt;
-  if (harmonic_calculation)
-    dt = 0;
-  else
-    dt = DMAXFLOAT;
+  double dt = harmonic_calculation ? 0 : DMAXFLOAT;
 
   int nb_op = nombre_d_operateurs();
   for(int i=0; i<nb_op; i++)
     {
-      if(operateur(i).l_op_base().get_decal_temps()!=1)
-        dt_op = operateur(i).calculer_pas_de_temps();
-      else
+      const Operateur_base& op=operateur(i).l_op_base();
+      bool diff_impl = sub_type(Operateur_Diff_base,op) && le_schema_en_temps->diffusion_implicite();
+      double dt_op;
+      if (op.get_decal_temps()==1)
         dt_op = DMAXFLOAT;
-
-//      Debog::verifier("Equation_base::calculer_pas_de_temps dt_op 0 ",dt_op);
+      else
+        dt_op = operateur(i).calculer_pas_de_temps();
 
       Debog::verifier("Equation_base::calculer_pas_de_temps dt ",dt);
-      const Operateur_base& op=operateur(i).l_op_base();
-      if (sub_type(Operateur_Diff_base,op) && le_schema_en_temps->diffusion_implicite())
-        {
-          // On ne compte pas le pas de temps de diffusion lorsque la diffusion est implicitee
-        }
-      else if (dt_op>0)
+      if (dt_op>0 && !diff_impl)
         {
           // Une demie-moyenne harmonique est justifiee par le fait que diffusion et convection sont deux phenonomenes qui se cumulent
           // L'information a chaque pas de temps ne peut traverser plus d'une maille de calcul donc dt*U + dt*vitesse_diffusion(~alpha/dx) < dx
@@ -1264,16 +1255,32 @@ double Equation_base::calculer_pas_de_temps() const
       else
         dt = 1./dt;
     }
-  // Warning sur les premiers pas de temps si l'implicitation de la diffusion
-  // dans un schema explicite vaut le coup (dt_diff<<min(dt_max,dt_conv))
-  // On fait le test apres les 10 premiers pas de temps en cas de demarrage avec vitesse nulle
-  int nw=100;
-  if (le_schema_en_temps->nb_pas_dt()>10 && le_schema_en_temps->nb_pas_dt()<nw && le_schema_en_temps->limpr())
-    if (nb_op>1 && dt_op_bak[0]<0.01*std::min(le_schema_en_temps->pas_temps_max(),dt_op_bak[1]) && sub_type(Schema_Euler_explicite,le_schema_en_temps.valeur()) && !le_schema_en_temps->diffusion_implicite())
-      {
-        Cerr << finl << "**** Advice (printed only on the first " << nw << " time steps) ****" << finl;
-        Cerr << "You could use diffusion_implicite option into the Euler scheme to increase the stability time step of the " << this->que_suis_je() << " equation by impliciting the diffusive operator." << finl;
-      }
+
+  const Schema_Temps_base& sch = le_schema_en_temps.valeur();
+  // Cas diffusion implicite et plusieurs operateurs:
+  if (sub_type(Schema_Euler_explicite,sch) && nb_op>1)
+    {
+      if (sch.diffusion_implicite())
+        {
+          // Cas vitesse initiale nulle par exemple
+          // dt_max n'est plus le garde fou pour ce scenario
+          if (dt>1e10) dt = dt_op_bak[0];
+        }
+      else
+        {
+          // Warning sur les premiers pas de temps si l'implicitation de la diffusion
+          // dans un schema explicite vaut le coup (dt_diff<<min(dt_max,dt_conv))
+          // On fait le test apres les 10 premiers pas de temps en cas de demarrage avec vitesse nulle
+          int nw = 100;
+          if (sch.nb_pas_dt() > 10 && sch.nb_pas_dt() < nw && sch.limpr())
+            if (dt_op_bak[0] < 0.01 * std::min(sch.pas_temps_max(), dt_op_bak[1]))
+              {
+                Cerr << finl << "**** Advice (printed only on the first " << nw << " time steps) ****" << finl;
+                Cerr << "You could use diffusion_implicite option into the Euler scheme to increase" << finl;
+                Cerr << "the stability time step of the " << this->que_suis_je() << " equation by impliciting the diffusive operator." << finl;
+              }
+        }
+    }
   Debog::verifier("Equation_base::calculer_pas_de_temps dt ",dt);
   return dt;
 }

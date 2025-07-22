@@ -1106,47 +1106,7 @@ bool Navier_Stokes_std::initTimeStep(double dt)
 
   // needed by ALE method and we don't want domaine_ale object in TRUST
   update_pressure_matrix( );
-
-  // Verification que dt_max est correctement fixe pour un champ
-  // de vitesse nul et diffusion_implicite active <=> dt_conv=INF
   const Schema_Temps_base& sch_tps = le_schema_en_temps.valeur();
-  const double dt_max = sch_tps.pas_temps_max();
-  const int diff_implicite = sch_tps.diffusion_implicite();
-  if (diff_implicite)
-    {
-      const DoubleTab& tab_vitesse = inconnue().valeurs();
-      int size = tab_vitesse.nb_dim()==1?1:tab_vitesse.dimension(1);
-      DoubleVect max_vit;
-      max_vit.resize(size);
-      mp_max_abs_tab(tab_vitesse,max_vit);
-      double max = mp_max_abs_vect(max_vit);
-
-      if (!sup_strict(max,0.))
-        {
-          if (est_egal(dt_max,1.e30))
-            {
-              Cerr<<" "<<finl;
-              Cerr<<" Diffusion operators are implicited and the current velocity field is null,"<<finl;
-              Cerr<<" then leading to an infinite time step if dt_max is not defined." << finl;
-              Cerr<<" Please, specify an appropriate dt_max value."<<finl;
-              Cerr<<" WARNING : The first value of dt_max that you will specified "<<finl;
-              Cerr<<" may need to be decreased if the calculation still crash."<<finl;
-              exit();
-            }
-          else
-            {
-              Cerr<<" "<<finl;
-              Cerr<<"==========================================================================="<<finl;
-              Cerr<<" WARNING : "<<finl;
-              Cerr<<" Diffusion operators are implicited and the current velocity field is null. "<<finl;
-              Cerr<<" In the case the calculation crash, please try to decrease"<<finl;
-              Cerr<<" the dt_max value in the time scheme block of your data set. "<<finl;
-              Cerr<<"==========================================================================="<<finl;
-              Cerr<<" "<<finl;
-            }
-        }
-    }
-
   bool ddt = Equation_base::initTimeStep(dt);
 
   for (int i=1; i<=sch_tps.nb_valeurs_futures(); i++)
