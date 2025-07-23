@@ -257,6 +257,8 @@ void Piso::iterer_NS(Equation_base& eqn,DoubleTab& current,DoubleTab& pression,
           // on redivise par rho_np_1 avant de sortir
           diviser_par_rho_np1_face(eqn,current);
         }
+
+      eqnNS.updateFluidForce(current);
       return;
     }
 

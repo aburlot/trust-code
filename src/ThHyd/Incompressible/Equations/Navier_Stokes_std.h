@@ -157,6 +157,7 @@ public :
 
   virtual void renewing_jacobians( DoubleTab& derivee );
   virtual void div_ale_derivative( DoubleTrav& derivee_ale, double timestep, DoubleTab& derivee, DoubleTrav& secmemP );
+  virtual void updateFluidForce(DoubleTab&) {}
   virtual void update_pressure_matrix();
   void update_y_plus(const DoubleTab& tab) ;
 
