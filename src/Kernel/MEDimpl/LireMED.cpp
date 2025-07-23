@@ -387,10 +387,13 @@ void LireMED_32_64<_SIZE_>::retrieve_MC_objects()
   std::vector< std::string > meshes_names = MEDCoupling::GetMeshNames(fileName) ;
   if (std::find(meshes_names.begin(), meshes_names.end(), meshName) == meshes_names.end())
     {
-      if (meshName == "--any--") meshName = meshes_names[0]; //magic name -> we take the first mesh
+      if (meshName == "--any--" && meshes_names.size()==1) meshName = meshes_names[0]; //magic name -> we take the first mesh
       else
         {
-          Cerr << "Mesh " << nom_mesh_ << " not found in the med file " << nom_fichier_ << " !" << finl;
+          if (meshName == "--any--")
+            Cerr << "You need to specify the mesh name for the med file " << nom_fichier_ << " !" << finl;
+          else
+            Cerr << "Mesh " << nom_mesh_ << " not found in the med file " << nom_fichier_ << " !" << finl;
           Cerr << "List of meshes found:" << finl;
           for(unsigned int i = 0; i<meshes_names.size(); i++)
             Cerr << meshes_names[i] << finl;
@@ -633,14 +636,25 @@ void LireMED_32_64<_SIZE_>::write_sub_dom_datasets() const
 
           jdd_seq << "Associer " << nom_sous_domaine << " " << nom_dom_trio << finl;
           jdd_par << "Associer " << nom_sous_domaine << " " << nom_dom_trio << finl;
-
-          jdd_seq << "Lire " << nom_sous_domaine << " { fichier " << file_ssz << " }" << finl;
-          jdd_par << "Lire " << nom_sous_domaine << " { fichier " << nom_sous_domaine << ".ssz" << " }" << finl;
-          SFichier f_ssz(file_ssz);
-          f_ssz << nb_elems << finl;
-          for (int_t j = 0; j < nb_elems; j++)
-            f_ssz << (int)idP[j] << " ";
-          f_ssz << finl;
+          bool flag = false;
+          if (flag)
+            {
+              jdd_seq << "Lire " << nom_sous_domaine << " { liste ";
+              jdd_seq << nb_elems;
+              for (int_t j = 0; j < nb_elems; j++) jdd_seq << " " << (int) idP[j];
+              jdd_seq << " }" << finl;
+              jdd_par << "Lire " << nom_sous_domaine << " { fichier " << nom_sous_domaine << ".ssz" << " }" << finl;
+            }
+          else
+            {
+              jdd_seq << "Lire " << nom_sous_domaine << " { fichier " << file_ssz << " }" << finl;
+              jdd_par << "Lire " << nom_sous_domaine << " { fichier " << nom_sous_domaine << ".ssz" << " }" << finl;
+              SFichier f_ssz(file_ssz);
+              f_ssz << nb_elems << finl;
+              for (int_t j = 0; j < nb_elems; j++)
+                f_ssz << (int) idP[j] << " ";
+              f_ssz << finl;
+            }
         }
     }
 #endif
@@ -886,7 +900,7 @@ void LireMED_32_64<_SIZE_>::lire_geom(bool subDom)
       Cerr << "Dimension is not defined. Check your data file." << finl;
       Process::exit();
     }
-  Cerr << "Trying to read the domain " << nom_mesh_ << " from the file " << nom_fichier_ << " in order to affect to domain "
+  Cerr << "Trying to read the mesh " << nom_mesh_ << " from the file " << nom_fichier_ << " in order to affect to domain "
        << nom_dom_trio << "..." << finl;
 
   retrieve_MC_objects();
