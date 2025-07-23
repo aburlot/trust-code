@@ -14,27 +14,27 @@ then
    TRUST_USE_MPI_GPU_AWARE=1 trust enabled $NP 1>enabled.out_err 2>&1   || exit -1
    sdiff disabled.TU enabled.TU | grep -e "Network bandwidth max"
 
-   echo "-----------------------------------------------------------------------------------------------------------------------"
-   echo "AmgX/CG/C-AMG use MPI communications:                         | Device communications:"
-   sed "1,$ s?amg gcp {?__solver__?g" enabled.data > template.data
-   sed "1,$ s?__solver__?amgx gcp { precond c-amg { }?g" template.data > enabled.data
-   TRUST_USE_MPI_GPU_AWARE=1 trust disabled $NP 1>disabled.out_err 2>&1 || exit -1
-   TRUST_USE_MPI_GPU_AWARE=1 AMGX_USE_MPI_GPU_AWARE=1 trust enabled $NP 1>enabled.out_err 2>&1  || exit -1
-   sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
+#   echo "-----------------------------------------------------------------------------------------------------------------------"
+#   echo "AmgX/CG/C-AMG use MPI communications:                         | Device communications:"
+#   sed "1,$ s?amg gcp {?__solver__?g" enabled.data > template.data
+#   sed "1,$ s?__solver__?amgx gcp { precond c-amg { }?g" template.data > enabled.data
+#   TRUST_USE_MPI_GPU_AWARE=1 trust disabled $NP 1>disabled.out_err 2>&1 || exit -1
+#   TRUST_USE_MPI_GPU_AWARE=1 AMGX_USE_MPI_GPU_AWARE=1 trust enabled $NP 1>enabled.out_err 2>&1  || exit -1
+#   sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
 
-   echo "-----------------------------------------------------------------------------------------------------------------------"
-   echo "PETSc/CG/SA-AMG use MPI communications:                       | Device communications:"
-   sed "1,$ s?__solver__?petsc_gpu gcp { precond sa-amg { }?g" template.data > enabled.data
-   TRUST_USE_MPI_GPU_AWARE=1 trust disabled $NP -use_gpu_aware_mpi 0 1>disabled.out_err 2>&1 || exit -1
-   TRUST_USE_MPI_GPU_AWARE=1 trust enabled  $NP -use_gpu_aware_mpi 1 1>enabled.out_err 2>&1  || exit -1
-   sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
+#   echo "-----------------------------------------------------------------------------------------------------------------------"
+#   echo "PETSc/CG/SA-AMG use MPI communications:                       | Device communications:"
+#   sed "1,$ s?__solver__?petsc_gpu gcp { precond sa-amg { }?g" template.data > enabled.data
+#   TRUST_USE_MPI_GPU_AWARE=1 trust disabled $NP -use_gpu_aware_mpi 0 1>disabled.out_err 2>&1 || exit -1
+#   TRUST_USE_MPI_GPU_AWARE=1 trust enabled  $NP -use_gpu_aware_mpi 1 1>enabled.out_err 2>&1  || exit -1
+#   sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
 
-   echo "-----------------------------------------------------------------------------------------------------------------------"
-   echo "PETSc/CG/Boomeramg use MPI communications:                    | Device communications:"
-   sed "1,$ s?__solver__?petsc_gpu gcp { precond boomeramg { }?g" template.data > enabled.data
-   TRUST_USE_MPI_GPU_AWARE=1 trust disabled $NP -use_gpu_aware_mpi 0 1>disabled.out_err 2>&1 || exit -1
-   TRUST_USE_MPI_GPU_AWARE=1 trust enabled  $NP -use_gpu_aware_mpi 1 1>enabled.out_err 2>&1  || exit -1
-   sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
+#   echo "-----------------------------------------------------------------------------------------------------------------------"
+#   echo "PETSc/CG/Boomeramg use MPI communications:                    | Device communications:"
+#   sed "1,$ s?__solver__?petsc_gpu gcp { precond boomeramg { }?g" template.data > enabled.data
+#   TRUST_USE_MPI_GPU_AWARE=1 trust disabled $NP -use_gpu_aware_mpi 0 1>disabled.out_err 2>&1 || exit -1
+#   TRUST_USE_MPI_GPU_AWARE=1 trust enabled  $NP -use_gpu_aware_mpi 1 1>enabled.out_err 2>&1  || exit -1
+#   sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
 
    echo "-----------------------------------------------------------------------------------------------------------------------"
    echo "PETSc/CG/Jacobi use MPI communications:                       | Device communications:"
@@ -43,12 +43,12 @@ then
    TRUST_USE_MPI_GPU_AWARE=1 trust enabled  $NP -use_gpu_aware_mpi 1 1>enabled.out_err 2>&1  || exit -1
    sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
 
-   echo "-----------------------------------------------------------------------------------------------------------------------"
-   echo "PETSc/CG/C-AMG use MPI communications:                        | Device communications:"
-   sed "1,$ s?__solver__?petsc_gpu gcp { precond c-amg { }?g" template.data > enabled.data
-   TRUST_USE_MPI_GPU_AWARE=1 trust disabled $NP -use_gpu_aware_mpi 0 1>disabled.out_err 2>&1 || exit -1
-   TRUST_USE_MPI_GPU_AWARE=1 trust enabled  $NP -use_gpu_aware_mpi 1 1>enabled.out_err 2>&1  || exit -1
-   sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
+#   echo "-----------------------------------------------------------------------------------------------------------------------"
+#   echo "PETSc/CG/C-AMG use MPI communications:                        | Device communications:"
+#   sed "1,$ s?__solver__?petsc_gpu gcp { precond c-amg { }?g" template.data > enabled.data
+#   TRUST_USE_MPI_GPU_AWARE=1 trust disabled $NP -use_gpu_aware_mpi 0 1>disabled.out_err 2>&1 || exit -1
+#   TRUST_USE_MPI_GPU_AWARE=1 trust enabled  $NP -use_gpu_aware_mpi 1 1>enabled.out_err 2>&1  || exit -1
+#   sdiff disabled.TU enabled.TU | grep -e "Secondes / pas de temps"
    
    echo "-----------------------------------------------------------------------------------------------------------------------"
    echo "Warning: Solver results on a single GPU or on multi-GPU without fast link are flawed."

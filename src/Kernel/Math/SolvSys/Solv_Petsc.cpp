@@ -842,13 +842,13 @@ void Solv_Petsc::create_solver(Entree& entree)
             case 5:
               {
                 // on sauvegarde au format petsc
-                save_matrix_=1;
+                set_save_matrix(2);
                 break;
               }
             case 26:
               {
                 // on sauvegarde au format matrix market
-                save_matrix_=2;
+                set_save_matrix(3);
                 break;
               }
             case 6:
@@ -1664,7 +1664,7 @@ void sortie_maple(Sortie& s, const Matrice_Morse& M)
 void Solv_Petsc::SaveObjectsToFile(const DoubleVect& secmem, DoubleVect& solution)
 {
   double start = Statistiques::get_time_now();
-  if (save_matrix_==1)
+  if (save_matrix()==2)
     {
       MatInfo Info;
       MatGetInfo(MatricePetsc_,MAT_GLOBAL_SUM,&Info);
@@ -1712,7 +1712,7 @@ void Solv_Petsc::SaveObjectsToFile(const DoubleVect& secmem, DoubleVect& solutio
           MatView(MatricePetsc_, PETSC_VIEWER_STDOUT_WORLD);
         }
     }
-  else if (save_matrix_==2)
+  else if (save_matrix()==3)
     {
       // Format matrix market ToDo : method
       if (Process::is_parallel()) Process::exit("Error, matrix market format is not available yet in parallel.");
@@ -2086,7 +2086,7 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
   Update_vectors(secmem, solution);
 
   // Save the matrix and the RHS if the matrix has changed...
-  if (nouvelle_matrice() && save_matrix_) SaveObjectsToFile(secmem, solution);
+  if (nouvelle_matrice() && save_matrix()) SaveObjectsToFile(secmem, solution);
   if (log_Create_Stage) PetscLogStagePop();
   //////////////////////////
   // Solve the linear system
@@ -2467,7 +2467,7 @@ void Solv_Petsc::check_aij(const Matrice_Morse& matrice)
 
   // Dans le cas de save_matrix_ en parallele
   // Sinon, cela bloque avec sbaij:
-  if (save_matrix_==1 && Process::is_parallel()) mataij_=1;
+  if (save_matrix()==1 && Process::is_parallel()) mataij_=1;
 
   // Error in PETSc when read/save the factored matrix if matrix is sbaij
   // so aij is selected instead:

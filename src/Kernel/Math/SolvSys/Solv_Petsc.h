@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -170,7 +170,6 @@ protected :
   int ignore_nb_it_max_;
   int controle_residu_;         // Verification si le residu ||Ax-B||<seuil
   int block_size_;              // Block size for SBAIJ matrix
-  int save_matrix_;             // Save constant matrix in a file
   Nom factored_matrix_;		// Deal with the A=LU factorization on disk
   int mataij_;			// Force the use of a Mataij matrix
   Nom type_pc_;			// Preconditioner type
@@ -274,7 +273,6 @@ inline void Solv_Petsc::initialize()
   convergence_with_nb_it_max_ = 0;
   ignore_nb_it_max_ = 0;
   nb_it_max_ = NB_IT_MAX_DEFINED;
-  save_matrix_=0;
   mataij_=0;
   factored_matrix_="";
   solveur_direct_=no;

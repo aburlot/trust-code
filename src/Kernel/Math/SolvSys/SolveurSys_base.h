@@ -66,10 +66,12 @@ public :
   const Nom& get_chaine_lue() const { return chaine_lue_ ; };
   inline bool read_matrix() const { return read_matrix_; };
   void set_read_matrix(bool flag) { read_matrix_ = flag; };
+  inline int save_matrix() const { return save_matrice_; };
+  void set_save_matrix(int flag) { save_matrice_ = flag; };
 
 protected :
   int nouvelle_matrice_; // Drapeau pour savoir si un stockage ou une factorisation est a refaire
-  bool save_matrice_ = false;     // Drapeau pour savoir si un stockage disque est a refaire
+  int save_matrice_ = 0; // Valeur pour savoir si une matrice est a sauver (entier car plusieurs formats possibles: 1: TRUST 2: PETSc format 3: Matrix Market)
   bool return_on_error_ = false; //drapeau pour savoir si on doit faire exit() ou renvoyer -1 si resoudre_
 
   // Pour lecture/stockage des parametres des solveurs:

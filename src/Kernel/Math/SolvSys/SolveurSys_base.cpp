@@ -56,7 +56,7 @@ int SolveurSys_base::resoudre_systeme(const Matrice_Base& A,
 void SolveurSys_base::save_matrice_secmem_conditionnel(const Matrice_Base& la_matrice, const DoubleVect& secmem, const DoubleVect& solution, int binaire2 )
 {
   int binaire=binaire2;
-  if (save_matrice_)
+  if (save_matrice_==1)
     {
       // on simule l'ecriture d'une Matrice et non d'une Matrice_Base
       // pour aider a la relecture
