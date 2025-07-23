@@ -1,5 +1,5 @@
 # Hydraulique 2D : Paroi defilante #
-# PARALLEL OK #
+# PARALLEL NOT #
 dimension 2
 Pb_Hydraulique pb
 Domaine dom

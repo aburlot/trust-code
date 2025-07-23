@@ -2054,11 +2054,7 @@ int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVec
       if (MatricePetsc_ == nullptr || rebuild_matrix_ || read_matrix())
         nouveau_stencil_ = true;
       else
-        nouveau_stencil_ = matrice_morse.constant_stencil() ? false : detect_new_stencil(matrice_morse);
-
-      // If stencil is set constant, we need to store zero:
-      if (matrice_morse.constant_stencil())
-        mat_ignore_zero_entries_ = false;
+        nouveau_stencil_ = detect_new_stencil(matrice_morse);
 
       // Build x and b if necessary
       Create_vectors(secmem);
@@ -3144,7 +3140,9 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
   // et si on supprime les zeros de la matrice, lors d'un update on peut avoir une allocation -> erreur
   if (mataij_)
     {
-      if (mat_ignore_zero_entries_)
+      if (!mat_ignore_zero_entries_ || mat_morse.constant_stencil())
+        MatSetOption(MatricePetsc, MAT_IGNORE_ZERO_ENTRIES, PETSC_FALSE); // Stocke les zeros st stencil constant
+      else
         {
           MatSetOption(MatricePetsc, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE); // Ne stocke pas les zeros
           if (verbose)
@@ -3169,8 +3167,6 @@ void Solv_Petsc::Create_MatricePetsc(Mat& MatricePetsc, int mataij, const Matric
                      << " zeros from TRUST matrix into the PETSc matrix ..." << finl;
             }
         }
-      else
-        MatSetOption(MatricePetsc, MAT_IGNORE_ZERO_ENTRIES, PETSC_FALSE); // Ne stocke pas les zeros
     }
   // Genere une erreur (ou pas) si une case de la matrice est remplie sans allocation auparavant:
   MatSetOption(MatricePetsc, MAT_NEW_NONZERO_ALLOCATION_ERR, allow_realloc_ ? PETSC_FALSE : PETSC_TRUE);
@@ -3322,6 +3318,10 @@ void Solv_Petsc::Update_matrix(Mat& MatricePetsc, const Matrice_Morse& mat_morse
 
 bool Solv_Petsc::detect_new_stencil(const Matrice_Morse& mat_morse)
 {
+  // If stencil is set constant for matrix, we leave
+  if (mat_morse.constant_stencil())
+    return false;
+
   // Est ce un nouveau stencil ?
   double start = Statistiques::get_time_now();
   int new_stencil=0;
