@@ -122,6 +122,10 @@ genere_fiche()
     then
       opt="-parallel_sjob"
     fi 
+    if [ $parallel -eq 1 ]
+    then
+      opt="-parallel_run"
+    fi
     if [ $concurent -eq 0 ] ||  [ ! -d BUILD/$cas/build ]
     then
       [ ! -d BUILD ] && echo `pwd` pas de build && exit 
@@ -142,7 +146,8 @@ genere_fiche()
          echo "@@@ Done executing Run script."
       else    # Jupyter format
          echo "@@@ About to execute and export Jupyter notebook to PDF ..."
-         env JUPYTER_RUN_OPTIONS="$opt -dest $curr_dir" jupyter-nbconvert --ExecutePreprocessor.timeout=432000 --to pdf --no-input --output "$curr_dir/build/rapport.pdf" --execute $prm 1>run$OPTIONS_PRM.log 2>&1
+         # ND: replace --execute $prm (where prm=$Rapports_auto_root/.../$cas/xxx.ipynb) by --execute $(basename $prm) to run the notebook BUILD/$cas/xxx.ipynb (otherwise many errors when importing python scripts from build)
+         env JUPYTER_RUN_OPTIONS="$opt -dest $curr_dir" jupyter-nbconvert --ExecutePreprocessor.timeout=432000 --to pdf --no-input --output "$curr_dir/build/rapport.pdf" --execute $(basename $prm) 1>run$OPTIONS_PRM.log 2>&1
          status=$?
          echo "@@@ Done processing Jupyter notebook with exit status $status."
       fi
@@ -210,6 +215,8 @@ pdf_only=0
 [ "$1" = "-pdf_only" ] && pdf_only=1 && shift
 with_sjob=0
 [ "$1" = "-parallel_sjob" ] && with_sjob=1 && shift
+parallel=0
+[ "$1" = "-parallel_run" ] && parallel=1 && shift
 
 if [[ "${testListValidation}" == "" ]]
 then
