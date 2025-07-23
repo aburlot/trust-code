@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -103,7 +103,12 @@ bool Probleme_base_interface_proto::iterateTimeStep_impl(Probleme_base& pb, bool
     throw WrongContext(pb.le_nom().getChar(), "iterateTimeStep", "initTimeStep should have been called");
 
   // Update the domain
-  pb.domaine().mettre_a_jour(pb.schema_temps().temps_defaut(),pb.domaine_dis(),pb);
+  if(pb.domaine().getUpdateTheGrid())
+    {
+      pb.domaine().mettre_a_jour(pb.schema_temps().temps_defaut(), pb.domaine_dis(), pb);
+      pb.domaine().setUpdateTheGrid(false);
+    }
+
 
   Debog::set_nom_pb_actuel(pb.le_nom());
   bool ok = pb.schema_temps().iterateTimeStep(converged);
