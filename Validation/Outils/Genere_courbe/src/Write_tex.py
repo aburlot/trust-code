@@ -749,9 +749,9 @@ Report generated  __DATE__.'''
 \setlength{\parindent}{0pt}
 
 % Style page
-\renewcommand{\sectionmark}[1]{\markboth{#1}{#1}}
+%\renewcommand{\sectionmark}[1]{\markboth{#1}{#1}}
 \pagestyle{fancy}
-\lhead{\leftmark\\\rightmark}
+\lhead{\uppercase{\leftmark}\\\uppercase{\rightmark}}
 \chead{}
 \rhead{}
 
