@@ -993,6 +993,8 @@ do
          trust -search petsc_gpu
          cat liste_cherche >> liste_cherche_gpu
          echo PETSC_CUDA >> liste_cherche_gpu
+         trust -search cuDSS
+         cat liste_cherche >> liste_cherche_gpu
          mv liste_cherche_cpu liste_cherche
          # Ensuite selon les options, on affine:
          teste=0
