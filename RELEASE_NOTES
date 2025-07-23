@@ -1,3 +1,12 @@
+XX/XX/25 (TRUST) Library      : Update PETSc 3.22.4 to 3.23.2 for GNU 15.x support, Cuda 12.8 support, GPU fixes 
+XX/XX/25 (TRUST) Fix          : Extraire_plan on large mesh could introduce severe slowdown every time-step
+XX/XX/25 (TRUST) Option       : Expert_only option depecated for the VerifierCoin keyword
+XX/XX/25 (TRUST) Memory       : Reduce 5-10% memory footprint when using muscl/upwind schemes in VEF 3D     
+XX/XX/25 (TRUST) Fix          : Possible KSP divergence on multi-node Nvidia GPU with MPI Cuda-aware
+XX/XX/25 (TRUST) GPU          : Support of old Turing cards (T1000)
+XX/XX/25 (TRUST) GPU          : First implicit scheme (Implicite) in VEF available on GPU (with muscl/ef_stab/upwind schemes and diffusive term)
+XX/XX/25 (TRUST) GPU          : More Quasi-compressible features accelerated in VEF
+XX/XX/25 (TRUST) GPU          : Lot of kernel optimizations in VEF (muscl/upwind schemes, diffusion term and semi-implicit scheme)
 XX/XX/25 (TRUST) Change       : When diffusion is implicited on a flow with null velocity initial condition, first time step is based on diffusive time step not dt_max
 XX/XX/25 (TRUST) Fix          : Large slowdown on GPU when Extraire_plan was used to create a 2D domain for lightweight postprocessing
 XX/XX/25 (TRUST) Solver       : AMG wrapper solver detect block-structure matrix in VEF, which dramatically improves convergence, especially on meshes with high amplitude for cell volumes

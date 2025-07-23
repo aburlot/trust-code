@@ -1,5 +1,7 @@
-XX/XX/25 (TRUST) GPU          : Update PETSc to 3.23.2
-XX/XX/25 (TRUST) GPU          : Add kokkos-kernels package (math kernels on GPU)
+XX/XX/25 (TRUST) Tool         : Fix regression in the Debog tool (tracks sequential-parallel or host-device results difference)
+XX/XX/25 (TRUST) GPU          : Add trust option -rocprof to profile code on AMD GPU 
+XX/XX/25 (TRUST) GPU          : TRUST_DISABLE_FENCE environment variable to enable asynchronous Kokkos kernels 
+XX/XX/25 (TRUST) GPU          : Add kokkos-kernels package (math kernels on GPU) through PETsc but not enabled by default
 -------------------------------------------------------------
 Developer notes version 1.9.7_beta : Changes since version 1.9.6 :
 -------------------------------------------------------------
