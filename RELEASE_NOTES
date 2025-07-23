@@ -1,7 +1,8 @@
-XX/XX/25 (TRUST) New keyword  : Singular loss pressure eps option should be replaced by alpha option for regul keyword (to be coherent with Flica5)
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+11/07/25 (TRUST) Tools        : In addition to LATA and MED plugins, VisIt installed in TRUST can read CGNS format on some platforms
+11/07/25 (TRUST) New keyword  : Singular loss pressure eps option should be replaced by alpha option for regul keyword (to be coherent with Flica5)
 11/07/25 (TRUST) GPU          : Add a new fast direct solver limited to a single Nvidia GPU: cuDSS LU|Cholesky { [algo int] [impr] }
 01/07/25 (TRUST) Bug fixed    : Crash in parallel during a Pb_multiphase simulation when elimination in SETS scheme failed
 01/07/25 (TRUST) Bug fixed    : Crash for Front Tracking simulation with time-dependent velocity boundary condition in VDF
