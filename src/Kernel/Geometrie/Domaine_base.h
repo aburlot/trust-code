@@ -58,6 +58,8 @@ public:
   virtual void set_dt(double& dt_) {}
   virtual void mettre_a_jour(double temps, Domaine_dis_base&, Probleme_base&) {}
   virtual void update_after_post(double temps) {}
+  virtual bool getUpdateTheGrid() {return true;}
+  virtual void setUpdateTheGrid(bool) {}
 
   //
   // Printing/export stuff
