@@ -32,11 +32,11 @@ if (loadercpp)
   # Library
   #
   set(tgt_ll LataLoader)
-  add_library(${tgt_ll} SHARED LataLoader.cpp)
+  add_library(${tgt_ll} STATIC LataLoader.cpp)
   if (CYGWIN)
     add_library(${tgt_ll}.st STATIC LataLoader.cpp)
   endif()
-  target_link_libraries(${tgt_ll} ${lib}  ${ajout} )
+  target_link_libraries(${tgt_ll} ${lib} ${ajout} )
   install(TARGETS ${tgt_ll} DESTINATION lib)
   #
   # Test executable
@@ -44,7 +44,7 @@ if (loadercpp)
   set(tgt_tst test_LataLoader)
   add_executable (${tgt_tst} test_LataLoader.cpp )
   install(TARGETS ${tgt_tst} DESTINATION bin)
-  target_link_libraries(${tgt_tst} ${tgt_ll} ${ajout})
+  target_link_libraries(${tgt_tst} ${tgt_ll} ${lib} ${ajout})
 
   #
   # Swig
