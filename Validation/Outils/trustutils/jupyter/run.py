@@ -63,7 +63,17 @@ def useMEDCoupling():
         import medcoupling
     except:
         raise Exception("Could not load MEDCoupling environment!")
-
+        
+def useLataTools():
+    """ Load LataTools environment in the PYTHONPATH so that 'import LataLoader' can work.
+    """
+    import sys
+    useMEDCoupling()
+    trust_root = os.environ["TRUST_ROOT"]
+    sys.path.append(f"{trust_root}/exec/lata_tools/lib")
+    # for testing. no need to try/catch, that would just shadow the initial exception
+    import LataLoader
+    
 ######## PRIVATE STUFF #########
 ORIGIN_DIRECTORY = os.getcwd()
 
