@@ -316,7 +316,7 @@ class Graph:
         ## On ajoute des titres
         self.subplot.set(xlabel=self.x_label, ylabel=self.y_label)
 
-    def addSegment(self, data, time=None, marker="-", label="", compo=0, func=None, funcX=None, **kwargs):
+    def addSegment(self, data, time=None, marker="-", label=None, compo=0, func=None, funcX=None, **kwargs):
         """
 
         Method to add a curve to the plot from a segment of probes.

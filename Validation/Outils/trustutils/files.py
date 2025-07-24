@@ -29,6 +29,7 @@ class TrustFile(object):
         self._entries = {}  # key = entry_name, val=col_index (or component numb for segs)
         self._taxis = TrustFile._VOID_ARR  # time axis values
         self._yvalues = TrustFile._VOID_ARR  # a np.array, col index is in _entries
+        self._indXValues = TrustFile._VOID_ARR  # the indice of the xaxis of the entries
         self._lastIndex = {}  # position of the last fetched data in the yvalues arrays. key=entry_name, vals=index
         self._lastSeek = 0  # position of the last fetched data in the file
         self._data = ""  # last chunk of read data
@@ -356,6 +357,8 @@ class SonFile(TrustFile):
                     e = "%s (%s)" % (self._field, sp)
                 self._entries[e] = col
                 col += 1
+        self._indXValues = (np.array(list(self._entries.values())[0::self._ncompo]) - 1) // self._ncompo
+
         # Reset last index:
         self._lastIndex = dict(list(zip(list(self._entries.keys()), [-1] * len(self._entries))))
 
@@ -462,7 +465,7 @@ class SonSEGFile(SonFile):
         return "Coordinate (%s)" % self._orient
 
     def getXAxis(self):
-        return self._xaxis
+        return self._xaxis[self._indXValues]
 
     def _extractValues(self, fileReady, entryName):
         """ Override to handle seg entries. """
@@ -561,7 +564,6 @@ class OutFile(TrustFile):
             hdr = TrustFile._ReadHeader(self._filePath, 4)
         try:
 
-            # print "uuuuuuuuuu",hdr
             # Field name:
             self._fied = "Unknown"
             for x in hdr[1]:
@@ -579,12 +581,6 @@ class OutFile(TrustFile):
                     assert hdr[3][3] == "Fz"
                     dim = 3
 
-            # if (self._field=="Integral(P*ndS)"):
-            #  print "pb fichier pression"
-            #  nb_co-=1
-            # nb_co-=1 # on a total par erreur dans les label
-            # print "yyyyyyyyyy",(len(hdr[3])-1)/dim, nb_co
-            # print "dim",dim,nb_co
             if dim == 0:
                 dim = 1
             self._dim = dim
@@ -618,8 +614,6 @@ class OutFile(TrustFile):
     def _reloadEntries(self, hdr=None):
         if hdr is None:
             self._populateFromHeader(hdr)
-            # print "uuuuuuuuuuuu"
-            # 1/0
 
         self._lastIndex = dict(list(zip(list(self._entries.keys()), [-1] * len(self._entries))))
 
@@ -656,8 +650,6 @@ class CSVFile(TrustFile):
             1 / 0
         # Adrien ???
         self._lastIndex = dict(list(zip(list(self._entries.keys()), [-1] * len(self._entries))))
-        # print "QQ",self._lastIndex
-        # print "uuu",self._entries.keys()
 
 
 class DTEVFile(TrustFile):
