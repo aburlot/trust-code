@@ -13,8 +13,8 @@ linux   rsync_ssh   tache   is234637-clang.intra.cea.fr 		-all	   -FLICA5	 		   
 linux   rsync_ssh   tache   is245205-clang.intra.cea.fr 		-all	   -ICoCo -TrioCFD -FLICA5 	 		   		-clang  	 -force_latest_mpich -without-pdflatex  					# Fedora 41 GA
 linux	rsync_ssh   tache	is246434-clang.intra.cea.fr		-all 		-ICoCo  -TrioCFD -GENEPI3 -STT -PEMFC -FLICA5 -C3D -TRUST_NK -SIDES -SCORPIO -TrioMC -MATHYS      	-clang   				-force_latest_mpich -without-pdflatex -without-visit   	# Debian testing MF
 linux	rsync_ssh	tache	is234634.intra.cea.fr	-all 		-FLICA5   					 -without-pdflatex  							# Fedora 36	Bat 451 LGLS bureau TMA TRUST
-linux	rsync_ssh	tache	is157083-cpp14.intra.cea.fr	-all 		-ICoCo -FLICA5 -GENEPI3 -STT -PEMFC -C3D -SIDES -SCORPIO -TrioMC -MATHYS     		-stdcpp14 			 -without-pdflatex    							# Fedora 38 	Bat 454 LMEC titania  GF
-linux	rsync_ssh	tache	is231001-cpp14.intra.cea.fr	-all 		-FLICA5 -GENEPI3 -C3D     		-stdcpp14 			 -without-pdflatex    							# Fedora 26 	Bat 454 LMEC titania  CP
+linux	rsync_ssh	tache	is157083-cpp14.intra.cea.fr	-all 		-ICoCo -GENEPI3 -STT -PEMFC -C3D -SIDES -SCORPIO -TrioMC -MATHYS     		-stdcpp14 			 -without-pdflatex    							# Fedora 38 	Bat 454 LMEC titania  GF
+linux	rsync_ssh	tache	is231001-cpp14.intra.cea.fr	-all 		-GENEPI3 -C3D     		-stdcpp14 			 -without-pdflatex    							# Fedora 26 	Bat 454 LMEC titania  CP
 linux	rsync_ssh	tache	is245205.intra.cea.fr	-all 		-FLICA5 -TrioCFD -GENEPI3 -STT -PEMFC -C3D -SIDES -SCORPIO     		 	 -force_even_unsupported -without-pdflatex    							# Fedora 41 	Bat 454 SGLS titania  GA
 linux	rsync_ssh	cible	is227246.intra.cea.fr		-all     	-ICoCo -MPCube -TrioCFD  -GENEPI3 -SIDES -SCORPIO -STT -PEMFC -FLICA5 -C3D -TrioMC -MATHYS    -force_latest_mpich  							# Fedora 34	Bat 451 Erwan titania
 linux	rsync_ssh  	tache	irene-ccrt.ccc.cea.fr	-limited	-ICoCo -TrioCFD 						-disable-gnuplot -without-doc -disable-plot2d -without-conda -disable-hwloc  						# RedHat 7.6	CEA CCRT
@@ -54,7 +54,7 @@ linux	rsync_ssh	non	is241478-xdata.intra.cea.fr				-ICoCo 					-xdata  -without-
 linux	rsync_ssh	tache	is246436.intra.cea.fr				-ICoCo -TrioCFD     			-g 		-without-pdflatex -without-visit 						# RedHat 9.4 Bat 451	LMSF titania Michel
 linux	rsync_ssh	non	is154726.intra.cea.fr		-all 		 -ICoCo 			-g 		-enable-petsc-debug -enable-mc-debug -without-pdflatex			# UB 22 titania 	Bat 451	LGLS	salle de formation
 linux	rsync_ssh	tache   is240933.intra.cea.fr				        	                     -check-valgrind -without-pdflatex  				# UB 22 Salle de formation titania
-linux	rsync_ssh	tache	is234617-wompi.intra.cea.fr	-all  		-FLICA5  							-disable-mpi -disable-valgrind  							# Ubuntu 22 Bat 451 titania 
+linux	rsync_ssh	tache	is234617-wompi.intra.cea.fr	-all  		  							-disable-mpi -disable-valgrind  							# Ubuntu 22 Bat 451 titania 
 linux	rsync_ssh	tache	is225934.intra.cea.fr	-all  		-FLICA5  							 							# Ubuntu 22 Bat 451 MF titania 
 linux	rsync_ssh	tache	is244274.intra.cea.fr			 	-TRUST_NK  				-Check_decoupage 		 -force-provided-mpich 							# Fedora 32 titania 	Bat 451	LGLS bureau Gilles
 linux   ssh_pass	non	    scania11.intra.cea.fr 		-all		-TrioCFD  -STT -PEMFC -GENEPI3    -without-pdflatex -disable-valgrind 	 		  								# tscibian11 VM (comme Debian 11)
