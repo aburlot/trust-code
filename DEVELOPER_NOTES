@@ -1,10 +1,10 @@
-XX/XX/25 (TRUST) Tool         : Fix regression in the Debog tool (tracks sequential-parallel or host-device results difference)
-XX/XX/25 (TRUST) GPU          : Add trust option -rocprof to profile code on AMD GPU 
-XX/XX/25 (TRUST) GPU          : TRUST_DISABLE_FENCE environment variable to enable asynchronous Kokkos kernels 
-XX/XX/25 (TRUST) GPU          : Add kokkos-kernels package (math kernels on GPU) through PETsc but not enabled by default
 -------------------------------------------------------------
 Developer notes version 1.9.7_beta : Changes since version 1.9.6 :
 -------------------------------------------------------------
+28/07/25 (TRUST) Tool         : Fix regression in the Debog tool (tracks sequential-parallel or host-device results difference)
+28/07/25 (TRUST) GPU          : Add trust option -rocprof to profile code on AMD GPU
+28/07/25 (TRUST) GPU          : TRUST_DISABLE_FENCE environment variable to enable asynchronous Kokkos kernels
+28/07/25 (TRUST) GPU          : Add kokkos-kernels package (math kernels on GPU) through PETsc but not enabled by default
 25/07/25 (TRUST) NR Tests     : Sserver now supports timeout option and can be passed with the '-t' option
 -------------------------------------------------------------
 Developer notes version 1.9.6 : Changes since version 1.9.5 :
