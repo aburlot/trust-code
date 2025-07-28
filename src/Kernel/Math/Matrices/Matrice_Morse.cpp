@@ -2245,6 +2245,8 @@ void Matrice_Morse::assert_check_morse_matrix_structure() const
       Cerr << "  Exiting..." << finl;
       Process::exit( );
     }
+  else
+    morse_matrix_structure_has_changed_=0;
 #endif
 }
 
@@ -2258,6 +2260,8 @@ void Matrice_Morse::assert_check_sorted_morse_matrix_structure() const
       Cerr << "  Exiting..." << finl;
       Process::exit( );
     }
+  else
+    morse_matrix_structure_has_changed_=0;
 #endif
 }
 
