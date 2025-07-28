@@ -25,15 +25,15 @@ pd.set_option("display.max_rows", None)
 def loadText(data, index_column=0, nb_column=-1, transpose=True, dtype="float", skiprows=0, **kwargs):
     """
     Method for loading and saving files.
-        
+
     Parameters
-    --------- 
-    data : str 
-        name of the file we want to save. 
-    index_column : int 
-        Index of the first column (default=0) 
-    nb_column : int 
-        Number of columns loaded (default=None) 
+    ---------
+    data : str
+        name of the file we want to save.
+    index_column : int
+        Index of the first column (default=0)
+    nb_column : int
+        Number of columns loaded (default=None)
     transpose : bool
         if we transpose the matrix (default=True)
     dtype : str
@@ -44,7 +44,7 @@ def loadText(data, index_column=0, nb_column=-1, transpose=True, dtype="float", 
         additional properties available in numpy.loadtxt() options
 
     Returns
-    ------- 
+    -------
     matrix : array
         matrix.
     """
@@ -72,11 +72,11 @@ def loadText(data, index_column=0, nb_column=-1, transpose=True, dtype="float", 
 def read_csv(data, **kwargs):
     """
     Method for loading files (wrap pandas.read_csv() function).
-        
+
     Parameters
-    --------- 
-    data : str 
-        name of the file we want to save. 
+    ---------
+    data : str
+        name of the file we want to save.
     comment : char, default = "#"
         Character indicating that the remainder of line should not be parsed.
     delim_whitespace : bool, default = True. Deprecated since version 2.2.0 -> Use sep="\\s+" instead.
@@ -85,7 +85,7 @@ def read_csv(data, **kwargs):
         additional properties available in pandas.read_csv() options
 
     Returns
-    ------- 
+    -------
     pandas Dataframe
     """
     origin = os.getcwd()
@@ -102,29 +102,29 @@ def read_csv(data, **kwargs):
 class Graph:
 
     """
-    
+
     Graph is a class to plot .son file
-    
+
     """
 
     def __init__(self, title=None, subtitle=None, nX=1, nY=1, size=[12, 10], label_size=14, title_size=24, legend_size=14):
         """
 
         Constructor of the class Graph.
-        
+
         Parameters
-        --------- 
-        title : str 
-            title of the Graph 
-        subtitle : str 
-            title of the first subplot. 
-        nX : int 
-            number of plot in the x axe (default=1) 
-        nY : int 
+        ---------
+        title : str
+            title of the Graph
+        subtitle : str
+            title of the first subplot.
+        nX : int
+            number of plot in the x axe (default=1)
+        nY : int
             number of plot in the Y axe (default=1)
-        size : [float,float] 
+        size : [float,float]
             Image's size (x,y) of the plot (default=[12,10])
-        
+
         """
         self.x_label = ""
         self.y_label = ""
@@ -150,18 +150,18 @@ class Graph:
         self._reset()
 
     def coordonee(self):
-        """ 
-        
+        """
+
         Method to add a data into the board.
 
         Parameters
-        --------- 
+        ---------
         None
 
         Returns
-        ------- 
+        -------
         The coordinates  of the subplot.
-        
+
         """
         if self.nX == 1 and self.nY == 1:
             return 1
@@ -171,10 +171,10 @@ class Graph:
             return (self.xIndice, self.yIndice)
 
     def _reset(self):
-        """ 
-        
+        """
+
         Method to reinitialize the plot.
-        
+
         """
         plt.rc("xtick", labelsize=self.label_font_size)  # Font size
         plt.rc("ytick", labelsize=self.label_font_size)
@@ -188,28 +188,28 @@ class Graph:
 
     def add(self, x, y, marker="-", label=None, title=None, xIndice=None, yIndice=None, **kwargs):
         """
-        
+
         Method to add a curve to the plot from a point probe.
-        
+
         Parameters
-        --------- 
+        ---------
         x : float array
-            x coordinates.  
+            x coordinates.
         y : float array
-            data to plot.  
+            data to plot.
         marker : str
             symbol of the ploted line (default="-")
         label : str
             label of the curve.
         title : str
-            title of the curve.  
+            title of the curve.
         xIndice : int
-            first coordinates of the subplot list 
+            first coordinates of the subplot list
         yIndice : int
-            second coordinates of the subplot list 
+            second coordinates of the subplot list
         kwargs : dictionary
             additional properties available in matplotlib.pyplot.plot
-            
+
         """
         if not xIndice is None:
             self.xIndice = xIndice
@@ -232,16 +232,16 @@ class Graph:
 
     def addPlot(self, coordonee, title=None):
         """
-        
+
         Method to add a plot/subplot.
-        
+
         Parameters
-        --------- 
+        ---------
         coordonee : str
-            Adress of the file. 
+            Adress of the file.
         title : str
-            Title of the plot. 
-            
+            Title of the plot.
+
         """
         self.subtitle = title
 
@@ -316,7 +316,7 @@ class Graph:
         ## On ajoute des titres
         self.subplot.set(xlabel=self.x_label, ylabel=self.y_label)
 
-    def addSegment(self, data, time=None, marker="-", label=None, compo=0, func=None, funcX=None, **kwargs):
+    def addSegment(self, data, time=None, marker="-", label=None, compo=0, func=None, funcX=None, transpose=False, **kwargs):
         """
 
         Method to add a curve to the plot from a segment of probes.
@@ -341,8 +341,8 @@ class Graph:
             additional properties available in matplotlib.pyplot.plot
 
         Returns
-        ------- 
-        
+        -------
+
         """
 
         path = os.path.join(BUILD_DIRECTORY, data)
@@ -380,6 +380,9 @@ class Graph:
         if not func is None:
             Y = func(X, Y)
 
+        if transpose:
+            Y, X = X, Y
+
         self.subplot.plot(X, Y, marker, label=label, **kwargs)
 
         if not label is None:
@@ -389,11 +392,11 @@ class Graph:
 
     def addResidu(self, data, marker="-", var="residu=max|Ri|", start=0, end=1000000000000, label="", **kwargs):
         """
-        
+
         Method to add a curve to the plot from a dt_ev file.
-        
+
         Parameters
-        --------- 
+        ---------
         data : str
             Adress of the file.
         marker : str
@@ -408,7 +411,7 @@ class Graph:
             title of the curve .
         kwargs : dictionary
             additional properties available in matplotlib.pyplot.plot
-            
+
         """
 
         if label == "":
@@ -447,11 +450,11 @@ class Graph:
 
     def visu(self, xmin=None, xmax=None, ymin=None, ymax=None):
         """
-        
+
         Method to visualize all the data.
-        
+
         Parameters
-        ---------  
+        ---------
         xmin : float
             Minimun of the ploted interval of x.
         xmax : float
@@ -460,153 +463,153 @@ class Graph:
             Minimun of the ploted interval of y.
         ymax : float
             Maximum of the ploted interval of y.
-        coordonee : 
-            coordinates in the subplotlist.  
-            
+        coordonee :
+            coordinates in the subplotlist.
+
         """
         self.subplot.set_xlim([xmin, xmax])
         self.subplot.set_ylim([ymin, ymax])
 
     def label(self, x_label, y_label, **kwargs):
         """
-        
+
         Method to change labels.
 
         Parameters
-        ---------  
-        x_label : str 
+        ---------
+        x_label : str
             Label of x.
         y_label : str
             Label of y.
         kwargs : dictionary
             additional properties available in matplotlib.pyplot.subplot
-        
+
         Returns
-        ------- 
-        
+        -------
+
         """
         self.subplot.set(xlabel=x_label, ylabel=y_label, **kwargs)
 
     def legend(self, **kwargs):
         """
-        
+
         Method to change labels.
 
         Parameters
-        ---------  
+        ---------
         **kwargs :
             option of matplotlib.pyplot.legend
 
         Returns
-        ------- 
-        
+        -------
+
         """
         self.subplot.legend(**kwargs)
 
 
 class Table:  # ancien tableau
     r"""
-    
+
     Class to plot a Table.
-    
+
     """
 
     def __init__(self, columns):
         """
-        
-        Constructor of the class Tableau. 
+
+        Constructor of the class Tableau.
 
         Parameters
-        ---------  
-        columns : str 
-            Name of the columns. 
+        ---------
+        columns : str
+            Name of the columns.
 
         Returns
-        ------- 
-        
+        -------
+
         """
         self.columns = columns
         self._reset()
 
     def _reset(self):
-        """ 
-        
+        """
+
         Method to reinitialize the board.
-        
+
         """
         self.df = pd.DataFrame(columns=self.columns)
 
     def addLine(self, ligne, name):
         """
-        
+
         Method to add a row to the board.
 
         Parameters
-        --------- 
+        ---------
         ligne : list
             Row of the board.
-        name : str 
-            Name of the board. 
+        name : str
+            Name of the board.
 
         Returns
-        ------- 
-        
+        -------
+
         """
         dftmp = pd.DataFrame(ligne, columns=self.columns, index=[name])
         self.df = pd.concat([self.df.astype(dftmp.dtypes), dftmp.astype(self.df.dtypes)])
 
     def setTitle(self,title):
         """
-        
+
         Method to add title to the board.
 
         Parameters
-        --------- 
-        title : str 
-            caption to ass. 
+        ---------
+        title : str
+            caption to ass.
 
         Returns
-        ------- 
-        
+        -------
+
         """
         self.df = self.df.style.set_caption(title)
-        
+
 
     def load(self, data, name):
-        """ 
-        
+        """
+
         Method to add a data into the board.
 
         Parameters
-        --------- 
+        ---------
         data : str
             Adress of the file
-        name : str 
-            Name of the row. 
+        name : str
+            Name of the row.
 
         Returns
-        ------- 
-        
+        -------
+
         """
         path = os.path.join(BUILD_DIRECTORY, data)
         self.addLine([list(np.loadtxt(path, dtype=float))], name)
         saveFileAccumulator(data)
 
     def loadPoint(self, data, name):
-        """ 
-        
+        """
+
         Method to add a data into the board.
 
         Parameters
-        --------- 
+        ---------
         data : str
             Adress of the file
-        name : str 
-            Name of the row. 
+        name : str
+            Name of the row.
 
         Returns
-        ------- 
-        
+        -------
+
         """
         path = os.path.join(BUILD_DIRECTORY, data)
         tmp = tf.SonPOINTFile(path, None)
@@ -616,18 +619,18 @@ class Table:  # ancien tableau
         self.addLine([[a]], name)
 
     def sum(self, name):
-        """ 
-        
+        """
+
         Method to sum data in a column.
 
         Parameters
-        --------- 
-        name : str 
-            Name of the column. 
+        ---------
+        name : str
+            Name of the column.
 
         Returns
-        ------- 
-        
+        -------
+
         """
 
         self.df[name] = self.df[name].astype(np.float64)
