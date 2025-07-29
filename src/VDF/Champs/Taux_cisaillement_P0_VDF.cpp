@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,11 +33,16 @@ void Taux_cisaillement_P0_VDF::associer_champ(const Champ_Face_VDF& la_vitesse, 
 void Taux_cisaillement_P0_VDF::mettre_a_jour(double tps)
 {
   int nb_elem = le_dom_VF->nb_elem();
-  DoubleVect tmp(nb_elem);
-  vitesse_->calcul_S_barre(vitesse_->valeurs(), tmp, le_dom_Cl_VDF.valeur());
+  int N = vitesse_->valeurs().line_size();
+
+  DoubleTab tmp(nb_elem,N);
+  vitesse_->calcul_S_barre_Multiphase(vitesse_->valeurs(), tmp, le_dom_Cl_VDF.valeur());
+
   DoubleTab& S = valeurs(); // Shear rate
-  for (int i = 0; i < nb_elem; i++)
-    S(i) = sqrt(tmp(i));
+  for (int n = 0; n < N; n++)
+    for (int i = 0; i < nb_elem; i++)
+      S(i,n) = sqrt(tmp(i,n));
+
   changer_temps(tps);
   Champ_Fonc_base::mettre_a_jour(tps);
 }

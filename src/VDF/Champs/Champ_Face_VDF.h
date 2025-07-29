@@ -72,6 +72,7 @@ public:
   DoubleTab& calcul_duidxj(const DoubleTab&, DoubleTab&) const;
   DoubleTab& calcul_duidxj(const DoubleTab&, DoubleTab&, const Domaine_Cl_VDF&) const;
   DoubleVect& calcul_S_barre(const DoubleTab&, DoubleVect&, const Domaine_Cl_VDF&) const;
+  DoubleTab& calcul_S_barre_Multiphase(const DoubleTab&,  DoubleTab&, const Domaine_Cl_VDF&) const;
   DoubleVect& calcul_S_barre_sans_contrib_paroi(const DoubleTab&, DoubleVect&, const Domaine_Cl_VDF&) const;
   void calculer_dercov_axi(const Domaine_Cl_VDF&);
 

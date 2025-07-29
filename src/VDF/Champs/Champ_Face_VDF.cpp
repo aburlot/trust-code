@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -1047,6 +1047,38 @@ DoubleVect& Champ_Face_VDF::calcul_S_barre(const DoubleTab& vitesse, DoubleVect&
               temp += Sij * Sij;
             }
         SMA_barre(elem) = 2. * temp;
+      }
+
+  return SMA_barre;
+
+}
+
+DoubleTab& Champ_Face_VDF::calcul_S_barre_Multiphase(const DoubleTab& vitesse, DoubleTab& SMA_barre, const Domaine_Cl_VDF& domaine_Cl_VDF) const
+{
+  const Domaine_VDF& domaine_VDF = domaine_vdf();
+  const int nb_elem_tot = domaine_VDF.nb_elem_tot();
+  const int nb_elem = domaine_VDF.nb_elem();
+  const int N = vitesse.line_size();
+
+  int i, j;
+  int elem;
+  double Sij, temp;
+
+  DoubleTab duidxj(nb_elem_tot, dimension, dimension, N);
+
+  calcul_duidxj(vitesse, duidxj, domaine_Cl_VDF);
+
+  for (elem = 0; elem < nb_elem; elem++)
+    for (int n=0; n<N; n++)
+      {
+        temp = 0.;
+        for (i = 0; i < dimension; i++)
+          for (j = 0; j < dimension; j++)
+            {
+              Sij = 0.5 * (duidxj(elem, i, j, n) + duidxj(elem, j, i, n));
+              temp += Sij * Sij;
+            }
+        SMA_barre(elem,n) = 2. * temp;
       }
 
   return SMA_barre;

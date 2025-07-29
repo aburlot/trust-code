@@ -405,7 +405,13 @@ void VDF_discretisation::taux_cisaillement(const Domaine_dis_base& z, const Doma
   const Champ_Face_VDF& vit = ref_cast(Champ_Face_VDF, ch_vitesse);
   ch.associer_champ(vit, domaine_cl_vdf);
   ch.nommer("Taux_cisaillement");
-  ch.fixer_nb_comp(1);
+  int N = vit.valeurs().line_size();
+  ch.fixer_nb_comp(N);
+  for (int n = 0; n < N; n++)
+    {
+      Nom phase = Nom(n);
+      ch.fixer_nom_compo(n, Nom("Taux_cisaillement_") + phase);
+    }
   ch.fixer_nb_valeurs_nodales(domaine_vdf.nb_elem());
   ch.fixer_unite("s-1");
   ch.changer_temps(ch_vitesse.temps());
