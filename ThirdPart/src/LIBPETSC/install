@@ -593,7 +593,7 @@ then
       add_package hypre && with_packages=$with_packages" --with-hypre-gpu-arch=$GPU_ARCH"
    elif [ $minimal_mumps = 0 ]
    then
-      add_package hypre
+      add_package hypre 2.33.0
    fi
 fi
 
