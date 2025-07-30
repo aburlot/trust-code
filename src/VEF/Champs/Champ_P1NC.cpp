@@ -197,7 +197,7 @@ void calculer_gradientP1NC_3D(const DoubleTab& tab_variable, const Domaine_VEF& 
   CDoubleTabView variable = tab_variable.view_ro();
   CIntArrView est_face_bord = tab_est_face_bord.view_ro();
   DoubleTabView3 gradient_elem = tab_gradient_elem.view_rw<3>();
-  bool fuse_kernels = false;  // Fused kernels create differences on several TrioCFD tests cases, pretty annoying
+  bool fuse_kernels = getenv("TRUST_FUSE_KERNELS") != nullptr;  // Fusing kernels create differences on several TrioCFD tests cases, pretty annoying
   if (!fuse_kernels)
     {
       Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_faces_tot, KOKKOS_LAMBDA (int fac)
