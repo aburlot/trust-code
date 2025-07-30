@@ -79,7 +79,7 @@ Entree& VerifierCoin::interpreter_(Entree& is)
   bool expert_only_obsolete = false;
   param.ajouter_flag("expert_only",&expert_only_obsolete);
   param.lire_avec_accolades_depuis(is);
-  if (expert_only_obsolete) Process::exit("expert_only is not supported anymore for VerifierCoin");
+  if (expert_only_obsolete) Process::exit("Error: expert_only is not supported anymore for VerifierCoin");
   int lecture_decoupage_som=(decoup_som!=""?1:0);
 
   if (Process::is_parallel())
