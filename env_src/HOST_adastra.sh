@@ -57,7 +57,13 @@ define_soumission_batch()
    else
       qos="" && cpu=30 # 30 mn
    fi
-   [ "`id | grep genden15`" != "" ] && project="genden15"
+   if [ "`id | grep cin3364`" != "" ] && [ "$ROCM_ARCH" = gfx942 ] # MI300A
+   then
+      project="cin3364"
+   elif [ "`id | grep genden15`" != "" ]
+   then
+      project="genden15"
+   fi   
    if [ "$gpu" = 1 ]
    then
       if [ "$ROCM_ARCH" = gfx90a ] # Partition MI250X (BW: 1600 GB/s)
