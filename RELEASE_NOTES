@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+31/07/25 (TRUST) Turbulence   : All transport equations of Modele_turbulence_hyd_2_eq_base are now OWN_PTR of OWN_PTR(Transport_2eq_base)
 28/07/25 (TRUST) Library      : Update PETSc 3.22.4 to 3.23.2 for GNU 15.x support, Cuda 12.8 support, GPU fixes
 28/07/25 (TRUST) Fix          : Extraire_plan on large mesh could introduce severe slowdown every time-step
 28/07/25 (TRUST) Option       : Expert_only option depecated for the VerifierCoin keyword
