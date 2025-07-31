@@ -39,7 +39,7 @@ Read sch
     dt_start dt_fixe 2.e-5
     solveur SETS
     {
-        criteres_convergence { alpha 1e-6 pression 1. vitesse 1e-5 temperature 1e8 k 1e-5 omega 1. }
+        criteres_convergence { alpha 1e-6 pression 1. vitesse 1e-5 temperature 1e8 }
         iter_min 2
         solveur petsc cholesky { quiet }
         seuil_convergence_implicite 1e30
@@ -83,7 +83,7 @@ Lire pb
         conditions_limites
         {
             wall paroi_fixe
-            bottom frontiere_ouverte_vitesse_imposee_sortie Champ_front_Fonc_xyz 6  0  0  0  0  0.5263157894736842 0.5263157894736842 
+            bottom frontiere_ouverte_vitesse_imposee_sortie champ_front_uniforme 6  0  0  0  0  0.5263157894736842 0.5263157894736842 
             top frontiere_ouverte_pression_imposee champ_front_uniforme 1 1e5
             symetrie symetrie
         }
