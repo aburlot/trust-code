@@ -571,7 +571,7 @@ do
          exit $?
       else
          # Lancement sequentiel classique:
-         echo $option | lance_test $nomail -no_timeout $binary
+         echo $option | lance_test $nomail $binary
          exit $?
       fi
    elif [ "$1" = "-clean" ]

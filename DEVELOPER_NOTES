@@ -1,6 +1,7 @@
 -------------------------------------------------------------
 Developer notes version 1.9.7_beta : Changes since version 1.9.6 :
 -------------------------------------------------------------
+31/07/25 (TRUST) NR Tests     : Timeout set to 10 minutes while running NR cases for TRUST and baltiks
 31/07/25 (TRUST) Turbulence   : All transport equations of Modele_turbulence_hyd_2_eq_base are now OWN_PTR of OWN_PTR(Transport_2eq_base)
 28/07/25 (TRUST) Tool         : Fix regression in the Debog tool (tracks sequential-parallel or host-device results difference)
 28/07/25 (TRUST) GPU          : Add trust option -rocprof to profile code on AMD GPU

@@ -154,7 +154,7 @@ rm -f $project_report_file
 export PATH=$BALTIK_ROOT/bin:${PATH} 
 #echo $liste_cas | lance_test -nomail $project_executable_name $project_test_directory | tee lance_test_out
 rm -f .pb
-(echo $liste_cas | lance_test -nomail -no_timeout  $project_executable_name $project_test_directory ; status=$?;  [ $status -ne 0 ]  && echo 1 > .pb )| tee lance_test_out
+(echo $liste_cas | lance_test -nomail $project_executable_name $project_test_directory ; status=$?;  [ $status -ne 0 ]  && echo 1 > .pb )| tee lance_test_out
 
 cat $project_report_file 2>/dev/null
 status=$?

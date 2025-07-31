@@ -95,7 +95,7 @@ attente()
    # Attend la fin du calcul avec possibilite d'un timeout si pas lance en batch (existence d'un fichier .sub_file)
    if [ $timeout != 0 ] && [ ! -f .sub_file_$NOM2 ]
    then
-      timeout=600 # (~10mn)
+      timeout=600 # (~10min)
       # Attend qu'un fichier soit cree plus recemment
       start=.debut
       go=0
