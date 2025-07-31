@@ -60,7 +60,9 @@ public :
   }
   inline int solveur_direct() const override
   {
+#ifdef PETSCKSP_H
     if (SolveurPetsc_==nullptr) Process::exit("Can't call to Solv_Petsc::solveur_direct() yet.");
+#endif
     return (solveur_direct_>0);
   };
   int resoudre_systeme(const Matrice_Base&, const DoubleVect&, DoubleVect& ) override;

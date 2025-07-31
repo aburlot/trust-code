@@ -1979,10 +1979,10 @@ PetscErrorCode MyKSPMonitor(KSP SolveurPetsc, PetscInt it, PetscReal residu, voi
 // Solve system
 int Solv_Petsc::resoudre_systeme(const Matrice_Base& la_matrice, const DoubleVect& secmem, DoubleVect& solution)
 {
+#ifdef PETSCKSP_H
   // Create solver now just before solve if not created:
   if (SolveurPetsc_==nullptr) create_solver();
 
-#ifdef PETSCKSP_H
   std::fenv_t fenv;
   std::feholdexcept(&fenv);
   // Si on utilise un solver petsc on le signale pour les stats finales
