@@ -941,13 +941,14 @@ then
     echo "         $ze_python"
     mkdir -p $TRUST_ROOT/exec/python/bin
     ln -nsf $ze_python $TRUST_ROOT/exec/python/bin/python
-    # check cmake version, 3.22 is needed to install SuiteSparse-7.7.0 in petsc 3.22 and TRUST
-    CMAKE_VERSION_OK=`cmake --version 2>&1 | awk '/cmake version/ {split($3,a,".");v=a[1]*100+a[2];print (v>=322?1:0)}'`
+    # check cmake version, 3.22 is needed to install SuiteSparse-7.7.0 in petsc 3.22 and TRUST 1.9.6
+    # cmake needed for TRUST 1.9.7 with petsc 3.23.2 needs at least cmake 3.26.0
+    CMAKE_VERSION_OK=`cmake --version 2>&1 | awk '/cmake version/ {split($3,a,".");v=a[1]*100+a[2];print (v>=326?1:0)}'`
     if [ "$CMAKE_VERSION_OK" != 1 ]
     then
        echo "ERROR: Installing without conda - The following (automatically detected)"
        echo "       `which cmake`"
-       echo "       is older than minimum required (3.22); you need to provide at least cmake 3.22 to install TRUST"
+       echo "       is older than minimum required (3.26.0); you need to provide at least cmake 3.26.0 to install TRUST"
        exit -1
     fi
     PYTHON_TEST_OK=1 && [ "`$TRUST_ROOT/exec/python/bin/python ./test.py 1>/dev/null 2>&1;echo $?`" != 0 ] && PYTHON_TEST_OK=0
