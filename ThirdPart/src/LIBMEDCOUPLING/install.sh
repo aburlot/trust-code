@@ -102,7 +102,7 @@ build_and_test_mc()
     echo "About to build MEDCoupling in mode: $rel_type"
     echo "About to execute CMake -- options are: $OPTIONS"
     echo "Current directory is : `pwd`"
-    
+   cmake --version 
     cmake $src_dir $OPTIONS -DCMAKE_INSTALL_PREFIX=$install_dir -DCMAKE_BUILD_TYPE=$rel_type || exit -1
     
     # The current CMake of MEDCoupling is badly written: dependencies on .pyc generation do not properly capture SWIG generated Python modules.

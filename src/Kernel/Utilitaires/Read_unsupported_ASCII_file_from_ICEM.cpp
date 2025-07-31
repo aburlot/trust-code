@@ -117,7 +117,7 @@ void check_ICEM_binary_file(Nom& filename, const Nom& nom_objet_lu)
   // Un fichier binaire ASCII est reconnaissable par le fait que le nom du
   // domaine est suivi d'un espace donc l'octet est 32 (= 20 en hexa = space)
   // Dans un binaire classique le nom du domaine est suivi par 0
-  char octet=-1;
+  char octet=(char)-1;
   while(octet!=32 && octet!=0)
     tmp.get_istream().read(&octet,1);
   tmp.close();

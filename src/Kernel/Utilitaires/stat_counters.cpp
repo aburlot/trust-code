@@ -377,7 +377,7 @@ void print_statistics_analyse(const char * message, int mode_append)
       statistiques().get_stats(gpu_library_counter_, gpu_library);
       statistiques().get_stats(gpu_kernel_counter_, gpu_kernel);
 
-      if (GET_COMM_DETAILS)
+      if (GET_COMM_DETAILS && Process::nproc()>1)
         {
           int nb_comm_counters = statistiques().get_nb_comm_counters();
 

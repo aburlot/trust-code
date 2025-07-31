@@ -13,6 +13,7 @@ e478b1d886935e5f836a9164ad4806d0  MPI/openmpi-4.1.6.tar.gz
 22603fcef8ba4dce7b7bb93935b02f90  MPI/openmpi-5.0.5.tar.gz
 ec1224a216a084684bab6cd0dbf592f8  MPI/osu-micro-benchmarks-3.8.tar
 b6f9a8d4ddc1f4dd16ae3bb2e74abe36  Miniforge/Miniforge3-24.7.1-0-MacOSX-arm64.sh
+d0e2d7b894ebc1eb821cd9ac62a4a19f  Miniforge/Miniforge3-24.7.1-1-Linux-aarch64.sh
 0d10090d28c5d484e4374519028d2887  Miniforge/Miniforge3-24.7.1-1-Linux-x86_64.sh
 7ed427f0871fd41cb1d9c17727c17589  Miniforge/local_channel/linux-64/alsa-lib-1.2.12-h4ab18f5_0.conda
 1505fc57c305c0a3174ea7aae0a0db25  Miniforge/local_channel/linux-64/argon2-cffi-bindings-21.2.0-py312h66e93f0_5.conda
@@ -260,6 +261,8 @@ ba84eaa8564155babd4ba1458d4eaa11  astyle_2.03_linux.tar.gz
 d43a8fbe83767978098ba7f8ee25d3d1  ccache/ccache-3.1.4.tar.gz
 27fc515a919221d69008cf7347137752  ccache/ccache-4.8.2-darwin.tar.gz
 34991901e77027afcc3bb16a9595c353  ccache/ccache-4.8.2-linux-x86_64.tar.gz
+34fd4b0843da02ebaa76f5711e1b63de  cudss/libcudss-linux-aarch64-0.6.0.5_cuda12-archive.tar.xz
+4ac17f5b35a4ecc550c4d7c479a5c5b5  cudss/libcudss-linux-x86_64-0.6.0.5_cuda12-archive.tar.xz
 2cf02a542c1933de95bdbe3f42188ffa  doxygen-1.7.4.linux.bin.tar.gz
 065cef54eb09cdb54614e1ed353ddbd1  doxygen-1.9.3.src.tar.gz
 27c5022f697e2522c0dbab439b9573b9  gnuplot/gnuplot-5.2.7.tar.gz
@@ -271,7 +274,6 @@ ea0931758fc180e3b1950931b9869921  gnuplot/gnuplot-6.0.2.tar.gz
 48384e324cd1cdcfbdb0d2e16ca55327  lapack/OpenBLAS-0.3.25.tar.gz
 853a0c5c0747c5943e7ef4bbb793162d  lapack/OpenBLAS-0.3.29.tar.gz
 44c3869c38c8335c2b9c2a8bb276eb55  lapack/lapack-3.4.1.tgz
-4ac17f5b35a4ecc550c4d7c479a5c5b5  libcudss-linux-x86_64-0.6.0.5_cuda12-archive.tar.xz
 b5e558f981326d9ca1bfdb841640721a  make-4.0.tar.gz
 9be6e048224797bf531f94b7a8aaa99d  osqp-0.6.0.tar.gz
 da26c4b43d53a9a6096775245cee847f  petsc/MUMPS_5.5.1.tar.gz

@@ -1,3 +1,4 @@
+XX/XX/25 (TRUST) GPU          : Nvidia Grace Hopper GH100 supported (see env_src/HOST_calypso-grace.sh example)
 XX/XX/25 (TRUST) Linux        : Fedora 42 and GNU 15.x compiler supported
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
