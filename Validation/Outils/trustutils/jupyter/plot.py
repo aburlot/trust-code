@@ -329,14 +329,16 @@ class Graph:
             time of the parameter. If None, it equals to zero.
         marker: str
             symbol of the ploted line (default="-")
-        label : str
-            title of the curve .
-        compo :  str
+        label: str
+            title of the curve.
+        compo:  str
             component we want to plot (for vector fields) (default=0)
         func : function Y = func(X,Y)
             function to apply to data before plot (ex: computation of error)
-        funcX : function X = funcX(X)
+        funcX: function X = funcX(X)
             function to apply to xcoordinates before plot
+        transpose: bool
+            if True, transpose axis
         kwargs : dictionary
             additional properties available in matplotlib.pyplot.plot
 
