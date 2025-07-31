@@ -77,6 +77,12 @@ verif_archives()
     DIR=`(cd $DIR;pwd)`
     cat /dev/null > nettoie
     cd archives
+    if [ "`\ls *.pdf 2>/dev/null`" = "" ]
+    then
+       echo "Erreur lors de l'appel a verif_archives: pas de pdf dans archives?"
+       PB=2
+       return $PB
+    fi
     for f in `\ls *.pdf`
       do
       if [ ! -f `basename $f .pdf`.tgz ] 
@@ -86,7 +92,7 @@ verif_archives()
       else
           [ -d ../BUILD/`basename $f .pdf`/build ] && echo "rm -rf BUILD/`basename $f .pdf`/build" >> ../nettoie
       fi
-      [ "`find $Rapports_auto_root/Validation/Rapports_automatiques/ -follow -type d -name  $(basename $f .pdf)`" = "" ] && [ "`find $Rapports_auto_root/Validation/Rapports_automatiques/ -follow -type l -name  $(basename $f .pdf)`" = "" ] &&echo $f not in Validation/Rapports_automatiques ?  && PB=3
+      [ "`find $Rapports_auto_root/Validation/Rapports_automatiques/ -follow -type d -name  $(basename $f .pdf)`" = "" ] && [ "`find $Rapports_auto_root/Validation/Rapports_automatiques/ -follow -type l -name  $(basename $f .pdf)`" = "" ] && echo $f not in Validation/Rapports_automatiques ?  && PB=3
     done
 
     thePRMList=""
