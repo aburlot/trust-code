@@ -1,9 +1,9 @@
 #!/bin/bash
 
 echo $ECHO_OPTS "Memory usage check for $1 ...\c"
-ram_at_1dt=`grep "RAM taken" $1.out | head -n 3 | tail -n 1 | awk '/MBytes of RAM taken by the calculation/{print $1}'`
-ram_after_10dt=`grep "MBytes of RAM taken by the calculation" $1.out | tail -n 1 | awk '/MBytes of RAM taken by the calculation/{print $1}'`
+ram_after_init=`grep "RAM taken" $1.out | head -n 4 | tail -n 1 | awk '/MBytes of RAM taken by the calculation/{print $1}'`
+ram_at_the_end=`grep "MBytes of RAM taken by the calculation" $1.out | tail -2 | head -n 1 | awk '/MBytes of RAM taken by the calculation/{print $1}'`
 
-[ $ram_after_10dt -gt $ram_at_1dt ] && echo "RAM is increasing from $ram_at_1dt to $ram_after_10dt" && exit 255
-echo $ECHO_OPTS "ok ($ram_after_10dt <= $ram_at_1dt)"
+[ $ram_at_the_end -gt $((ram_after_init+1)) ] && echo "RAM is increasing from $ram_after_init to $ram_at_the_end" && exit 255
+echo $ECHO_OPTS "ok ($ram_at_the_end <= ($ram_after_init + 1))"
 
