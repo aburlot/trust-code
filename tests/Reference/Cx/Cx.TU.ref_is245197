@@ -1,25 +1,25 @@
 Statistiques d'initialisation du calcul
 
-Temps total                       1.35714
+Temps total                       1.40124
 
 Statistiques de resolution du probleme
 
-Temps total                       1.32504
+Temps total                       1.24259
 
 
 Timesteps                         10
-Secondes / pas de temps           0.132498
-Dont solveurs Ax=B                0.026288 19% (1 appel/pas de temps)
-Dont mettre_a_jour                0.003317  2% (1 appel/pas de temps)
-Dont operateurs convection        0.046419 35% (2 appels/pas de temps)
-Dont operateurs diffusion         0.009656  7% (2 appels/pas de temps)
-Dont operateurs gradient          0.010928  8% (2 appels/pas de temps)
-Dont operateurs divergence        0.003962  2% (2 appels/pas de temps)
-Dont operations postraitement     0.014006 10% (1 appel/pas de temps)
-Dont calcul dt                    0.012365  9% (4 appels/pas de temps)
-Dont calcul divers                0.005554  4% (0 appels/pas de temps)
+Secondes / pas de temps           0.124249
+Dont solveurs Ax=B                0.027190 21% (1 appel/pas de temps)
+Dont mettre_a_jour                0.003448  2% (1 appel/pas de temps)
+Dont operateurs convection        0.039243 31% (2 appels/pas de temps)
+Dont operateurs diffusion         0.011129  8% (2 appels/pas de temps)
+Dont operateurs gradient          0.011015  8% (2 appels/pas de temps)
+Dont operateurs divergence        0.004001  3% (2 appels/pas de temps)
+Dont operations postraitement     0.013455 10% (1 appel/pas de temps)
+Dont calcul dt                    0.008508  6% (4 appels/pas de temps)
+Dont calcul divers                0.006258  5% (0 appels/pas de temps)
 Nb solveur / pas de temps         1
-Secondes / solveur                0.0262885
+Secondes / solveur                0.0271898
 Iterations / solveur              2
 I/O:
 
@@ -39,5 +39,5 @@ Communications > 30%    => too many processors or network too slow
 
 Statistiques de post resolution
 
-Temps total                       0.019843
+Temps total                       0.021473
 
