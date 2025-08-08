@@ -158,6 +158,9 @@ public :
   virtual void renewing_jacobians( DoubleTab& derivee );
   virtual void div_ale_derivative( DoubleTrav& derivee_ale, double timestep, DoubleTab& derivee, DoubleTrav& secmemP );
   virtual void updateFluidForce(DoubleTab&) {}
+  // Retrieve true if implicit coupling with another code
+  // required to perform filtering of pressure Champ_P1_isoP1Bull during sub-iterations of the implicit loop
+  virtual bool getCouplingInfoForFiltering() const {return false;}
   virtual void update_pressure_matrix();
   void update_y_plus(const DoubleTab& tab) ;
 

@@ -462,13 +462,19 @@ void corriger(const Domaine_VEF& domaine_VEF, DoubleTab& champ_filtre_, Matrice&
   champ_filtre_.echange_espace_virtuel();         // Mise a jour des espaces virtuels
 }
 
-DoubleTab& Champ_P1iP1B_implementation::filtrage(const Domaine_VEF& zvef, const Champ_base& un_champ) const
+DoubleTab& Champ_P1iP1B_implementation::filtrage(const Domaine_VEF& zvef, const Champ_base& un_champ, bool implicitCoupling) const
 {
   // Filtrage si supports element et sommet presents au moins
   if (zvef.get_alphaE() && zvef.get_alphaS())
     {
-      // Pas de filtrage si deja fait sur ce champ:
-      if (un_champ.valeurs().data()==adresse_champ_filtre_ && un_champ.temps()==temps_filtrage_)
+      // No filtering if it has already been done on this field during the time step
+      // and if no sub-iterations are performed during the time step
+      // The condition implicitCoupling=true enables filtering and therefore updates
+      // the variable "champ_filtre_" during sub-iterations.
+      // Sub-iterations can be performed within a time step in the case of an implicit
+      // coupling with another code, for example with a structural solver
+      // in fluid–structure interaction applications
+      if ((un_champ.valeurs().addr()==adresse_champ_filtre_ && un_champ.temps()==temps_filtrage_ ) && (!implicitCoupling) )
         return champ_filtre_;
 
       // On copie le champ a filtrer dans le tableau qui contiendra le champ filtre

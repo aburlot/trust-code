@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -50,7 +50,7 @@ public:
 
   int remplir_coord_noeuds_et_polys(DoubleTab& positions, IntVect& polys) const override;
   int imprime_P1B(Sortie&, int) const;
-  DoubleTab& filtrage(const Domaine_VEF&, const Champ_base&) const;        // Methode pour filtrer le champ
+  DoubleTab& filtrage(const Domaine_VEF&, const Champ_base&, bool implicitCoupling=false) const;        // Methode pour filtrer le champ
   const DoubleTab& champ_filtre() const { return champ_filtre_; }
 
   int Condition_Neumann_imposee_;        // Drapeau pour savoir s'il y'a des CL de Neumann (influe sur le filtrage)

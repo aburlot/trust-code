@@ -649,7 +649,15 @@ void Op_Grad_VEF_P1B_Face::calculer_flux_bords() const
   const Navier_Stokes_std& eqn_hydr = ref_cast(Navier_Stokes_std, equation());
   const Champ_P1_isoP1Bulle& la_pression_P1B = ref_cast(Champ_P1_isoP1Bulle, eqn_hydr.pression_pa());
   // Si on filtre:
-  la_pression_P1B.filtrage(domaine_VEF, la_pression_P1B);
+  if(domaine_VEF.domaine().que_suis_je() == "Domaine_ALE")
+    {
+      la_pression_P1B.filtrage(domaine_VEF, la_pression_P1B, eqn_hydr.getCouplingInfoForFiltering());
+    }
+  else
+    la_pression_P1B.filtrage(domaine_VEF, la_pression_P1B);
+
+
+
   const DoubleVect& pression_P1B = la_pression_P1B.champ_filtre();
 
   double coeff_P1 = 1. / dimension;
