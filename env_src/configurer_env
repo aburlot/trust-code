@@ -1242,7 +1242,7 @@ then
          echo "The NVidia drivers are too old for your Cuda compiler."
          echo "You will experience possible error code:222, reason: the provided PTX was compiled with an unsupported toolchain"
          echo "-> Update NVidia driver or take older Cuda compiler."
-         exit -1
+         #exit -1
       fi
    fi
    if [ "$TRUST_CUDA_CC" = "" ]
@@ -1259,7 +1259,7 @@ then
       echo "Cuda Compute Capability not detected ! TRUST_CUDA_CC should be set."
       exit -1
    fi
-   if [ "$TRUST_CUDA_CC" != 70 ] && [ "$TRUST_CUDA_CC" != 75 ] && [ "$TRUST_CUDA_CC" != 80 ] && [ "$TRUST_CUDA_CC" != 86 ] && [ "$TRUST_CUDA_CC" != 89 ] && [ "$TRUST_CUDA_CC" != 90 ]
+   if [ "$TRUST_CUDA_CC" != 70 ] && [ "$TRUST_CUDA_CC" != 75 ] && [ "$TRUST_CUDA_CC" != 80 ] && [ "$TRUST_CUDA_CC" != 86 ] && [ "$TRUST_CUDA_CC" != 89 ] && [ "$TRUST_CUDA_CC" != 90 ] && [ "$TRUST_CUDA_CC" != 100 ] && [ "$TRUST_CUDA_CC" != 120 ] 
    then
       echo "TRUST_CUDA_CC=$TRUST_CUDA_CC not supported yet !"
       echo "Update the following files:"

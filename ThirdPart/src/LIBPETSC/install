@@ -497,6 +497,8 @@ then
       [ "${TRUST_CUDA_CC#7}" != "$TRUST_CUDA_CC" ] && target=Volta
       [ "${TRUST_CUDA_CC#8}" != "$TRUST_CUDA_CC" ] && target=Ampere
       [ "${TRUST_CUDA_CC#9}" != "$TRUST_CUDA_CC" ] && target=Hopper
+      [ "${TRUST_CUDA_CC#10}" != "$TRUST_CUDA_CC" ] && target=Blackwell
+      [ "${TRUST_CUDA_CC#12}" != "$TRUST_CUDA_CC" ] && target=Blackwell
       [ "$target" = "" ] && echo "Configure Magma target!" && exit -1
       add_package magma && with_packages=$with_packages" --with-magma-gputarget=$target"
 

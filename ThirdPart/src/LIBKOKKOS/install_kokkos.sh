@@ -3,8 +3,13 @@
 if [ "$TRUST_USE_GPU" = 1 ] || [ "$TRUST_USE_KOKKOS_SIMD" = 1 ]
 then
    # Kokkos pour SIMD ou GPU (C++17):
-   #archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.6.01.tar.gz
-   archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.5.00.tar.gz
+   if [ "$TRUST_CUDA_CC" = 100 ] || [ "$TRUST_CUDA_CC" = 120 ] # Blackwell support
+   then
+      archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.7.00.tar.gz && Kokkos_ENABLE_IMPL_MDSPAN=OFF # Else TRUST don't build. See https://github.com/kokkos/kokkos/pull/7427
+   else
+      #archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.6.01.tar.gz
+      archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.5.00.tar.gz
+   fi   
 else
    # Kokkos Serial (C++14)
    archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-3.7.02.tgz
@@ -53,6 +58,8 @@ if [ ! -f $KOKKOS_ROOT_DIR/lib64/libkokkos.a ]; then
            #sed -i '/Kokkos::Tools::Experimental::Impl::profile_fence_event<Kokkos::Serial>(/,/Kokkos::memory_fence();/d' $src_dir/core/src/Serial/Kokkos_Serial.hpp || exit -1 # Disable fence for serial without thread
         fi
         CMAKE_OPT="$CMAKE_OPT -DCMAKE_CXX_FLAGS=-fPIC"
+	# TRUST don't support yet new MDSPAN view (introduced in from 4.7):
+        [ "$Kokkos_ENABLE_IMPL_MDSPAN" != "" ] && CMAKE_OPT="$CMAKE_OPT -DKokkos_ENABLE_IMPL_MDSPAN=$Kokkos_ENABLE_IMPL_MDSPAN"
         # ARCH:
         if [ "$TRUST_USE_CUDA" = 1 ]
         then
@@ -77,6 +84,9 @@ if [ ! -f $KOKKOS_ROOT_DIR/lib64/libkokkos.a ]; then
            elif [ "$TRUST_CUDA_CC" = 90 ]
            then
               CMAKE_OPT="$CMAKE_OPT -DKokkos_ARCH_HOPPER$TRUST_CUDA_CC=ON"
+           elif [ "$TRUST_CUDA_CC" = 100 ] || [ "$TRUST_CUDA_CC" = 120 ] # Kokkos 4.7 needed
+           then
+              CMAKE_OPT="$CMAKE_OPT -DKokkos_ARCH_BLACKWELL$TRUST_CUDA_CC=ON"
            else
               echo "KOKKOS_ARCH not set cause TRUST_CUDA_CC=$TRUST_CUDA_CC unknown!" && exit -1
            fi
