@@ -134,7 +134,8 @@ version_lapack=3.4.1 && [ "$TRUST_INT64" != "1" ] && [ "$TRUST_USE_MUMPS" != 1 ]
 # [HPC][!Portabilite] Utilisation OpenBlas par defaut (valide sur TRUST/F5/TrioCFD/G3) -> Decomposition LU plus rapide
 if [ "$TRUST_USE_OPENBLAS" = 1 ]
 then
-   for tag in 0.3.25 0.3.29
+   #for tag in 0.3.25 0.3.29
+   for tag in 0.3.29
    do 
      version_openblas=$tag
      echo "version_openblas = $tag"
