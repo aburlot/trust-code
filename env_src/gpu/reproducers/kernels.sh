@@ -85,6 +85,16 @@ exit
 [Kernel OpDiv] Kokkos Mean time: 0.716475 ms 29 GFLOPS
 [Kernel OpDiv] Kokkos Mean time: 0.63987 ms 32.5 GFLOPS (Tuned kernel)
 
+# H200 (nvc++)
+[Kernel OpDiv] CPU    Mean time: 99.4521 ms 0.2 GFLOPS
+[Kernel OpDiv] Kokkos Mean time: 0.510751 ms 40.7 GFLOPS
+[Kernel OpDiv] Kokkos Mean time: 0.468619 ms 44.3 GFLOPS (Tuned kernel)
+
+# H200 (nvcc)
+[Kernel OpDiv] CPU    Mean time: 99.1272 ms 0.2 GFLOPS
+[Kernel OpDiv] Kokkos Mean time: 0.499469 ms 41.6 GFLOPS
+[Kernel OpDiv] Kokkos Mean time: 0.449254 ms 46.2 GFLOPS (Tuned kernel)
+
 # MI300 (hipcc)
 [Kernel OpDiv] CPU    Mean time: 179.657 ms 0.1 GFLOPS
 [Kernel OpDiv] Kokkos Mean time: 0.694193 ms 29.9 GFLOPS
