@@ -2,7 +2,7 @@
 #include "CommInterface.hxx"
 #include "ProcessorGroup.hxx"
 #include "MPIProcessorGroup.hxx"
-#include "Statistiques.h"
+#include "Perf_counters.h"
 #include "DEC.hxx"
 #include "TrioDEC.hxx"
 #include <set>
@@ -235,8 +235,7 @@ void main2 (int argc,char **argv) {
 
 
         MPI_Barrier(MPI_COMM_WORLD);
-
-        auto clock0= Statistiques::get_time_now();
+        Perf_counters::time_point clock0 = statistics().start_clock();
         int compti=0;
 
         bool init=true; // first time step ??
@@ -245,8 +244,7 @@ void main2 (int argc,char **argv) {
         while (!stop) {
 
             compti++;
-            auto clocki= Statistiques::get_time_now();;
-            cout << compti << " CLOCK " << (clocki-clock0) << endl;
+            cout << compti << " CLOCK " << statistics().compute_time(clock0) << endl;
             for (int non_unif=0;non_unif<2;non_unif++)
               {
                 // if (champ_recepteur._field)
