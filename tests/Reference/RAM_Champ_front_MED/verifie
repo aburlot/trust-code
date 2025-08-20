@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo $ECHO_OPTS "Memory usage check for $1 ...\c"
-ram_after_init=`grep "RAM taken" $1.out | head -n 4 | tail -n 1 | awk '/MBytes of RAM taken by the calculation/{print $1}'`
+ram_after_init=`grep "RAM taken" $1.out | head -n 8 | tail -n 1 | awk '/MBytes of RAM taken by the calculation/{print $1}'`
 ram_at_the_end=`grep "MBytes of RAM taken by the calculation" $1.out | tail -2 | head -n 1 | awk '/MBytes of RAM taken by the calculation/{print $1}'`
 
 [ $ram_at_the_end -gt $((ram_after_init+1)) ] && echo "RAM is increasing from $ram_after_init to $ram_at_the_end" && exit 255
