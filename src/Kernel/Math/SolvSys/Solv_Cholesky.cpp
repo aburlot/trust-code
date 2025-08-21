@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -54,7 +54,7 @@ Entree& Solv_Cholesky::readOn(Entree& is )
 void Solv_Cholesky::set_param(Param& param)
 {
   param.ajouter_non_std("impr",(this));
-  param.ajouter_flag("save_matrice|save_matrix",&save_matrice_);
+  param.ajouter("save_matrice|save_matrix",&save_matrice_);
   param.ajouter_non_std("quiet",(this));
 }
 

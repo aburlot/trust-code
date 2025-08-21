@@ -23,7 +23,7 @@ Read sch
         no_qdm
         seuil_convergence_solveur 1e-10
         seuil_convergence_implicite 1e-6
-        solveur gmres { diag seuil 1e-10 impr save_matrix }
+        solveur gmres { diag seuil 1e-10 impr save_matrix 1 }
     }
 }
 

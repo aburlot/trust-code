@@ -40,14 +40,14 @@ public :
   // Print solver convergence if impr option set in the solver AND if time scheme gives authorization
   int limpr() const
   {
-    if (!schema_temps_limpr_)
+    if (schema_temps_limpr_ == 0)
       return 0;
     return  limpr_;
   }
 
-  virtual void reinit() { nouvelle_matrice_=1; }
-  int nouvelle_matrice() const { return nouvelle_matrice_; }
-  void fixer_nouvelle_matrice(int i) { nouvelle_matrice_ = i; }
+  virtual void reinit() { nouvelle_matrice_=true; }
+  bool nouvelle_matrice() const { return nouvelle_matrice_; }
+  void fixer_nouvelle_matrice(bool i) { nouvelle_matrice_ = i; }
 
   // Par defaut tous les solveurs acceptent les Matrice_Morse_Sym (surcharger sinon)
   virtual int supporte_matrice_morse_sym() { return 1; };
@@ -56,7 +56,7 @@ public :
   // (this flag cannot be set, it is a property of the solver)
   virtual int get_flag_updated_input() const { return 1; }
   // Call this to tell the solver if you want "x" to have an updated virtual space (default is yes)
-  void set_flag_updated_result(int flag) { echange_ev_resu_ = (flag!=0); }
+  void set_flag_updated_result(bool flag) { echange_ev_resu_ = flag; }
   int get_flag_updated_result() const { return echange_ev_resu_; }
 
   void save_matrice_secmem_conditionnel(const Matrice_Base& la_matrice, const DoubleVect& secmem,  const DoubleVect& solution, int binaire=1);
@@ -70,8 +70,12 @@ public :
   void set_save_matrix(int flag) { save_matrice_ = flag; };
 
 protected :
-  int nouvelle_matrice_; // Drapeau pour savoir si un stockage ou une factorisation est a refaire
-  int save_matrice_ = 0; // Valeur pour savoir si une matrice est a sauver (entier car plusieurs formats possibles: 1: TRUST 2: PETSc format 3: Matrix Market)
+  bool nouvelle_matrice_; // Drapeau pour savoir si un stockage ou une factorisation est a refaire
+
+  // Valeur pour savoir si une matrice est a sauver (entier car plusieurs formats possibles: 1: TRUST 2: PETSc format 3: Matrix Market)
+  // ATTENTION: pas un flag au sens de Param::ajouter_flag !!!
+  int save_matrice_ = 0;
+
   bool return_on_error_ = false; //drapeau pour savoir si on doit faire exit() ou renvoyer -1 si resoudre_
 
   // Pour lecture/stockage des parametres des solveurs:
@@ -79,9 +83,9 @@ protected :
   void lecture(Entree&);
 private:
   bool read_matrix_ = false; // Drapeau pour savoir si une matrice est a lire
-  int limpr_;            // Drapeau pour impression ou non de la convergence du solveur
-  int schema_temps_limpr_; // Authorization printing flag set by the time scheme
-  int echange_ev_resu_;  // User set flag to tell if the solver must do echange_espace_virtuel() on the result.
+  int limpr_ = 0;            // Drapeau pour impression ou non de la convergence du solveur
+  int schema_temps_limpr_ = 1; // Authorization printing flag set by the time scheme
+  bool echange_ev_resu_;  // User set flag to tell if the solver must do echange_espace_virtuel() on the result.
   bool reuse_preconditioner_; // Flag to reuse previous preconditioner (default false)
 };
 

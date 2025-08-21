@@ -44,7 +44,7 @@ Sortie& Solv_GCP::printOn(Sortie& s ) const
     s<<" precond_nul ";
   if (limpr()==1) s<<" impr ";
   if (limpr()==-1) s<<" quiet ";
-  if (save_matrice_) s<<" save_matrice ";
+  if (save_matrice_) s<<" save_matrice " << save_matrice_;
   if (nb_it_max_!=-1) s<<" nb_it_max "<<nb_it_max_;
 
   s<<" } ";
@@ -53,14 +53,15 @@ Sortie& Solv_GCP::printOn(Sortie& s ) const
 
 Entree& Solv_GCP::readOn(Entree& is )
 {
-  bool precond_nul;
-  bool impr,quiet;
+  bool precond_nul = false;
+  bool impr = false; // this is not used I think (teo boutin)
+  bool quiet = false;
   Param param((*this).que_suis_je());
   param.ajouter("seuil",&seuil_,Param::REQUIRED);  // XD attr seuil floattant seuil 0 Value of the final residue. The gradient ceases iteration when the Euclidean residue standard ||Ax-B|| is less than this value.
   param.ajouter("nb_it_max",&nb_it_max_); // XD attr nb_it_max entier nb_it_max 1 Keyword to set the maximum iterations number for the Gcp.
   param.ajouter_flag("impr",&impr);   // XD attr impr rien impr 1 Keyword which is used to request display of the Euclidean residue standard each time this iterates through the conjugated gradient (display to the standard outlet).
   param.ajouter_flag("quiet",&quiet); // XD attr quiet rien quiet 1 To not displaying any outputs of the solver.
-  param.ajouter_flag("save_matrice|save_matrix",&save_matrice_); // XD attr save_matrice|save_matrix rien save_matrice 1 to save the matrix in a file.
+  param.ajouter("save_matrice|save_matrix",&save_matrice_); // XD attr save_matrice|save_matrix entier save_matrice 1 to save the matrix in a file.
   param.ajouter("precond",&le_precond_);  // XD attr precond precond_base precond 1 Keyword to define system preconditioning in order to accelerate resolution by the conjugated gradient. Many parallel preconditioning methods are not equivalent to their sequential counterpart, and you should therefore expect differences, especially when you select a high value of the final residue (seuil). The result depends on the number of processors and on the mesh splitting. It is sometimes useful to run the solver with no preconditioning at all. In particular: NL2 - when the solver does not converge during initial projection, NL2 - when comparing sequential and parallel computations. NL2 With no preconditioning, except in some particular cases (no open boundary), the sequential and the parallel computations should provide exactly the same results within fpu accuracy. If not, there might be a coding error or the system of equations is singular.
   param.ajouter_flag("precond_nul",&precond_nul);  // XD attr precond_nul rien precond_nul 1 Keyword to not use a preconditioning method.
   param.ajouter_flag("precond_diagonal", &precond_diag_); // XD attr precond_diagonal rien precond_diagonal 1 Keyword to use diagonal preconditioning.
@@ -79,9 +80,15 @@ Entree& Solv_GCP::readOn(Entree& is )
       le_precond_.detach();
     }
   assert(seuil_>0);
-  fixer_limpr(impr);
-  if (quiet)
-    fixer_limpr(-1);
+  if (impr and quiet)
+    {
+      Cerr << "'impr' and 'quiet' keywords in Solv_GCP are not compatible. Use only one of them." << finl;
+      Process::exit();
+    }
+  else if (impr) { fixer_limpr(1); }
+  else if (quiet) { fixer_limpr(-1); }
+  else { fixer_limpr(0);}
+
   return is;
 }
 

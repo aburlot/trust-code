@@ -214,7 +214,7 @@ then
    fi
    if [ $resolution = solveur_implicite ]
    then
-      sed -i "s?seuil_convergence_solveur.*? solveur gmres { save_matrice seuil $seuil controle_residu 1 diag impr }?g" test_solveur_$ref.data
+      sed -i "s?seuil_convergence_solveur.*? solveur gmres { save_matrice 1 seuil $seuil controle_residu 1 diag impr }?g" test_solveur_$ref.data
    fi
    # On fait 1 seul pas de temps pour creer la matrice et le second membre
    sed -i "s?nb_pas_dt_max .*?nb_pas_dt_max 1?g" test_solveur_$ref.data

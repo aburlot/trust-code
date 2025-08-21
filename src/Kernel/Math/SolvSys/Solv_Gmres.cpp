@@ -67,7 +67,7 @@ void Solv_Gmres::set_param(Param& param)
   param.ajouter_non_std("sans_precond",(this));
   param.ajouter("nb_it_max",&nb_it_max_);
   param.ajouter("controle_residu",&controle_residu_);
-  param.ajouter_flag("save_matrice|save_matrix",&save_matrice_);
+  param.ajouter("save_matrice|save_matrix",&save_matrice_);
   param.ajouter("dim_espace_krilov",&dim_espace_Krilov_);
   param.ajouter_non_std("quiet",(this));
 }

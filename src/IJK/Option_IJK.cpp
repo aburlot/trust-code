@@ -19,8 +19,8 @@
 Implemente_instanciable(Option_IJK, "Option_IJK", Interprete);
 // XD Option_IJK interprete Option_IJK 1 Class of IJK options.
 
-int Option_IJK::CHECK_DIVERGENCE = 0;
-int Option_IJK::DISABLE_DIPHASIQUE = 0;
+bool Option_IJK::CHECK_DIVERGENCE = false;
+bool Option_IJK::DISABLE_DIPHASIQUE = false;
 
 Sortie& Option_IJK::printOn(Sortie& os) const { return Interprete::printOn(os); }
 Entree& Option_IJK::readOn(Entree& is) { return Interprete::readOn(is); }

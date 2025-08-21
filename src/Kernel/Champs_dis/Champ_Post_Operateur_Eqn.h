@@ -61,11 +61,13 @@ public:
   void verification_cas_compo() const;
 
 protected:
-  int numero_source_,numero_op_, numero_masse_;
+  int numero_source_ = -1;
+  int numero_op_ = -1;
+  int numero_masse_ = -1;
   OBS_PTR(Equation_base) ref_eq_;
   bool sans_solveur_masse_ = false;
   Entity localisation_inco_ = Entity::NODE;
-  int compo_;                            //Pour identifier la composante a recuperer
+  int compo_ = -1;                            //Pour identifier la composante a recuperer
 };
 
 #endif

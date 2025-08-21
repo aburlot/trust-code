@@ -233,14 +233,14 @@ public :
   virtual void ajouter_blocs(matrices_t matrices, DoubleTab& secmem, const Equation_base& eqn, const tabs_t& semi_impl = {}) const;
 
   // Flag to disable the writing of the .progress file
-  inline int disable_progress() const
+  inline bool disable_progress() const
   {
     return disable_progress_ ;
   }
   void write_dt_ev(bool init);
   void write_progress(bool init);
   // Flag to disable the writing of the .dt_ev file
-  inline int disable_dt_ev() const
+  inline bool disable_dt_ev() const
   {
     return disable_dt_ev_ ;
   }
@@ -303,8 +303,8 @@ private:
   int stationnaire_atteint_ = 0;          ///< Stationary reached by the problem using this scheme
   int stationnaires_atteints_ = 0;       ///< Stationary reached by the calculation (means all the problems reach stationary)
   SFichier progress_;
-  int disable_progress_ = 0;              ///< Flag to disable the writing of the .progress file
-  int disable_dt_ev_ = 0;                 ///< Flag to disable the writing of the .dt_ev file
+  bool disable_progress_ = false;              ///< Flag to disable the writing of the .progress file
+  bool disable_dt_ev_ = false;                 ///< Flag to disable the writing of the .dt_ev file
 };
 
 /*! @brief surcharge Objet_U::nommer(const Nom&) Donne un nom au shema en temps

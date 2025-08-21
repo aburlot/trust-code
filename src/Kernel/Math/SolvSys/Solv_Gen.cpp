@@ -68,7 +68,7 @@ void Solv_Gen::set_param(Param& param)
   param.ajouter_non_std("impr",(this));
   param.ajouter("seuil",&seuil_);
   param.ajouter("solv_elem",&le_solveur_elem_);
-  param.ajouter_flag("save_matrice|save_matrix",&save_matrice_);
+  param.ajouter("save_matrice|save_matrix",&save_matrice_);
   param.ajouter("precond",&le_precond_);
   param.ajouter_non_std("quiet",(this));
   param.ajouter_non_std("nb_it_max",(this));
