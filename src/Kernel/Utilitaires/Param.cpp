@@ -413,6 +413,14 @@ void Param::ajouter_arr_size_predefinie(const char *mot, ArrOfDouble *quoi, Para
 
 void Param::ajouter_flag(const char *mot, bool *quoi, Param::Nature nat)
 {
+
+  if (*quoi)
+    {
+      Cerr << "WARNING: flag " << mot << " is set to true before being passed to Param::ajouter_flag." << finl;
+      Cerr << "         Flags should be set to false by default. Then, the value will be set to true if the keyword is present in the .data file." << finl;
+      Cerr << "         Current value will be overridden to false." << finl;
+    }
+
   Objet_a_lire& obj = create_or_get_objet_a_lire(mot);
   obj.set_nature(convert_nature(nat));
   obj.set_flag(quoi);
