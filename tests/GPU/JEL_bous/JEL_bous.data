@@ -112,15 +112,7 @@ Lire pb1
         }
     }
 
-    Postraitement
-    {
-        format lml
-        Champs dt_post 1e6
-        {
-            temperature som
-        }
-    }
-
+    Postraitement { format lml Champs dt_post 1e6 { temperature som } }
 }
 
 ecriturelecturespecial 0
