@@ -67,7 +67,7 @@ fi
 
 # configuration (we use the hdf5 of TRUST)
 options="-DBUILD_BENCHMARKING=OFF -DBUILD_FORTRAN=OFF -DBUILD_DECL_NETCDF_PLUGIN=OFF"
-options=$options" -DBUILD_NETCDF_PARALLEL=OFF -DBUILD_TEST_PLUGIN=OFF -DBUILD_TESTING=OFF -DUSE_yaml=EMBEDDED"
+options=$options" -DBUILD_NETCDF_PARALLEL=OFF -DBUILD_TEST_PLUGIN=OFF -DBUILD_TESTING=OFF -DUSE_yaml=EMBEDDED -DUSE_spdlog=EMBEDDED"
 
 # ND: force install in lib directory instead of lib64. If you want to set lib64 instead of lib, you should fix patches
 # in this script for pdi/CMakeLists.txt and vendor/paraconf-1.0.0/paraconf/CMakeLists.txt
