@@ -221,7 +221,7 @@ inline DoubleTab& Op_Conv_EF_Stab_PolyMAC_Face::ajouter(const DoubleTab& tab_inc
                 for (int k = 0; k < 2; k++)
                   {
                     int eb = f_e(fb, k);
-                    double fac = dir_f * tab_inco(fb) * dir_fb * fs(fb) / ve(e) * (1. + (vit(fb) * (k ? -1 : 1) >= 0 ? 1. : vit[f] ? -1. : 0.) * alpha_) / 2;
+                    double fac = dir_f * tab_inco(fb) * dir_fb * fs(fb) * pe(eb >= 0 ? eb : f_e(fb, 0)) / ve(e) * (1. + (vit(fb) * (k ? -1 : 1) >= 0 ? 1. : vit[fb] ? -1. : 0.) * alpha_) / 2;
 
                     int fc = equiv(fb, e != f_e(fb, 0), i);
                     if (fc  >= 0 || f_e(fb, 0) < 0 || f_e(fb, 1) < 0)
@@ -232,32 +232,31 @@ inline DoubleTab& Op_Conv_EF_Stab_PolyMAC_Face::ajouter(const DoubleTab& tab_inc
                             double mult = (fd < 0 || domaine.dot(&nf(f, 0), &nf(fd, 0)) > 0) ? 1 : -1;
                             mult *= (fd >= 0) ? pf(fd) / pe(eb) : 1;
 
-                            tab_resu(f) -= fac * mult * dir_f * vfd(f, e != f_e(f, 0)) * pe(eb) * vit(fd);
-
-                            if (!incompressible_)
-                              tab_resu(f) += fac * dir_f * vfd(f, e != f_e(f, 0)) * pe(eb) * vit(f);
+                            tab_resu(f) -= fac * mult * dir_f * vfd(f, e != f_e(f, 0)) * vit(fd);
 
                           }
-                        else if (ch.fcl()(fb, 0) == 3)
+                        else if (ch.fcl()(fb, 0) == 3 )
                           {
                             double masse = std::fabs(vit[fb]) > 1e-10 ? tab_inco(fb) / vit[fb] : 1.0;
                             for (int l = 0; l < dimension; l++)
                               tab_resu(f) -= fac * dir_f * vfd(f, e != f_e(f, 0))* nf(f, l) / fs(f) * ref_cast(Dirichlet, cls[ch.fcl()(fb, 1)].valeur()).val_imp(ch.fcl()(fb, 2), l) / masse;
                           }
+                        if (!incompressible_)
+                          tab_resu(f) += fac * dir_f * vfd(f, e != f_e(f, 0)) * vit(f);
                       }
                     else
                       {
                         for (int l = domaine.vedeb(eb); l < domaine.vedeb(eb + 1); l++)
                           {
                             fc = domaine.veji(l);
-                            tab_resu(f) -= fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0)) * pe(eb) * vit(fc);
+                            tab_resu(f) -= fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0)) * vit(fc);
                           }
                         if (!incompressible_)
                           {
                             for (int l = domaine.vedeb(e); l < domaine.vedeb(e + 1); l++)
                               {
                                 fc = domaine.veji(l);
-                                tab_resu(f) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0)) * pe(e) * vit(fc);
+                                tab_resu(f) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0)) * vit(fc);
                               }
                           }
                       }
@@ -312,23 +311,25 @@ inline void Op_Conv_EF_Stab_PolyMAC_Face::contribuer_a_avec(const DoubleTab& tab
                       if (ch.fcl()(fb, 0) < 2 || ch.fcl()(fb, 0) == 3)
                         {
                           int eb = f_e(fb, k);
+                          double fac = dir_f * tab_inco(fb) * dir_fb * fs(fb) * pe(eb >= 0 ? eb : f_e(fb, 0)) / ve(e) * (1. + (vit(fb) * (k ? -1 : 1) >= 0 ? 1. : vit[fb] ? -1. : 0.) * alpha_) / 2;
 
                           // Convection pour les equivalences ou bords
-                          if (eb < 0) continue;
 
-                          double fac = dir_f * tab_inco(fb) * dir_fb * fs(fb) / ve(e) * (1. + (vit(fb) * (k ? -1 : 1) >= 0 ? 1. : vit[f] ? -1. : 0.) * alpha_) / 2;
 
                           int fc = equiv(fb, e != f_e(fb, 0), i);
                           if (fc  >= 0 || f_e(fb, 0) < 0 || f_e(fb, 1) < 0)
                             {
-                              int fd = (eb == e ? f : fc); //face source
-                              double mult = (fd < 0 || domaine.dot(&nf(f, 0), &nf(fd, 0)) > 0) ? 1 : -1;
-                              mult *= (fd >= 0) ? pf(fd) / pe(eb) : 1;
+                              if (eb >= 0)
+                                {
+                                  int fd = (eb == e ? f : fc); //face source
+                                  double mult = (fd < 0 || domaine.dot(&nf(f, 0), &nf(fd, 0)) > 0) ? 1 : -1;
+                                  mult *= (fd >= 0) ? pf(fd) / pe(eb) : 1;
 
-                              matrice(f, fd) += fac * mult * dir_f * vfd(f, e != f_e(f, 0)) * pe(eb);
+                                  matrice(f, fd) += fac * mult * dir_f * vfd(f, e != f_e(f, 0));
+                                }
 
                               if (!incompressible_)
-                                matrice(f, f) -= fac * dir_f * vfd(f, e != f_e(f, 0)) * pe(eb);
+                                matrice(f, f) -= fac * dir_f * vfd(f, e != f_e(f, 0));
                             }
                           else
                             {
@@ -337,7 +338,7 @@ inline void Op_Conv_EF_Stab_PolyMAC_Face::contribuer_a_avec(const DoubleTab& tab
                                 {
                                   fc = domaine.veji(l);
                                   if (ch.fcl()(fc, 0) < 2 && std::fabs(domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0))) > 1e-8 * vf(f) / fs(f))
-                                    matrice(f, fc) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0)) * pe(eb);
+                                    matrice(f, fc) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0));
                                 }
                               if (!incompressible_)
                                 // Convection pour les faces internes sans equivalence
@@ -345,7 +346,7 @@ inline void Op_Conv_EF_Stab_PolyMAC_Face::contribuer_a_avec(const DoubleTab& tab
                                   {
                                     fc = domaine.veji(l);
                                     if (ch.fcl()(fc, 0) < 2 && std::fabs(domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0))) > 1e-8 * vf(f) / fs(f))
-                                      matrice(f, fc) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0)) * pe(e);
+                                      matrice(f, fc) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0));
                                   }
                             }
                         }
