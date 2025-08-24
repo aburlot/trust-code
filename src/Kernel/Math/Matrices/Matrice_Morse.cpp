@@ -518,10 +518,10 @@ void Matrice_Morse::compacte(int elim_coeff_nul)
 
   int coeff_nuls=0;
   int coeff_quasi_nuls=0;
-  IntTrav elim_coeff(tab2_);
+  ArrOfInt elim_coeff(tab2_.size());
   if (elim_coeff_nul)
     {
-      DoubleTrav coeff_max(n);
+      ArrOfDouble coeff_max(n);
       // Recherche des coefficients nuls hors diagonale a supprimer de la matrice morse
       for(int i=0; i<n; i++)
         for (int k=tab1_(i)-1; k<tab1_(i+1)-1; k++)
