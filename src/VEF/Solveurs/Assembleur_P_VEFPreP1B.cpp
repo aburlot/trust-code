@@ -94,7 +94,6 @@ void Assembleur_P_VEFPreP1B::completer(const Equation_base& eqn)
       alpha_=1./Objet_U::dimension;
       beta_=1./(Objet_U::dimension*(Objet_U::dimension+1));
     }
-  la_matrice_de_travail_.typer("Matrice_Bloc_Sym");
 }
 
 const Domaine_VEF& Assembleur_P_VEFPreP1B::domaine_Vef() const
@@ -258,6 +257,8 @@ int Assembleur_P_VEFPreP1B::assembler_mat(Matrice& la_matrice,const DoubleVect& 
         }
 
       // Assemblage de la matrice complete selon les supports choisis
+      Matrice la_matrice_de_travail_;                // Matrice de travail
+      la_matrice_de_travail_.typer("Matrice_Bloc_Sym");
       Matrice_Bloc_Sym& la_matrice_bloc_sym_de_travail = ref_cast(Matrice_Bloc_Sym, la_matrice_de_travail_.valeur());
       if (la_matrice_bloc_sym_de_travail.nb_bloc_lignes()==0)
         {

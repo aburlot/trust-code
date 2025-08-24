@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -63,9 +63,6 @@ public :
   void changer_base_pression(DoubleVect&);          // x->x~ (P0+P1->P1Bulle) Ne sert que pour les tests
   template <vecteur _v_>
   void changer_base(DoubleVect& v);
-
-
-  Matrice la_matrice_de_travail_;                // Matrice de travail
 
 protected:
 
