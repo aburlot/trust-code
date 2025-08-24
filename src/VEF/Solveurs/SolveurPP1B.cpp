@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -16,6 +16,7 @@
 #include <SolveurPP1B.h>
 #include <Champ_P1_isoP1Bulle.h>
 #include <stat_counters.h>
+#include <Solv_AMG.cpp>
 
 Implemente_instanciable(SolveurPP1B,"SolveurPP1B",SolveurSys_base);
 
@@ -32,6 +33,7 @@ Entree& SolveurPP1B::readOn(Entree& is )
   return is;
 }
 
+static int nw=0;
 int SolveurPP1B::resoudre_systeme(const Matrice_Base& A,
                                   const DoubleVect& second_membre,
                                   DoubleVect& x)
@@ -39,10 +41,27 @@ int SolveurPP1B::resoudre_systeme(const Matrice_Base& A,
   // Stop the solv_sys_counter_ counter to not count the changing base
   statistiques().end_count(solv_sys_counter_,0,-1);
   b_ = second_membre;
-  assembleur_pression_.changer_base_second_membre(b_);
-  assembleur_pression_.changer_base_pression(x);
+  assembleur_pression_->changer_base_second_membre(b_);
+  assembleur_pression_->changer_base_pression(x);
   int nb_iter=solveur_pression_.resoudre_systeme(A,b_,x);
-  assembleur_pression_.changer_base_pression_inverse(x);
+
+  // Advice to use AMG solver based on PCFieldsplit from PETSc
+  if (!sub_type(Solv_AMG, solveur_pression_.valeur()))
+    {
+      nw++;
+      if (nw<100 && x.size_array()*Process::nproc()>100000)
+        {
+          Cerr << finl;
+          Cerr << "************** Advice (printed only on the first 100 time steps) **************" << finl;
+          Cerr << "You should use AMG (Algebric Multigrid) solver for your pressure solver problem" << finl;
+          Cerr << "which benefits from the block P0P1 structure of the pressure matrix." << finl;
+          Cerr << "Something like: solveur_pression AMG GCP { atol|rtol XXX impr } " << finl;
+          Cerr << "For the caracteristics of your problem, it will have much faster convergence !" << finl;
+          Cerr << "*******************************************************************************" << finl << finl;
+        }
+    }
+
+  assembleur_pression_->changer_base_pression_inverse(x);
   statistiques().begin_count(solv_sys_counter_);
   return nb_iter;
 }

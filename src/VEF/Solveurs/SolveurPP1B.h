@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -40,7 +40,7 @@ public :
 
 protected :
   SolveurSys solveur_pression_;
-  Assembleur_P_VEFPreP1B assembleur_pression_;
+  OBS_PTR(Assembleur_P_VEFPreP1B) assembleur_pression_;
   DoubleVect b_;
 };
 
