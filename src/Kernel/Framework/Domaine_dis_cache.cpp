@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -66,7 +66,6 @@ Domaine_dis_base& Domaine_dis_cache::build_or_get(const Nom& type, const Domaine
   // Do we have the prefix "NO_FACE_" at the begining of type:
   Nom typ_short(type);
   typ_short.suffix("NO_FACE_");
-  bool no_face = typ_short != type;
 
   // Build a key of the form: "(@x07f8e63)_dom_NO_FACE_Domaine_PolyMAC_P0P1NC"
   auto make_key = [&](const std::string& t)
@@ -91,11 +90,14 @@ Domaine_dis_base& Domaine_dis_cache::build_or_get(const Nom& type, const Domaine
   ddp->discretiser_root(type);
 
   // If a full discretisation was requested, we can also register the NO_FACE_ version:
+  /*
+  bool no_face = typ_short != type;
   if (!no_face)
     {
       std::string key_face = make_key("NO_FACE_" + typ_short.getString());
       cache_[key_face] = ddp;  // shared_ptr copy
     }
+    */
   return cache_[key].valeur();
 }
 
