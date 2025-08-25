@@ -24,9 +24,9 @@ except:
     print("WARNING: Try to import jupyter.plot directly to see missing packages.")
 
 try:
-    from .jupyter import widget
     from .visitutils import tools_for_visit as visit
     from .visitutils import message
+    from .jupyter import widget
 except:
     print("WARNING: jupyter.widget functionality not available ... please see README.md.")
     # Widget might not always be available!!
