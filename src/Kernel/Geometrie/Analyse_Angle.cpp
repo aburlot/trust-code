@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -134,7 +134,7 @@ void histogramme_angle(const Domaine& dom , Sortie& out,  int nb_histo )
     }
   if (histo[nb_histo]>0)
     Process::exit();
-  int nb_elem_tot = Process::check_int_overflow(Process::mp_sum(nb_elem));  // Analyse_angle only provided in 32b!
+  trustIdType nb_elem_tot = Process::mp_sum(nb_elem);  // Analyse_angle only provided in 32b!
   if (nb_elem_tot>0)
     {
       double obtuse_cells_proportion=0;
@@ -144,7 +144,7 @@ void histogramme_angle(const Domaine& dom , Sortie& out,  int nb_histo )
           // Pas d'angles en dessous de 60 forcement
           if (180/nb_histo*h>=60)
             {
-              obtuse_cells_proportion=histo[h]*100./nb_elem_tot;
+              obtuse_cells_proportion=histo[h]*100./(double)nb_elem_tot;
               int angle=180/nb_histo*h;
               out <<"Between "<<angle<<" degrees and " << 180/nb_histo*(h+1)<<" degrees : "<<histo[h]<<" elements ( "<<obtuse_cells_proportion<< " %)"<<finl;
             }

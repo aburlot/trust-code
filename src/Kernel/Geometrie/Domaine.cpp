@@ -309,9 +309,8 @@ void Domaine_32_64<_SZ_>::check_domaine()
   elem_->associer_domaine(*this);
   fixer_premieres_faces_frontiere();
 
-  const trustIdType tmp = mp_sum(mes_elems_.dimension(0));
-  const int_t nbelem = std::is_same<int_t, int>::value ? Process::check_int_overflow(tmp) : tmp;
-  Cerr << "  Number of elements: " << nbelem << finl;
+  const trustIdType nb_elem = mp_sum(mes_elems_.dimension(0));
+  Cerr << "  Number of elements: " << nb_elem << finl;
 
   // Verifications sanitaires:
   // On doit avoir le meme nombre de frontieres et les memes noms sur tous les procs
