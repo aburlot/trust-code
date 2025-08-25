@@ -1486,39 +1486,44 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
           Process::exit();
         }
       statistiques().begin_count(assemblage_sys_counter_);
-      DoubleTrav present(solution); // I(n)
-      present = solution;
       // On multiplie secmem par M (qui etait divise par M avant l'appel...)
-      DoubleTrav copie(secmem);
-      copie = secmem;
-      secmem = 0;
-      solveur_masse->ajouter_masse(1, secmem, copie);
+      {
+        // Scope to release Trav quickly
+        DoubleTrav copie(secmem);
+        copie = secmem;
+        secmem = 0;
+        solveur_masse->ajouter_masse(1, secmem, copie);
+      }
       // Build matrix A:
       Matrice_Morse& matrice = ref_cast(Parametre_diffusion_implicite, parametre_equation().valeur()).matrice();
       if (matrice.ordre()==0) dimensionner_matrice(matrice);
       matrice.clean(); // A=0
       // Add diffusion matrix L into matrix
-      operateur(0).l_op_base().contribuer_a_avec(present, matrice); // A=L
-      statistiques().end_count(assemblage_sys_counter_);
-      operateur(0).ajouter(present, secmem);
-      statistiques().begin_count(assemblage_sys_counter_);
-      matrice.ajouter_multvect(present, secmem);
-      // Add M/dt into matrix
-      schema_temps().ajouter_inertie(matrice,secmem,(*this)); // A=M/dt+L
-      modifier_pour_Cl(matrice,secmem);
-      statistiques().end_count(assemblage_sys_counter_,0,0);
-      // Solve to get I(n+1):
-      SolveurSys& solveur = ref_cast(Parametre_diffusion_implicite, parametre_equation().valeur()).solveur();
-      solveur->reinit(); // New matrix but same sparsity
-      int niter = solveur.resoudre_systeme(matrice, secmem, solution);
-      Cout << "Diffusion operator implicited for the equation " << que_suis_je()
-           << " : Conjugate gradient converged in " << niter << " iterations." << finl;
-      // CHD 230501 : Call to diffusive operator to update flux_bords (boundary fluxes):
-      operateur(0).ajouter(inconnue(), secmem);
+      {
+        // Scope to release DoubleTrav quickly after solver
+        DoubleTrav present(solution); // I(n)
+        present = solution;
+        operateur(0).l_op_base().contribuer_a_avec(present, matrice); // A=L
+        statistiques().end_count(assemblage_sys_counter_);
+        operateur(0).ajouter(present, secmem);
+        statistiques().begin_count(assemblage_sys_counter_);
+        matrice.ajouter_multvect(present, secmem);
+        // Add M/dt into matrix
+        schema_temps().ajouter_inertie(matrice, secmem, (*this)); // A=M/dt+L
+        modifier_pour_Cl(matrice, secmem);
+        statistiques().end_count(assemblage_sys_counter_, 0, 0);
+        // Solve to get I(n+1):
+        SolveurSys& solveur = ref_cast(Parametre_diffusion_implicite, parametre_equation().valeur()).solveur();
+        solveur->reinit(); // New matrix but same sparsity
+        int niter = solveur.resoudre_systeme(matrice, secmem, solution);
+        Cout << "Diffusion operator implicited for the equation " << que_suis_je()
+             << " : Conjugate gradient converged in " << niter << " iterations." << finl;
+        // CHD 230501 : Call to diffusive operator to update flux_bords (boundary fluxes):
+        operateur(0).ajouter(inconnue(), secmem);
 
-      solution-=present; // dI=I(n+1)-I(n)
-      solution/=schema_temps().pas_de_temps(); // dI/dt
-
+        solution -= present; // dI=I(n+1)-I(n)
+        solution /= schema_temps().pas_de_temps(); // dI/dt
+      }
     }
   else
     {
@@ -1545,11 +1550,6 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
       // Le nombre maximal d'iteration peut etre desormais borne par niter_max_diff_impl
       int nmax = le_schema_en_temps->niter_max_diffusion_implicite();
 
-      DoubleTrav p(solution);
-      DoubleTrav moins_phiB(p); // la partie Bord de l'operateur.
-      DoubleTrav resu(p);
-      DoubleTrav merk(solution);
-      merk = solution;
       double aCKN = 1; // Crank - Nicholson -> 0.5
 
       // Calcul de la matrice Diagonale
@@ -1646,6 +1646,8 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
           }
         }
       // On utilise p pour calculer phiB :
+      DoubleTrav p(solution);
+      DoubleTrav moins_phiB(solution); // la partie Bord de l'operateur.
       operateur(0).ajouter(p, moins_phiB);
       if (marq_tot)
         {
@@ -1659,23 +1661,9 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
       // fait maintenant avant l'appel
       //solveur_masse->appliquer(secmem);
 
-      DoubleTrav sol;
-      if (size_terme_mul)
-        {
-          sol = solution;
-          ToDo_Kokkos("critical for IBC");
-          //operator_multiply(sol, term_mul);
-          // tab_multiply_any_shape(sol, terme_mul);
-          for (int i = 0; i < size_terme_mul; i++)
-            sol(i) *= terme_mul(i);
-        }
-      else
-        sol.ref(solution);
-
-      secmem.ajoute(1. / dt, sol, VECT_REAL_ITEMS);
-
       // Stop the counter because operator diffusion is also counted
       statistiques().end_count(diffusion_implicite_counter_, 0, 0);
+      DoubleTrav resu(solution);
       operateur(0).ajouter(solution, resu);
       if (marq_tot)
         {
@@ -1687,9 +1675,26 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
       solveur_masse->appliquer(resu);
       resu.echange_espace_virtuel();
       resu *= -1.;
-      resu.ajoute(1. / dt, sol, VECT_REAL_ITEMS);
 
-      DoubleTrav residu(resu); // residu = Ax
+      {
+        // Create scope to release DoubleTrav quickly
+        DoubleTrav sol;
+        if (size_terme_mul)
+          {
+            sol = solution;
+            ToDo_Kokkos("critical for IBC");
+            //operator_multiply(sol, term_mul);
+            // tab_multiply_any_shape(sol, terme_mul);
+            for (int i = 0; i < size_terme_mul; i++)
+              sol(i) *= terme_mul(i);
+          }
+        else
+          sol.ref(solution);
+        secmem.ajoute(1. / dt, sol, VECT_REAL_ITEMS);
+        resu.ajoute(1. / dt, sol, VECT_REAL_ITEMS);
+      }
+
+      DoubleTrav residu; // residu = Ax
       residu = resu;
       residu -= secmem;      // residu = Ax-B
       DoubleTrav z;
@@ -1720,26 +1725,27 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
 
       double residual = seuil;
       double prodrz_old = mp_prodscal(residu, z);
-      DoubleTrav pp(p);
+      DoubleTrav pp;
+      if (size_terme_mul) pp=p;
+      DoubleTrav merk;
+      merk = solution;
       int niter = 0;
       if (initial_residual != 0)
         while (niter++ <= nmax)
           {
             resu = moins_phiB; // On retire la contribution des bords.
-
             p.echange_espace_virtuel();
 
             // Stop the counter during diffusive operator:
             statistiques().end_count(diffusion_implicite_counter_, 0, 0);
             operateur(0).ajouter(p, resu);
-            statistiques().begin_count(diffusion_implicite_counter_);
-
             if (marq_tot)
               {
                 for (int i = 0; i < size_s; i++)
                   if (marq[i])
                     ref_cast(Source_dep_inco_base, sources()(i).valeur()).ajouter_(p, resu);
               }
+            statistiques().begin_count(diffusion_implicite_counter_);
             solveur_masse->appliquer(resu);
             resu.echange_espace_virtuel();
 

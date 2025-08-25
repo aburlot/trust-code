@@ -808,12 +808,6 @@ void Navier_Stokes_std::projeter()
       DoubleTab& tab_vitesse = la_vitesse->valeurs();
       tab_vitesse.echange_espace_virtuel();
       la_pression->valeurs().echange_espace_virtuel();
-      DoubleTrav secmem(la_pression->valeurs());
-      // Cela ne sert a rien d'initialiser lagrange avec la pression
-      // voir ca penalise le calcul en p1B et CL p<>0
-      // On prend un DoubleTrav au lieu d'un DoubleTab pour avoir lagrange=0
-      DoubleTrav lagrange(la_pression->valeurs());
-      DoubleTrav gradP(gradient_P->valeurs());
 
       double normal_seuil = 0.;
 
@@ -823,6 +817,7 @@ void Navier_Stokes_std::projeter()
       //
       modify_initial_variable();
 
+      DoubleTrav secmem(la_pression->valeurs());
       divergence.calculer(tab_vitesse, secmem);
       // Desormais on calcule le pas de temps avant la projection
       // Avant, on avait dt=dt_min au debut du calcul
@@ -845,17 +840,19 @@ void Navier_Stokes_std::projeter()
         }
 
       // Correction du second membre d'apres les conditions aux limites :
+      // Cela ne sert a rien d'initialiser lagrange avec la pression
+      // voir ca penalise le calcul en p1B et CL p<>0
+      // On prend un DoubleTrav au lieu d'un DoubleTab pour avoir lagrange=0
+      DoubleTrav lagrange(la_pression->valeurs());
       solveur_pression_.resoudre_systeme(matrice_pression_.valeur(),secmem,lagrange);
       assembleur_pression_->modifier_solution(lagrange);
       lagrange.echange_espace_virtuel();
 
       // M-1 Bt l
+      DoubleTrav gradP(gradient_P->valeurs());
       gradient->multvect(lagrange, gradP);
-
       modify_initial_gradP(gradP);
-
       gradP.echange_espace_virtuel();
-
       solveur_masse->appliquer(gradP);
       gradP.echange_espace_virtuel();
 

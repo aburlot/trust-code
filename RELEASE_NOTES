@@ -1,3 +1,4 @@
+XX/XX/25 (TRUST) RAM          : Important reduction (-40%) of memory footprint for VEF during a typical calculation with (AMG) multigrid solver
 XX/XX/25 (TRUST) GPU          : Blackwell architecture supported (B100, B200, RTX 50xx). Need Nvidia HPC SDK>=25.3 + Kokkos 4.7
 XX/XX/25 (TRUST) GPU          : Nvidia H200 and Grace Hopper GH100 supported (see env_src/HOST_calypso-grace.sh example)
 XX/XX/25 (TRUST) Linux        : Fedora 42 and GNU 15.x compiler supported
