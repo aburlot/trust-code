@@ -424,25 +424,60 @@ double Process::ram_processeur()
   return 0;
 #endif
 }
-
-/* #include <malloc.h>
-void Process::print_allocated_memory(std::string s)
+#include <sys/resource.h>
+double ru_maxrss()
 {
+  // Best to track OOM
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+  // ru_maxrss is in kilobytes
+  long rss_kb = usage.ru_maxrss;
+  return static_cast<double>(rss_kb*1024);
+}
+#include <malloc.h>
+/*
+struct mallinfo2 {
+    size_t hblkhd;    // Space in mmapped regions (bytes)
+    size_t hblks;     // Number of mmapped regions
+    size_t usmblks;   // Always 0 (obsolete field)
+    size_t fsmblks;   // Always 0 (obsolete field)
+    size_t uordblks;  // Total allocated space (bytes)
+    size_t fordblks;  // Total free space (bytes)
+    size_t keepcost;  // Top-most, releasable space (bytes)
+};
+*/
+double heap_allocation()
+{
+  // Best to track memory leak
+#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 33)
   struct mallinfo2 info = mallinfo2();
-  Cout << "Total allocated memory: " << s << " " << info.uordblks << " B" << finl;
-} */
+#else
+  struct mallinfo info = mallinfo();
+#endif
+  return (double)info.uordblks;
+}
 
+static double heap_allocated_old=0;
 void Process::imprimer_ram_totale(int all_process)
 {
-  double memoire=ram_processeur();
+  double memoire;
+  //memoire = ram_processeur();
+  memoire = ru_maxrss();
+  double heap_allocated = heap_allocation();
   if (memoire)
     {
+      //Cout << "RAM provisoire: PETSc " << ram_processeur() << "  ru_maxrss " << memoire << " mallinfo " << heap_allocated << finl;
       int Mo=1024*1024;
       if (all_process) Journal() << (int)(memoire/Mo) << " MBytes of RAM taken by the processor " << Process::me() << finl;
       {
         double max_memoire=Process::mp_max(memoire);
         double total_memoire=Process::mp_sum(memoire);
         Cout << (int)(total_memoire/Mo) << " MBytes of RAM taken by the calculation (max on a rank: "<<(int)(max_memoire/Mo)<<" MB)." << finl;
+        Cout << "[RAM] Allocated heap on master rank: " << (int)(heap_allocated/Mo) << " Mbytes";
+        double delta = heap_allocated - heap_allocated_old;
+        if (delta!=0 && heap_allocated_old>0) Cout << " (" << (delta>0 ? "+" : "") << (long)delta << " bytes)";
+        Cout << finl;
+        heap_allocated_old = heap_allocated;
 #ifdef TRUST_USE_GPU
         int Go = 1024 * Mo;
         double allocated = mp_max((double)DeviceMemory::allocatedBytesOnDevice());
