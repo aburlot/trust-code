@@ -40,7 +40,7 @@ define_modules_config()
    echo "module purge 1>/dev/null" >> $env
    echo "module load $module 1>/dev/null || exit -1" >> $env
    echo "PATH=\$CRAY_MPICH_PREFIX/bin:\$PATH"  >> $env # Pour trouver mpicxx
-   echo "export TRUST_DEVICES_PER_NODE=8" >> $env # Devices per node
+   #echo "export TRUST_DEVICES_PER_NODE=8" >> $env # Devices per node
    . $env
 }
 
@@ -81,6 +81,7 @@ define_soumission_batch()
 	  # Not available on the GPU nodes:
           cp -f /lib64/libsuitesparseconfig.so.4 .
           echo "export LD_LIBRARY_PATH=.:\$LD_LIBRARY_PATH" > ld_env.sh
+	  echo "export TRUST_DISABLE_CHECK_OS=1" >> ld_env.sh
       fi
       noeuds=`echo "1+($NB_PROCS-1)/$gpu_per_node" | bc`
       # Important pour les performances ! le -c dans le srun est important il semble que SBATCH -c ne marche pas...
@@ -103,7 +104,7 @@ define_soumission_batch()
    # https://dci.dci-gitlab.cines.fr/webextranet/porting_optimization/detailed_binding_script.html#adastra-detailed-binding-script
    # Attention, le verbose est important sinon crash ! voir doc
    USE_MPIRUN=1 # Pour profiter du binding meme en sequentiel
-   if [ "$TRUST_USE_OLD_BINDING" = 1 ]
+   if [ "$TRUST_USE_OLD_BINDING" = 1 ] || [ $ROCM_ARCH = gfx942 ] # Pas clair encore le binding sur MI300
    then
       mpirun="srun -l $srun_options --mpi=cray_shasta --mem-bind=local --cpu-bind=verbose,cores"
    else

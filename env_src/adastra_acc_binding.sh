@@ -24,9 +24,16 @@ function Adastra_GENOA_48TasksWith4Threads() {
 export MPICH_OFI_NIC_POLICY="NUMA"
 export OMP_PROC_BIND="TRUE"
 
-Adastra_MI250_8TasksWith8ThreadsAnd1GPU
-# Adastra_GENOA_24TasksWith8Threads
-# Adastra_GENOA_48TasksWith4Threads
+if [ $ROCM_ARCH = gfx90a ]
+then
+   Adastra_MI250_8TasksWith8ThreadsAnd1GPU
+elif [ $ROCM_ARCH = gfx942 ]
+then
+   Adastra_MI300_4TasksWith24ThreadsAnd1GPU
+else
+   #Adastra_GENOA_24TasksWith8Threads
+   Adastra_GENOA_48TasksWith4Threads
+fi
 
 CPU_SET="${AFFINITY_NUMACTL[$((${LOCAL_RANK_INDEX} % ${#AFFINITY_NUMACTL[@]}))]}"
 if [ ! -z ${AFFINITY_GPU+x} ]; then
