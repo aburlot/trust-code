@@ -1368,24 +1368,24 @@ void Champ_Face_VDF::calculer_dercov_axi(const Domaine_Cl_VDF& domaine_Cl_VDF)
 double Champ_Face_get_val_imp_face_bord_sym(const DoubleTab& tab_valeurs, const double temp, int face, int comp, const Domaine_Cl_VDF& zclo)
 {
   const Domaine_VDF& domaine_vdf = zclo.domaine_VDF();
-  int face_globale, face_locale;
-
-  face_globale = face + domaine_vdf.premiere_face_bord(); // Maintenant numero dans le tableau global des faces.
+  int face_locale = -123;
+  const int face_globale = face + domaine_vdf.premiere_face_bord(); // Maintenant numero dans le tableau global des faces.
   const Domaine_Cl_dis_base& zcl = zclo; //equation().domaine_Cl_dis();
   // On recupere la CL associee a la face et le numero local de la face dans la frontiere.
   //assert(equation().domaine_Cl_dis()==zclo);
 
-  const Cond_lim_base& cl = (face < domaine_vdf.nb_faces()) ? zcl.condition_limite_de_la_face_reelle(face_globale, face_locale) : zcl.condition_limite_de_la_face_virtuelle(face_globale, face_locale);
+  const Cond_lim_base& cl = (face < domaine_vdf.nb_faces()) ? zcl.condition_limite_de_la_face_reelle(face_globale, face_locale) :
+                            zcl.condition_limite_de_la_face_virtuelle(face_globale, face_locale);
 
   const IntTab& face_voisins = domaine_vdf.face_voisins();
   const IntTab& elem_faces = domaine_vdf.elem_faces();
   const DoubleVect& porosite = zclo.equation().milieu().porosite_face();
-  int ori = domaine_vdf.orientation()(face_globale);
+  const int ori = domaine_vdf.orientation()(face_globale);
 
   if (sub_type(Navier, cl))
     {
-      int N = tab_valeurs.line_size();
-      int n=comp%N, comploc = (comp-n)/N;
+      const int N = tab_valeurs.line_size();
+      const int n=comp%N, comploc = (comp-n)/N;
       if (comploc == ori)
         return 0;
       else
@@ -1395,49 +1395,54 @@ double Champ_Face_get_val_imp_face_bord_sym(const DoubleTab& tab_valeurs, const 
             elem = face_voisins(face_globale, 0);
           else
             elem = face_voisins(face_globale, 1);
-          int comp2 = comploc + Objet_U::dimension;
+          const int comp2 = comploc + Objet_U::dimension;
           return (tab_valeurs(elem_faces(elem, comploc), n) * porosite[elem_faces(elem, comploc)] + tab_valeurs(elem_faces(elem, comp2), n) * porosite[elem_faces(elem, comp2)])
                  / (porosite[elem_faces(elem, comploc)] + porosite[elem_faces(elem, comp2)]);
         }
     }
 
+  if (!cl.champ_front().has_valeurs_au_temps(temp)) // si pas encore initialise !!
+    return 0.;
+
   const DoubleTab& vals = cl.champ_front().valeurs_au_temps(temp);
-  int face_de_vals = vals.dimension(0) == 1 ? 0 : face_locale;
+  const int face_de_vals = vals.dimension(0) == 1 ? 0 : face_locale;
 
   if (sub_type(Dirichlet_entree_fluide, cl))
     return vals(face_de_vals, comp);
   else if (sub_type(Dirichlet_paroi_fixe, cl))
-    return 0;
+    return 0.;
   else if (sub_type(Dirichlet_paroi_defilante, cl))
     return vals(face_de_vals, comp);
 
-  return 0; // All other cases
+  return 0.; // All other cases
 }
 
 double Champ_Face_get_val_imp_face_bord(const double temp, int face, int comp, const Domaine_Cl_VDF& zclo)
 {
   const Domaine_VDF& domaine_vdf = zclo.domaine_VDF();
-  int face_globale, face_locale;
-
-  face_globale = face + domaine_vdf.premiere_face_bord(); // Maintenant numero dans le tableau global des faces.
+  int face_locale = -123;
+  const int face_globale = face + domaine_vdf.premiere_face_bord(); // Maintenant numero dans le tableau global des faces.
   const Domaine_Cl_dis_base& zcl = zclo; //equation().domaine_Cl_dis();
   // On recupere la CL associee a la face et le numero local de la face dans la frontiere.
   //assert(equation().domaine_Cl_dis()==zclo);
 
-  const Cond_lim_base& cl = (face < domaine_vdf.nb_faces()) ? zcl.condition_limite_de_la_face_reelle(face_globale, face_locale) : zcl.condition_limite_de_la_face_virtuelle(face_globale, face_locale);
-  int ori = domaine_vdf.orientation()(face_globale);
+  const Cond_lim_base& cl = (face < domaine_vdf.nb_faces()) ? zcl.condition_limite_de_la_face_reelle(face_globale, face_locale) :
+                            zcl.condition_limite_de_la_face_virtuelle(face_globale, face_locale);
+  const int ori = domaine_vdf.orientation()(face_globale);
 
   if (sub_type(Navier, cl))
     {
       if (comp == ori)
-        return 0;
+        return 0.;
       else
         {
-          Cerr << "You should call Champ_Face_get_val_imp_face_bord_sym and not Champ_Face_get_val_imp_face_bord" << finl;
-          Process::exit();
-          return 1e9;
+          Process::exit("You should call Champ_Face_get_val_imp_face_bord_sym and not Champ_Face_get_val_imp_face_bord\n");
+          return 1.e9;
         }
     }
+
+  if (!cl.champ_front().has_valeurs_au_temps(temp)) // si pas encore initialise !!
+    return 0.;
 
   const DoubleTab& vals = cl.champ_front().valeurs_au_temps(temp);
   int face_de_vals = vals.dimension(0) == 1 ? 0 : face_locale;
@@ -1445,18 +1450,17 @@ double Champ_Face_get_val_imp_face_bord(const double temp, int face, int comp, c
   if (sub_type(Dirichlet_entree_fluide, cl))
     return vals(face_de_vals, comp);
   else if (sub_type(Dirichlet_paroi_fixe, cl))
-    return 0;
+    return 0.;
   else if (sub_type(Dirichlet_paroi_defilante, cl))
     return vals(face_de_vals, comp);
 
-  return 0; // All other cases
+  return 0.; // All other cases
 }
 
 double Champ_Face_get_val_imp_face_bord(const double temp, int face, int comp, int comp2, const Domaine_Cl_VDF& zclo)
 {
-  Cerr << "Champ_Face_VDF::val_imp_face_bord(,,) exit" << finl;
-  Process::exit();
-  return 0; // For compilers
+  Process::exit("Champ_Face_VDF::val_imp_face_bord(,,) exit\n");
+  return 0.; // For compilers
 }
 
 double Champ_Face_coeff_frottement_face_bord(const int f, const int n, const Domaine_Cl_VDF& zclo)
@@ -1465,8 +1469,9 @@ double Champ_Face_coeff_frottement_face_bord(const int f, const int n, const Dom
   const Domaine_Cl_dis_base& zcl = zclo;
   const int face_globale = f + domaine_vdf.premiere_face_bord(); // Maintenant numero dans le tableau global des faces.
 
-  int face_locale;
-  const Cond_lim_base& cl = (f < domaine_vdf.nb_faces()) ? zcl.condition_limite_de_la_face_reelle(face_globale, face_locale) : zcl.condition_limite_de_la_face_virtuelle(face_globale, face_locale);
+  int face_locale = -123;
+  const Cond_lim_base& cl = (f < domaine_vdf.nb_faces()) ? zcl.condition_limite_de_la_face_reelle(face_globale, face_locale) :
+                            zcl.condition_limite_de_la_face_virtuelle(face_globale, face_locale);
 
   return sub_type(Navier, cl) ? ref_cast(Navier, cl).coefficient_frottement(face_locale,n) : 0.;
 }
@@ -1477,8 +1482,9 @@ double Champ_Face_coeff_frottement_grad_face_bord(const int f, const int n, cons
   const Domaine_Cl_dis_base& zcl = zclo;
   const int face_globale = f + domaine_vdf.premiere_face_bord(); // Maintenant numero dans le tableau global des faces.
 
-  int face_locale;
-  const Cond_lim_base& cl = (f < domaine_vdf.nb_faces()) ? zcl.condition_limite_de_la_face_reelle(face_globale, face_locale) : zcl.condition_limite_de_la_face_virtuelle(face_globale, face_locale);
+  int face_locale = -123;
+  const Cond_lim_base& cl = (f < domaine_vdf.nb_faces()) ? zcl.condition_limite_de_la_face_reelle(face_globale, face_locale) :
+                            zcl.condition_limite_de_la_face_virtuelle(face_globale, face_locale);
 
   return sub_type(Navier, cl) ? ref_cast(Navier, cl).coefficient_frottement_grad(face_locale,n) : 0.;
 }
