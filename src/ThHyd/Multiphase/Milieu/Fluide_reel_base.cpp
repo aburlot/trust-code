@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -179,6 +179,15 @@ void Fluide_reel_base::preparer_calcul() { mettre_a_jour(t_init_); }
 void Fluide_reel_base::mettre_a_jour(double t)
 {
   double tp = ref_cast(Champ_Inc_base, ch_e_int_.valeur()).temps(); //pour savoir si on va tourner la roue
+
+  // XXX Elie Saikali : cas reprise car ch_rho_, ch_e_int_ et ch_h_ou_T_ pas dans les .sauvs !
+  if (t > ch_rho_->temps() && first_maj_)
+    {
+      ch_rho_->changer_temps(t);
+      ch_e_int_->changer_temps(t);
+      ch_h_ou_T_->changer_temps(t);
+    }
+
   ch_rho_->mettre_a_jour(t);
   ch_e_int_->mettre_a_jour(t);
   ch_h_ou_T_->mettre_a_jour(t);
