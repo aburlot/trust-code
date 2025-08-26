@@ -52,8 +52,9 @@ do
             [ $run = 1 ] && (trust $jdd $mpi -ksp_view -journal=0 1>$jdd.out_err 2>&1 || (rm -f *.TU;echo "Error:See "`pwd`/$jdd.out_err))
             [ "`grep 'Arret des process' $jdd.out_err`" = "" ] && break
             # Analyse
-            hram=`awk '/RAM taken/ {if ($13>RAM) RAM=$13} END {print 0.1*int(0.01*RAM)}' $jdd.out_err`
-            dram=`awk '/RAM allocated on a GPU/ {if ($1>RAM) RAM=$1} END {print RAM}' $jdd.out_err`
+	    i=0 && [ "$HOST" = adastra ] && i=1
+	    hram=`awk -v i=$i '/RAM taken/ {if ($(13+i)>RAM) RAM=$(13+i)} END {print 0.1*int(0.01*RAM)}' $jdd.out_err`
+	    dram=`awk -v i=$i '/RAM allocated on a GPU/ {if ($(1+i)>RAM) RAM=$(1+i)} END {print RAM}' $jdd.out_err`
             row=`awk '/Order of the matrix/ {print $NF;exit}' $jdd.out_err`
             faces=`awk '/Total number of faces/ {print $NF;exit}' $jdd.out_err`
             elems=`awk '/Total number of elements/ {printf($NF);exit}' $jdd.out_err`

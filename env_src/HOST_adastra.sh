@@ -85,7 +85,8 @@ define_soumission_batch()
       noeuds=`echo "1+($NB_PROCS-1)/$gpu_per_node" | bc`
       # Important pour les performances ! le -c dans le srun est important il semble que SBATCH -c ne marche pas...
       # Attention, le verbose est important sinon crash ! voir doc
-      srun_options="-c $cpus_per_task --gpus-per-task=1 --ntasks-per-node=$gpu_per_node --threads-per-core=1 --gpu-bind=verbose,closest"
+      ntasks_per_node=$gpu_per_node && [ $NB_PROCS -lt $gpu_per_node ] && ntasks_per_node=$NB_PROCS
+      srun_options="-c $cpus_per_task --gpus-per-task=1 --ntasks-per-node=$ntasks_per_node --threads-per-core=1 --gpu-bind=verbose,closest"
       #[ $NB_PROCS -gt 8 ] && qos=normal # 2 nodes
    else
       # Partition scalaire
@@ -101,7 +102,13 @@ define_soumission_batch()
    # https://dci.dci-gitlab.cines.fr/webextranet/porting_optimization/#proper-binding-why-and-how
    # https://dci.dci-gitlab.cines.fr/webextranet/porting_optimization/detailed_binding_script.html#adastra-detailed-binding-script
    # Attention, le verbose est important sinon crash ! voir doc
-   mpirun="srun -l $srun_options --mem-bind=local --mpi=cray_shasta --cpu-bind=verbose,cores"
+   USE_MPIRUN=1 # Pour profiter du binding meme en sequentiel
+   if [ "$TRUST_USE_OLD_BINDING" = 1 ]
+   then
+      mpirun="srun -l $srun_options --mpi=cray_shasta --mem-bind=local --cpu-bind=verbose,cores"
+   else
+      mpirun="srun -l $srun_options --mem-bind=none --cpu-bind=verbose,none -- \$TRUST_ROOT/env_src/adastra_acc_binding.sh"
+   fi
    sub=SLURM
 }
 
