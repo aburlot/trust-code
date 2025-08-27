@@ -2007,6 +2007,34 @@ void Equation_base::assembler(Matrice_Morse& matrice, const DoubleTab& inco, Dou
       // On calcule somme(residu) par somme(operateur)+sources+A*Inco(n)
       // Cette approche necessite de coder seulement deux methodes (contribuer_a_avec et ajouter)
       // Donc un peu plus couteux en temps de calcul mais moins de code a ecrire/maintenir
+
+      /*
+       * XXX XXX XXX Elie Saikali, Gauthier Fauchet, aout 2025 :
+       *
+       * We need to calculate : [ I^(n+1) - I^n ] / dt = f( I^(n+1) )
+       *
+       * But we dont know now what is f( I^(n+1) )
+       *
+       * 2 possibilities
+       *
+       *  1- [ I^(k+1) - I^k ] / dt = f( I^(k) )
+       *    then use fixed point algo to have I^k = I^(k+1) = I^(n+1)
+       *
+       *
+       *  2- Use Newton algorithm (we use this here)
+       *
+       *    f( I^(n+1) ) = f ( I^n ) + df/dI ( I^(n+1) - I^n )
+       *
+       *    df/dI is the matrix -A obtained by the method contribuer_a_avec
+       *
+       *    so : f( I^(n+1) ) = f ( I^n ) - A ( I^(n+1) - I^n ) = f ( I^n ) - A * I^(n+1) + A * I^n
+       *
+       *    Thus, 1/dt I^(n+1) + A * I^(n+1) = 1/dt I^n + f ( I^n ) + A * I^n
+       *
+       *    I^(n+1) [ Identity / dt + A ] =  1/dt I^n + f ( I^n ) + A * I^n
+       *
+       *    and f ( I^n ) is obtained by the method ajouter
+       */
       for (int op=0; op<nombre_d_operateurs(); op++)
         {
           operateur(op).l_op_base().contribuer_a_avec(inco, matrice);
