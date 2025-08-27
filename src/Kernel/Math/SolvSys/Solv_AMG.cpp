@@ -109,11 +109,11 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
 -fieldsplit_P1_pc_gamg_square_graph 1";
       if (n==3)
         {
-          chaine_lue_+=" -fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_pc_type gamg \
--fieldsplit_P2_pc_gamg_threshold 0.01 \
--fieldsplit_P2_pc_gamg_square_graph 1";
+          chaine_lue_+=" -fieldsplit_Pa_ksp_type preonly \
+-fieldsplit_Pa_ksp_type preonly \
+-fieldsplit_Pa_pc_type gamg \
+-fieldsplit_Pa_pc_gamg_threshold 0.01 \
+-fieldsplit_Pa_pc_gamg_square_graph 1";
         }
     }
   else if (precond=="boomeramg")
@@ -130,12 +130,18 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
 -fieldsplit_P1_pc_hypre_boomeramg_print_statistics 1";
       if (n==3)
         {
-          chaine_lue_+=" -fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_pc_type hypre \
--fieldsplit_P2_pc_hypre_type boomeramg \
--fieldsplit_P2_pc_hypre_boomeramg_strong_threshold 0.1 \
--fieldsplit_P2_pc_hypre_boomeramg_print_statistics 1";
+          chaine_lue_+=" -fieldsplit_Pa_ksp_type preonly \
+-fieldsplit_Pa_pc_type hypre \
+-fieldsplit_Pa_pc_hypre_type boomeramg \
+-fieldsplit_Pa_pc_hypre_boomeramg_strong_threshold 0.1 \
+-fieldsplit_Pa_pc_hypre_boomeramg_print_statistics 1";
         }
+      // To avoid this issue on Nvidia:  CUSPARSE ERROR (code = 11, insufficient resources) at csr_spgemm_device_cusparse.c:152
+#ifdef TRUST_USE_CUDA
+      if (n==2) chaine_lue_+=" -fieldsplit_P0_pc_mg_galerkin_mat_product_algorithm hypre";
+      if (n==2) chaine_lue_+=" -fieldsplit_P1_pc_mg_galerkin_mat_product_algorithm hypre";
+      if (n==3) chaine_lue_+=" -fieldsplit_Pa_pc_mg_galerkin_mat_product_algorithm hypre";
+#endif
     }
   else if (precond=="amgx")
     {
@@ -150,10 +156,10 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
 -fieldsplit_P1_pc_amgx_print_grid_stats 1";
       if (n==3)
         {
-          chaine_lue_+=" -fieldsplit_P2_ksp_type preonly \
--fieldsplit_P2_pc_type amgx \
--fieldsplit_P2_pc_amgx_verbose 1 \
--fieldsplit_P2_pc_amgx_print_grid_stats 1";
+          chaine_lue_+=" -fieldsplit_Pa_ksp_type preonly \
+-fieldsplit_Pa_pc_type amgx \
+-fieldsplit_Pa_pc_amgx_verbose 1 \
+-fieldsplit_Pa_pc_amgx_print_grid_stats 1";
         }
     }
   else
