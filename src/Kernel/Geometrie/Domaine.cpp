@@ -1601,8 +1601,8 @@ void Domaine_32_64<_SIZE_>::reordering()
   };
   auto renum_Vect_values = [] (auto& vect, const auto& renum)
   {
-    for (int_t i=0; i<vect.size_array(); i++)
-      vect(i) = renum(vect(i));
+    for (int_t ii=0; ii<vect.size_array(); ii++) // To fix on F26 error: declaration of 'i' shadows a previous local
+      vect(ii) = renum(vect(ii));
   };
 
   // Create test with non uniform value and compute a reduced

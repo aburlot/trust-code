@@ -1147,7 +1147,7 @@ void Op_Conv_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
           }
       }
     // Boucle sur les facettes du polyedre non standard:
-    double cc[3];
+    double cc[3] = { 0., 0., 0. };
     for (int fa7=0; fa7<nfa7; fa7++)
       {
         // normales aux facettes
