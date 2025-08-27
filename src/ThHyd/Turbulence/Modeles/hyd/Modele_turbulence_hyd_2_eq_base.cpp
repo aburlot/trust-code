@@ -28,6 +28,9 @@ void Modele_turbulence_hyd_2_eq_base::set_param(Param& param)
 {
   Modele_turbulence_hyd_base::set_param(param);
   param.ajouter_non_std("Transport_equation", (this)); // cannot be REQUIRED because of Bicephale models
+  param.ajouter_non_std("Transport_K_Epsilon", (this));
+  param.ajouter_non_std("Transport_K_Omega", (this));
+  param.ajouter_non_std("Transport_K_Epsilon_Realisable", (this));
   param.ajouter("k_min", &K_MIN_); // XD_ADD_P floattant Lower limitation of k (default value 1.e-10).
   param.ajouter_flag("quiet", &lquiet_); // XD_ADD_P flag To disable printing of information about K and Epsilon/Omega.
 }
@@ -40,6 +43,45 @@ int Modele_turbulence_hyd_2_eq_base::lire_motcle_non_standard(const Motcle& mot,
       is>> typ_eq;
       Nom name_transport_eq=typ_eq;
       ptr_eq_transport_.typer(name_transport_eq);
+      get_set_eq_transport().associer_modele_turbulence(*this);
+      is >> get_set_eq_transport();
+    }
+  else if (mot == "Transport_K_Epsilon")
+    {
+      Cerr << "Warning: You are using a deprecated syntaxe for Transport_K_Epsilon in your datafile!!!!!!!!!!!!!!!!" << finl;
+      Cerr << "         Since v1.9.7, you should replace:" << finl;
+      Cerr << "             Transport_K_Epsilon" << finl;
+      Cerr << "         by:" << finl;
+      Cerr << "             Transport_equation Transport_K_Eps" << finl;
+      Cerr << "Please update your datafile" << finl;
+      Motcle typ_eq = "transport_k_eps";
+      ptr_eq_transport_.typer(typ_eq);
+      get_set_eq_transport().associer_modele_turbulence(*this);
+      is >> get_set_eq_transport();
+    }
+  else if (mot == "Transport_K_Omega")
+    {
+      Cerr << "Warning: You are using a deprecated syntaxe for Transport_K_Omega in your datafile!!!!!!!!!!!!!!!!" << finl;
+      Cerr << "         Since v1.9.7, you should replace:" << finl;
+      Cerr << "             Transport_K_Omega" << finl;
+      Cerr << "         by:" << finl;
+      Cerr << "             Transport_equation Transport_K_Omega" << finl;
+      Cerr << "Please update your datafile" << finl;
+      Motcle typ_eq = "Transport_K_Omega";
+      ptr_eq_transport_.typer(typ_eq);
+      get_set_eq_transport().associer_modele_turbulence(*this);
+      is >> get_set_eq_transport();
+    }
+  else if (mot == "Transport_K_Epsilon_Realisable")
+    {
+      Cerr << "Warning: You are using a deprecated syntaxe for Transport_K_Epsilon_Realisable in your datafile!!!!!!!!!!!!!!!!" << finl;
+      Cerr << "         Since v1.9.7, you should replace:" << finl;
+      Cerr << "             Transport_K_Epsilon_Realisable" << finl;
+      Cerr << "         by:" << finl;
+      Cerr << "             Transport_equation Transport_K_Eps_Realisable" << finl;
+      Cerr << "Please update your datafile" << finl;
+      Motcle typ_eq = "Transport_K_Eps_Realisable";
+      ptr_eq_transport_.typer(typ_eq);
       get_set_eq_transport().associer_modele_turbulence(*this);
       is >> get_set_eq_transport();
     }
