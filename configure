@@ -174,7 +174,7 @@ then
 #then
 #   [ `eval yum list installed libX11-devel 1>/dev/null 2>&1;echo $?` != 0 ] && echo "libX11-devel" >> NON_INSTALLED
 else
-   echo "If an error with hwloc occurs, install libX11-dev on your OS"
+   echo "If an error with hwloc or gmsh or visit occurs, install libX11-dev on your OS"
 fi
 
 ########################
@@ -330,7 +330,6 @@ echo "   -disable-jupyter                  Disable jupyter installation."
 echo "   -disable-valgrind                 Disable valgrind installation and build."
 echo "   -disable-gnuplot                  Disable gnuplot installation and build."
 echo "   -disable-doxygen                  Disable doxygen installation and build. HTML documentation cannot be build if doxygen disabled."
-echo "   -disable-tcl_tk                   Disable Tcl/Tk detection/installation."
 echo "   -disable-gmsh                     Disable Gmsh installation and build."
 echo "   -disable-trustify                 Do not build the trustify documentation tool."
 echo "   -disable-plot2d                   Disable PLOT2D installation and build."
@@ -361,7 +360,7 @@ cc=""
 F77=""
 clean=""
 
-LIST_THIRD_PARTY="PETSC MED MPI GTEST METIS MEDCOUPLING VC CCACHE GMSH VALGRIND GNUPLOT TCL_TK PLOT2D DOXYGEN TRUSTIFY"
+LIST_THIRD_PARTY="PETSC MED MPI GTEST METIS MEDCOUPLING VC CCACHE GMSH VALGRIND GNUPLOT PLOT2D DOXYGEN TRUSTIFY"
 
 #[ -f configure.log ] && sed "s/^/# /" -i  configure.log
 [ -f configure.log ] && sed "s/# //" -i  configure.log && sed "s/^/# /" -i  configure.log
@@ -371,7 +370,7 @@ if [ "$1" = "-for_appli_salome" ]
 then
   shift
   export TRUST_ROOT=$TRUST_ROOT_SA
-  $0 -disable-ccache -disable-gnuplot -disable-tcl_tk -disable-valgrind -without-visit -disable-gmsh -disable-checks -disable-check_sources -with-med=$MEDFILE_ROOT_DIR -with-hdf=$HDF5_ROOT_DIR $*
+  $0 -disable-ccache -disable-gnuplot -disable-valgrind -without-visit -disable-gmsh -disable-checks -disable-check_sources -with-med=$MEDFILE_ROOT_DIR -with-hdf=$HDF5_ROOT_DIR $*
 # pas encore pas ICoCoMEDField -with-medcoupling=$MEDCOUPLING_ROOT_DIR $*
   exit $?
 fi
@@ -379,14 +378,14 @@ if [ "$1" = "-disable-optionals" ]
 then
   shift
   export TRUST_ROOT=$TRUST_ROOT_SA
-  $0 -disable-ccache -disable-openblas -disable-petsc -disable-petsc-optionals -disable-hwloc -disable-gnuplot -disable-tcl_tk -disable-vc -disable-valgrind -disable-mpi -disable-cgns -disable-metis -disable-pdi -without-visit -disable-gmsh -disable-plot2d -without-pdflatex -without-doc -disable-jupyter -disable-doxygen -disable-checks -disable-check_sources -rocalution=0 -disable-trustify -disable-gtest $*
+  $0 -disable-ccache -disable-openblas -disable-petsc -disable-petsc-optionals -disable-hwloc -disable-gnuplot -disable-vc -disable-valgrind -disable-mpi -disable-cgns -disable-metis -disable-pdi -without-visit -disable-gmsh -disable-plot2d -without-pdflatex -without-doc -disable-jupyter -disable-doxygen -disable-checks -disable-check_sources -rocalution=0 -disable-trustify -disable-gtest $*
   exit $?
 fi
 if [ "$1" = "-disable-tools" ]
 then
   shift
   export TRUST_ROOT=$TRUST_ROOT_SA
-  $0 -disable-ccache -disable-openblas -disable-hwloc -disable-gnuplot -disable-tcl_tk -disable-valgrind -disable-metis -without-visit -disable-gmsh -disable-plot2d -without-doc -without-pdflatex -disable-checks -disable-check_sources -disable-trustify $*
+  $0 -disable-ccache -disable-openblas -disable-hwloc -disable-gnuplot -disable-valgrind -disable-metis -without-visit -disable-gmsh -disable-plot2d -without-doc -without-pdflatex -disable-checks -disable-check_sources -disable-trustify $*
   exit $?
 fi
 
@@ -721,7 +720,6 @@ do
       [ "$THIRD_PARTY" = "GNUPLOT" ] && REP_THIRD_PARTY=$TRUST_ROOT/Outils/gnuplot
       [ "$THIRD_PARTY" = "TRUSTIFY" ] && REP_THIRD_PARTY=$TRUST_ROOT/Outils/trustify
       [ "$THIRD_PARTY" = "DOXYGEN" ] && REP_THIRD_PARTY=$TRUST_ROOT/Outils/doxygen
-      [ "$THIRD_PARTY" = "TCL_TK" ] && REP_THIRD_PARTY=$TRUST_ROOT/Outils/tcl_tk
       [ "$THIRD_PARTY" = "PLOT2D" ] && REP_THIRD_PARTY=$TRUST_ROOT/Outils/IHM
       if [ ! -d $REP_THIRD_PARTY ]
       then

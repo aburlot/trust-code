@@ -912,7 +912,7 @@ echo " "
          git remote update
          git checkout .
          git checkout next
-         git pull 1>tmp.log 2>&1
+         git reset --hard origin/next 1>tmp.log 2>&1
          if [ $? != 0 ]
          then
             cat tmp.log | mail_ -s\"[lance_test_nuit] $Composant : git pull next KO \" $TRUST_MAIL
@@ -925,12 +925,12 @@ echo " "
          git remote update
          git checkout .
          git checkout advance
-         git pull 1>tmp.log 2>&1
+         git reset --hard origin/advance 1>tmp.log 2>&1
          if [ $? != 0 ]
          then
-            cat tmp.log | mail_ -s\"[lance_test_nuit_maintenance] $Composant : git pull master KO \" $TRUST_MAIL
+            cat tmp.log | mail_ -s\"[lance_test_nuit_maintenance] $Composant : git pull advance KO \" $TRUST_MAIL
          else
-            [ "`grep 'Already up to date' tmp.log`" = "" ] && cat tmp.log | mail_ -s\"[lance_test_nuit_maintenance] $Composant : git pull master OK \" $TRUST_MAIL
+            [ "`grep 'Already up to date' tmp.log`" = "" ] && cat tmp.log | mail_ -s\"[lance_test_nuit_maintenance] $Composant : git pull advance OK \" $TRUST_MAIL
          fi
          cat tmp.log
          rm tmp.log 1>/dev/null 2>&1

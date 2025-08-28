@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+28/08/25 (Tools) Minor change : Configure option -disable-tcl_tk has been removed since Tcl/Tk librairy is not needed anymore
 26/08/25 (Tools) New feature  : For validation forms, -no_visit option added to Run_fiche. If specified, VisIt plots are skipped when running notebooks/generating PDF
 26/08/25 (TRUST) Fix          : Turbulent viscosity computed in Mixing Length (l_melange) model in Multiphase was not correctly computed.
 31/07/25 (TRUST) Fix          : Shear rate was not correctly computed in Multiphase VDF calculation with at least two phases

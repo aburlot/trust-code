@@ -37,10 +37,7 @@ make_()
       echo "Error while installing $package_name. " >> $TRUST_ROOT/NON_INSTALLED
       echo "See $package_log" >> $TRUST_ROOT/NON_INSTALLED
       echo "You need $1 installed correctly." >> $TRUST_ROOT/NON_INSTALLED
-      if [ "$package_name" = "Tcl/Tk" ] ; then
-         echo "=> You may have to first install libX11-dev" >> $TRUST_ROOT/NON_INSTALLED
-         echo "=> You can run ./configure by adding: -disable-tcl_tk"
-      elif [ "$package_name" = "mpich" ] && [ "$TRUST_DISABLE_CCACHE" != 1 ] ; then
+      if [ "$package_name" = "mpich" ] && [ "$TRUST_DISABLE_CCACHE" != 1 ] ; then
          #echo "=> Adding the option -disable-ccache in the configure step may fix this problem." >> $TRUST_ROOT/NON_INSTALLED
          echo "=> Try using another MPI package, for instance -force_latest_mpich in the configure step, to fix this problem." >> $TRUST_ROOT/NON_INSTALLED
       fi
@@ -1162,17 +1159,6 @@ fi
 m="# Path to dtterm command";e="`cherche_file Dtterm $Dtterm`";ecrit $m"|"$e"|"$env;eval $e
 m="# Path to xterm command";e="`cherche_file Xterm xterm rxvt konsole`";ecrit $m"|"$e"|"$env;eval $e
 [ ${#Dtterm} = 0 ] || [ ${#Xterm} = 0 ] && echo "Warning. Some TRUST tools (e.g. gdb on a parallel case) will not work cause Dtterm or Xterm not found. "
-
-#################################################################
-# Si on ne trouve pas la librairie graphique Tcl/Tk on l'installe
-#################################################################
-#m="# Path to Tcl/Tk";e="`cherche_file TRUST_WISH /usr/bin/wish /bin/wish wish`";eval $e
-#if [ "$TRUST_WISH" = "" ] && [ "$TRUST_DISABLE_TCL_TK" != "1" ]
-#then
-#   make_ $TRUST_ROOT/Outils/tcl_tk Tcl/Tk $TRUST_ROOT/exec/tcl_tk.log
-#   e="`cherche_file TRUST_WISH $TRUST_ROOT/exec/tcl_tk/bin/wish`";
-#fi
-#ecrit $m"|"$e"|"$env
 
 #################################################################
 # Recherche de GNU make>=3.81 (3.80 ne marche pas avec Metis 5.0)
