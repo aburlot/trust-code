@@ -5,7 +5,7 @@ then
    # Kokkos pour SIMD ou GPU (C++17):
    if [ "$TRUST_CUDA_CC" = 100 ] || [ "$TRUST_CUDA_CC" = 120 ] # Blackwell support
    then
-      archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.7.00.tar.gz && Kokkos_ENABLE_IMPL_MDSPAN=OFF # Else TRUST don't build. See https://github.com/kokkos/kokkos/pull/7427
+      archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.7.00.tar.gz
    else
       #archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.6.01.tar.gz
       archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.5.00.tar.gz

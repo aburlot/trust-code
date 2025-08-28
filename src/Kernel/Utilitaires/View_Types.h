@@ -121,22 +121,46 @@ using CDoubleTabHostView4 = ConstHostView<double, 4>;
 template <typename ViewType, typename _TYPE_, int _SHAPE_, typename _SIZE_>
 inline ViewType createView(_TYPE_* ptr, const std::array<_SIZE_, 4>& dims)
 {
-  return ViewType(
-           (_TYPE_*)(ptr),dims[0],
-           1 < _SHAPE_ ? dims[1] : KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-           2 < _SHAPE_ ? dims[2] : KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-           3 < _SHAPE_ ? dims[3] : KOKKOS_IMPL_CTOR_DEFAULT_ARG
-         );
+  if constexpr (_SHAPE_ == 1)
+    {
+      return ViewType((_TYPE_*)(ptr), dims[0]);
+    }
+  else if constexpr (_SHAPE_ == 2)
+    {
+      return ViewType((_TYPE_*)(ptr), dims[0], dims[1]);
+    }
+  else if constexpr (_SHAPE_ == 3)
+    {
+      return ViewType((_TYPE_*)(ptr), dims[0], dims[1], dims[2]);
+    }
+  else if constexpr (_SHAPE_ == 4)
+    {
+      return ViewType((_TYPE_ *) (ptr), dims[0], dims[1], dims[2], dims[3]);
+    }
+  else
+    static_assert(_SHAPE_ <= 4, "Invalid _SHAPE_ !");
 }
 template <typename ViewType, typename _TYPE_, int _SHAPE_, typename _SIZE_>
 inline ViewType createView(const _TYPE_* ptr, const std::array<_SIZE_, 4>& dims)
 {
-  return ViewType(
-           (_TYPE_*)(ptr),dims[0],
-           1 < _SHAPE_ ? dims[1] : KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-           2 < _SHAPE_ ? dims[2] : KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-           3 < _SHAPE_ ? dims[3] : KOKKOS_IMPL_CTOR_DEFAULT_ARG
-         );
+  if constexpr (_SHAPE_ == 1)
+    {
+      return ViewType((_TYPE_*)(ptr), dims[0]);
+    }
+  else if constexpr (_SHAPE_ == 2)
+    {
+      return ViewType((_TYPE_*)(ptr), dims[0], dims[1]);
+    }
+  else if constexpr (_SHAPE_ == 3)
+    {
+      return ViewType((_TYPE_*)(ptr), dims[0], dims[1], dims[2]);
+    }
+  else if constexpr (_SHAPE_ == 4)
+    {
+      return ViewType((_TYPE_ *) (ptr), dims[0], dims[1], dims[2], dims[3]);
+    }
+  else
+    static_assert(_SHAPE_ <= 4, "Invalid _SHAPE_ !");
 }
 extern void kokkos_self_test();
 
