@@ -536,8 +536,8 @@ DoubleTab& Op_Conv_VEF_Face::ajouter(const DoubleTab& transporte,
                 // calcul de la vitesse aux sommets des tetraedres
                 // On va utliser les fonctions de forme implementees dans la classe Champs_P1_impl ou Champs_Q1_impl
                 double vsom[12];
-                for (int i = 0; i < nsom; i++)
-                  for (int j = 0; j < dim; j++)
+                for (int i = 0; i < 4; i++)
+                  for (int j = 0; j < 3; j++)
                     vsom[i * 3 + j] = vs[j] - dim * vitesse_face_absolue_v(face[i], j) * porosite_face_v(face[i]);
 
                 // Determination du type de CL selon le rang
