@@ -2,7 +2,7 @@
 check()
 {
    [ "$2" = -nsys ] && exit
-   grep "AMG solver" $1.out_err 2>/dev/null
+   #grep "AMG solver" $1.out_err 2>/dev/null
    if [ ! -f $1.TU ] || [ "`grep 'Arret des processes' $1.out_err`" = "" ]
    then
       echo "==================================================="
@@ -17,7 +17,7 @@ check()
       mv -f $TU $TU_REF && [ "$TRUST_SCM" = 1 ] && git add $TU_REF
       echo "Creating new reference $TU_REF"
       exit
-   fi   
+   fi 
    ref=`awk '/Secondes/ && /pas de temps/ {print $NF}' $TU_REF`
    new=`awk '/Secondes/ && /pas de temps/ {print $NF}' $TU`
    echo $ref $new | awk '// {if (2*($2-$1)/($1+$2)>0.05) {exit 1}}' # On verifie qu'on ne depasse pas +5% de la performance
@@ -41,6 +41,7 @@ check()
          [ $its_ref != $its_new ] && echo "Solver convergence is different ($its_ref != $its_new) ! Possible regression..." && exit -1
       fi
    fi
+   [ "$UPDATE_REFERENCE" = 1 ] && cp -f $TU $TU_REF && echo "Forced update of $TU_REF"
 }
 run()
 {
