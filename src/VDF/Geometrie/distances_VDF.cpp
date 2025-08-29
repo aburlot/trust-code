@@ -134,7 +134,7 @@ double norm_3D_vit(const DoubleVect& vit, int elem, int iori, const Domaine_VDF&
   moy_3D_vit(vit, elem, iori, domaine, val1, val2);
   if (iori == 0)
     {
-      v1 = val1 - u_paroi;
+      v1 = val1 - v_paroi; // EB 28/08/25 : for a wall of normal x, val1 is the velocity in y direction and val2 in z direction
       v2 = val2 - w_paroi;
     }
   else if (iori == 1)
