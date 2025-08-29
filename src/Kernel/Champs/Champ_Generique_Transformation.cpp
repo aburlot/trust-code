@@ -679,7 +679,7 @@ const Champ_base& Champ_Generique_Transformation::get_champ(OWN_PTR(Champ_base)&
           CDoubleTabView face_normales = zvf.face_normales().view_ro();
           CDoubleArrView surface = zvf.face_surfaces().view_ro();
           CDoubleTabView pos = positions.view_ro();
-          CIntArrView nb_comp_sources = static_cast<const ArrOfInt&>(nb_comps).view_ro();
+          //CIntArrView nb_comp_sources = static_cast<const ArrOfInt&>(nb_comps).view_ro();
           DoubleArrView valeurs = static_cast<ArrOfDouble&>(valeurs_espace).view_wo();
           Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_pos, KOKKOS_LAMBDA(const int i)
           {

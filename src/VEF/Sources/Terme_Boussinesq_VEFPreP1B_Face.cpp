@@ -183,8 +183,8 @@ DoubleTab& Terme_Boussinesq_VEFPreP1B_Face::ajouter(DoubleTab& tab_resu) const
 
   const Domaine_Cl_VEF& domaine_Cl_VEF = le_dom_Cl_VEF.valeur();
 
-  CIntArrView rang_elem_non_std = domaine_VEF.rang_elem_non_std().view_ro();
-  CIntArrView type_elem_Cl = domaine_Cl_VEF.type_elem_Cl().view_ro();
+  //CIntArrView rang_elem_non_std = domaine_VEF.rang_elem_non_std().view_ro();
+  //CIntArrView type_elem_Cl = domaine_Cl_VEF.type_elem_Cl().view_ro();
   CDoubleArrView g = static_cast<const DoubleVect&>(gravite().valeurs()).view_ro();
   CDoubleArrView porosite_surf = equation().milieu().porosite_face().view_ro();
   CIntTabView elem_faces = domaine_VEF.elem_faces().view_ro();
