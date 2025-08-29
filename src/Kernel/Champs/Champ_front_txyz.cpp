@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2022, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -103,17 +103,16 @@ void Champ_front_txyz::mettre_a_jour(double temps)
   const Domaine_VF& zvf = ref_cast(Domaine_VF, fr_dis.domaine_dis());
   int nb_faces=ref_cast(Front_VF, fr_dis).nb_faces();
   int premiere_face = ref_cast(Front_VF, fr_dis).num_premiere_face();
-  int i,k;
   DoubleTab& tab=valeurs_au_temps(temps);
-  for( i=0; i<nb_faces; i++)
+  for(int i=0; i<nb_faces; i++)
     {
-      for( k=0; k<dim; k++)
+      for(int k=0; k<dim; k++)
         {
-          fxyz[k].setVar("t",temps);
-          fxyz[k].setVar("x",zvf.xv(premiere_face + i, 0));
-          fxyz[k].setVar("y",zvf.xv(premiere_face + i, 1));
+          fxyz[k].setVar(0,temps);
+          fxyz[k].setVar(1,zvf.xv(premiere_face + i, 0));
+          fxyz[k].setVar(2,zvf.xv(premiere_face + i, 1));
           if (dimension >= 3)
-            fxyz[k].setVar("z",zvf.xv(premiere_face + i, 2));
+            fxyz[k].setVar(3,zvf.xv(premiere_face + i, 2));
           tab(i,k)=fxyz[k].eval();
         }
     }
@@ -123,9 +122,9 @@ void Champ_front_txyz::mettre_a_jour(double temps)
 double Champ_front_txyz::valeur_au_temps_et_au_point(double temps,int som,double x,double y, double z, int k) const
 {
   Parser_U& fxyzk=fxyz[k];
-  fxyzk.setVar("t",temps);
-  fxyzk.setVar("x",x);
-  fxyzk.setVar("y",y);
-  fxyzk.setVar("z",z);
+  fxyzk.setVar(0,temps);
+  fxyzk.setVar(1,x);
+  fxyzk.setVar(2,y);
+  fxyzk.setVar(3,z);
   return fxyzk.eval();
 }
