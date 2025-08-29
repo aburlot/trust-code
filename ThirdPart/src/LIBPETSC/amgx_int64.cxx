@@ -296,7 +296,7 @@ static PetscErrorCode PCSetUp_AMGX(PC pc)
     // Create the distribution and upload the matrix data
     AMGX_distribution_handle dist;
     PetscCallAmgX(AMGX_distribution_create(&dist, amgx->cfg));
-    //PetscCallAmgX(AMGX_distribution_set_32bit_colindices(dist, true));
+    PetscCallAmgX(AMGX_distribution_set_32bit_colindices(dist, false));
     PetscCallAmgX(AMGX_distribution_set_partition_data(dist, AMGX_DIST_PARTITION_OFFSETS, partitionOffsets.data()));
     PetscCallAmgX(AMGX_matrix_upload_distributed(amgx->A, amgx->nGlobalRows, (int)amgx->nLocalRows, (int)amgx->nnz, amgx->bSize, amgx->bSize, &rowOffsets32[0], colIndices, amgx->values, NULL, dist));
     PetscCallAmgX(AMGX_solver_setup(amgx->solver, amgx->A));
