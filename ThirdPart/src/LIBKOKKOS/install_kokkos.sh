@@ -3,13 +3,7 @@
 if [ "$TRUST_USE_GPU" = 1 ] || [ "$TRUST_USE_KOKKOS_SIMD" = 1 ]
 then
    # Kokkos pour SIMD ou GPU (C++17):
-   if [ "$TRUST_CUDA_CC" = 100 ] || [ "$TRUST_CUDA_CC" = 120 ] # Blackwell support
-   then
-      archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.7.00.tar.gz
-   else
-      #archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.6.01.tar.gz
-      archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.5.00.tar.gz
-   fi   
+   archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-4.7.00.tar.gz
 else
    # Kokkos Serial (C++14)
    archive=$TRUST_ROOT/externalpackages/kokkos/kokkos-3.7.02.tgz
