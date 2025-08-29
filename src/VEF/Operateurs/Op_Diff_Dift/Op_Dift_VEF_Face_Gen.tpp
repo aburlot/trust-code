@@ -168,21 +168,36 @@ Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_bord_gen(const DoubleTab& tab_inconnue,
     }
 }
 
-template <typename DERIVED_T> template<Type_Champ _TYPE_, bool _IS_RANS_>
-std::enable_if_t<_TYPE_ == Type_Champ::VECTORIEL, void>
-Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_interne_gen(const DoubleTab& tab_inconnue, DoubleTab& tab_resu, DoubleTab& flux_bords, const DoubleTab& tab_nu, const DoubleTab& tab_nu_turb) const
-{
-  const Domaine_VEF& domaine_VEF = static_cast<const DERIVED_T*>(this)->domaine_vef();
-  const int nb_faces = domaine_VEF.nb_faces(), nbr_comp = tab_resu.line_size();
 
-  // Boucle sur les faces internes
-  const int nint = domaine_VEF.premiere_face_int();
-  CIntTabView face_voisins = domaine_VEF.face_voisins().view_ro();
-  CDoubleTabView face_normale = domaine_VEF.face_normales().view_ro();
-  CDoubleArrView nu = static_cast<const ArrOfDouble&>(tab_nu).view_ro();
-  CDoubleTabView3 grad = grad_.view_ro<3>();
-  CDoubleTabView3 Re = Re_.view_ro<3>();
-  DoubleTabView resu = tab_resu.view_rw();
+struct AjouterInterneData
+{
+  // execution window
+  int nint;
+  int nb_faces;
+
+  // inputs
+  CIntTabView        face_voisins;
+  CDoubleTabView     face_normale;
+  CDoubleArrView     nu;
+  CDoubleTabView3    Re;
+  CDoubleTabView3    grad;
+
+  // output
+  DoubleTabView      resu;
+};
+
+inline void apply_ajouter_interne_gen_kernel_notemplate(const AjouterInterneData& data, const int nbr_comp)
+{
+  // Unpack on host side BEFORE passing to kernel
+  const int nint         = data.nint;
+  const int nb_faces     = data.nb_faces;
+  auto face_voisins      = data.face_voisins;
+  auto face_normale      = data.face_normale;
+  auto nu                = data.nu;
+  auto Re                = data.Re;
+  auto grad              = data.grad;
+  auto resu              = data.resu;
+
   // PL: collapsing loops even with an atomic is x2-3 faster than no collapsing (seen on DomainFlowLES_BENCH)
   bool collapse_loops = true;
   if (collapse_loops)
@@ -216,6 +231,131 @@ Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_interne_gen(const DoubleTab& tab_inconn
     }
   end_gpu_timer(__KERNEL_NAME__);
 }
+
+template<int nbr_comp>
+void apply_ajouter_interne_gen_kernel(const AjouterInterneData& data)
+{
+  // Unpack on host side BEFORE passing to kernel
+  const int nint         = data.nint;
+  const int nb_faces     = data.nb_faces;
+  auto face_voisins      = data.face_voisins;
+  auto face_normale      = data.face_normale;
+  auto nu                = data.nu;
+  auto Re                = data.Re;
+  auto grad              = data.grad;
+  auto resu              = data.resu;
+
+  // Deduce policy
+  Kokkos::RangePolicy<> policy(nint, nb_faces);
+
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), policy,
+                       KOKKOS_LAMBDA(const int num_face)
+  {
+    double resu_loc[2][nbr_comp];
+    double face_normale_loc[nbr_comp];
+    int    face_voisins_loc[2];
+
+    // Load per-face data from global memory once
+    for (int j = 0; j < nbr_comp; ++j)
+      face_normale_loc[j] = face_normale(num_face, j);
+
+    for (int side = 0; side < 2; ++side)
+      {
+        face_voisins_loc[side] = face_voisins(num_face, side);
+        for (int i = 0; i < nbr_comp; ++i) resu_loc[side][i] = 0.0;
+      }
+
+    // Compute local contributions
+    for (int side = 0; side < 2; ++side)
+      {
+        const int elem = face_voisins_loc[side];
+        const int ori  = 1 - 2 * side;
+        const double nu_elem = nu(elem);
+
+        for (int i = 0; i < nbr_comp; ++i)
+          {
+            double sum = 0.0;
+            for (int j = 0; j < nbr_comp; ++j)
+              {
+                sum -= ori * face_normale_loc[j]
+                       * (nu_elem * grad(elem, i, j) + Re(elem, i, j));
+              }
+            resu_loc[side][i] += sum;
+          }
+      }
+
+    // Reduce two sides and write back
+    for (int i = 0; i < nbr_comp; ++i)
+      {
+        double sum = 0.0;
+        for (int side = 0; side < 2; ++side) sum += resu_loc[side][i];
+        resu(num_face, i) += sum;
+      }
+  });
+
+  end_gpu_timer(__KERNEL_NAME__);
+}
+
+// Explicit instantiations
+template void apply_ajouter_interne_gen_kernel<1>(const AjouterInterneData&);
+template void apply_ajouter_interne_gen_kernel<2>(const AjouterInterneData&);
+template void apply_ajouter_interne_gen_kernel<3>(const AjouterInterneData&);
+template void apply_ajouter_interne_gen_kernel<4>(const AjouterInterneData&);
+
+template <typename DERIVED_T> template<Type_Champ _TYPE_, bool _IS_RANS_>
+std::enable_if_t<_TYPE_ == Type_Champ::VECTORIEL, void>
+Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_interne_gen(const DoubleTab& tab_inconnue,
+                                                     DoubleTab& tab_resu,
+                                                     DoubleTab& flux_bords,
+                                                     const DoubleTab& tab_nu,
+                                                     const DoubleTab& tab_nu_turb) const
+{
+  const Domaine_VEF& domaine_VEF = static_cast<const DERIVED_T*>(this)->domaine_vef();
+  const int nb_faces = domaine_VEF.nb_faces();
+  const int nint     = domaine_VEF.premiere_face_int();
+  const int nbr_comp = tab_resu.line_size();
+
+  // Build views once
+  CIntTabView     face_voisins = domaine_VEF.face_voisins().view_ro();
+  CDoubleTabView  face_normale = domaine_VEF.face_normales().view_ro();
+  CDoubleArrView  nu           = static_cast<const ArrOfDouble&>(tab_nu).view_ro();
+  CDoubleTabView3 grad         = grad_.view_ro<3>();
+  CDoubleTabView3 Re           = Re_.view_ro<3>();
+  DoubleTabView   resu         = tab_resu.view_rw();
+  AjouterInterneData data {nint, nb_faces, face_voisins, face_normale, nu, Re, grad, resu};
+
+  //You might not want to use the templated version for HUGE values of nbr_comp
+  const bool use_templated_version=true;
+
+  // Dispatch on compile-time component count;
+  if (use_templated_version)
+    {
+      switch (nbr_comp)
+        {
+        case 1:
+          apply_ajouter_interne_gen_kernel<1>(data);
+          break;
+        case 2:
+          apply_ajouter_interne_gen_kernel<2>(data);
+          break;
+        case 3:
+          apply_ajouter_interne_gen_kernel<3>(data);
+          break;
+        case 4:
+          apply_ajouter_interne_gen_kernel<4>(data);
+          break;
+        default:
+          Cerr << "nbr_comp too large (>4), no templated verison of Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_interne_gen implemented" << finl;
+          Cerr<<  "Defaulting to the non templated version.";
+          apply_ajouter_interne_gen_kernel_notemplate(data, nbr_comp);
+        }
+    }
+  else
+    {
+      apply_ajouter_interne_gen_kernel_notemplate(data, nbr_comp);
+    }
+}
+
 
 template <typename DERIVED_T> template<Type_Champ _TYPE_, bool _IS_RANS_>
 std::enable_if_t<_TYPE_ == Type_Champ::SCALAIRE, void>
