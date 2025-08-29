@@ -131,7 +131,16 @@ int Champ_Fonc_base::sauvegarder(Sortie& fich) const
       const Nom& name = get_pdi_name();
       TRUST_2_PDI pdi_interface;
       pdi_interface.share_TRUSTTab_dimensions(valeurs(), name, 1 /*write mode*/);
-      pdi_interface.TRUST_start_sharing(name.getString(), valeurs().addr());
+
+      // Sharing the unknown field with PDI
+      if( valeurs().dimension_tot(0) )
+        pdi_interface.TRUST_start_sharing(name.getString(), valeurs().addr());
+      else
+        {
+          // if the dimension is null in a direction - might happen in parallel - sharing an empty array
+          ArrOfDouble garbage( valeurs().nb_dim() );
+          pdi_interface.TRUST_start_sharing(name.getString(), garbage.addr());
+        }
     }
   else
     {
