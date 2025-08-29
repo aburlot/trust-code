@@ -623,6 +623,7 @@ NOM=`basename $ici` && [ ${#1} != 0 ] && NOM=$1 && NOM=${NOM%.data} && shift
 # si $1 non vide et pas de tiret au debut
 #export NB_PROCS=1 && [ ${#1} != 0 ] && [ ${1#-} = $1 ] && NB_PROCS=$1 && USE_MPIRUN=1 && shift
 export NB_PROCS=1
+[ $1 -eq 0 ] && echo "You cannot run a TRUST simulation on 0 procs!!!" && exit -1
 [ $1 -eq 0 ] 2>/dev/null
 code_retour=$?
 # verifie que $1 est une valeur numerique

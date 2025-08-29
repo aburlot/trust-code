@@ -1538,28 +1538,29 @@ do
       fi
       # On fait l'executable share libs
       # CC: 16/02/2015 => Pourquoi fait-on ca ici et pas lors de la compilation plus haut ?
+      # ND: Edit du 29/08/2025 => on retire cette partie comme vu avec PL
       #(cd $TRUST_ROOT/src/MAIN;make)
-      (
-      OPT=""
-      [ $exec = "$exec_debug" ] && OPT=_
-      [ $exec = "$exec_semi_opt" ] && OPT=_semi_opt_
-      OPT=${OPT%_} # <=> OPT=${OPT::-1}
-      if [ $type = Statique ]
-      then
-         echo "Call to make with COMPIL_DYN=OFF on $TRUST_ROOT/MonoDir_mpi$OPT/src"
-         cd $TRUST_ROOT/MonoDir_mpi$OPT/src
-         cmake . -DCOMPIL_DYN=OFF
-      elif [ $type = Dynamique ]
-      then
-         echo "Call to make with COMPIL_DYN=ON  on $TRUST_ROOT/MonoDir_mpi$OPT/src"
-         cd $TRUST_ROOT/MonoDir_mpi$OPT/src
-         cmake . -DCOMPIL_DYN=ON
-      fi
-      tmp=`mktemp_`
-      make 1>>$tmp 2>&1
-      tail -n2 $tmp
-      rm -f $tmp
-      )
+      #(
+      #OPT=""
+      #[ $exec = "$exec_debug" ] && OPT=_
+      #[ $exec = "$exec_semi_opt" ] && OPT=_semi_opt_
+      #OPT=${OPT%_} # <=> OPT=${OPT::-1}
+      #if [ $type = Statique ]
+      #then
+      #   echo "Call to make with COMPIL_DYN=OFF on $TRUST_ROOT/MonoDir_mpi$OPT/src"
+      #   cd $TRUST_ROOT/MonoDir_mpi$OPT/src
+      #   cmake . -DCOMPIL_DYN=OFF
+      #elif [ $type = Dynamique ]
+      #then
+      #   echo "Call to make with COMPIL_DYN=ON  on $TRUST_ROOT/MonoDir_mpi$OPT/src"
+      #   cd $TRUST_ROOT/MonoDir_mpi$OPT/src
+      #   cmake . -DCOMPIL_DYN=ON
+      #fi
+      #tmp=`mktemp_`
+      #make 1>>$tmp 2>&1
+      #tail -n2 $tmp
+      #rm -f $tmp
+      #)
    fi
    # Suite au test `$exec 2>&1 | grep TRUST`
    rm -f convert_jdd hierarchie.dump TRUST.log TRUST.stop

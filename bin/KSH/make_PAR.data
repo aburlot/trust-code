@@ -83,16 +83,6 @@ trust $DEC_NOM 1>$DEC_NOM.out 2>$DEC_NOM.err
 err=$?
 OK_make_par $err
 [ $err != 0 ] && exit -1
-if [ "`grep -E 'La syntaxe du decoupeur a change apres la v1.5.2|The syntax of the splitter has changed after the v1.5.2.' $DEC_NOM.err`" != "" ]
-then
-   echo "Warning: Old syntax (<1.5.2) found for partitioning... Have a look to the $DEC_NOM.err file."
-   if [ $TRUST_LOGIN = triou ]
-   then
-      echo "You are triou : please update the data file syntax for partitioning to give the good example."
-      echo ".Zones files are deleted."
-      rm -f *Zones
-   fi
-fi
 
 # recherche du nombre de NB_CPUSesseurs
 NB_CPUS=""
