@@ -1,7 +1,7 @@
-XX/XX/25 (TRUST) RAM          : Important reduction (-40%) of memory footprint for VEF during a typical calculation with (AMG) multigrid solver
-XX/XX/25 (TRUST) GPU          : Blackwell architecture supported (B100, B200, RTX 50xx). Need Nvidia HPC SDK>=25.3 + Kokkos 4.7
+XX/XX/25 (TRUST) Memory       : Reduced footprint again (-40%) for VEF discretization (now ~2.5KB/tetra) during a typical calculation with algebric multigrid solver
+XX/XX/25 (TRUST) GPU          : Blackwell architecture partially supported (B200, B100, RTX 50xx) cause needs Nvidia HPC SDK>=25.3 and Cuda 12.8. Use ./configure -cuda=cc100
 XX/XX/25 (TRUST) GPU          : Nvidia H200 and Grace Hopper GH100 supported (see env_src/HOST_calypso-grace.sh example)
-XX/XX/25 (TRUST) Linux        : Fedora 42 and GNU 15.x compiler supported
+XX/XX/25 (TRUST) Linux        : Fedora 42 and GNU 15.x compilers supported
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
@@ -9,7 +9,7 @@ Release notes version 1.9.7_beta : Enhancements, modifications and corrected bug
 26/08/25 (Tools) New feature  : For validation forms, -no_visit option added to Run_fiche. If specified, VisIt plots are skipped when running notebooks/generating PDF
 26/08/25 (TRUST) Fix          : Turbulent viscosity computed in Mixing Length (l_melange) model in Multiphase was not correctly computed.
 31/07/25 (TRUST) Fix          : Shear rate was not correctly computed in Multiphase VDF calculation with at least two phases
-28/07/25 (TRUST) Portability  : cmake 3.26.0 or newer is necessary to install petsc 3.23.2 and so TRUST.
+28/07/25 (TRUST) Portability  : cmake 3.26.0 or newer is necessary to install PETSc 3.23.2 and so TRUST.
 28/07/25 (TRUST) Library      : Update PETSc 3.22.4 to 3.23.2 for GNU 15.x support, Cuda 12.8 support, GPU fixes
 28/07/25 (TRUST) Fix          : Extraire_plan on large mesh could introduce severe slowdown every time-step
 28/07/25 (TRUST) Option       : Expert_only option depecated for the VerifierCoin keyword
