@@ -1205,13 +1205,14 @@ then
          echo "export MPICH_GPU_SUPPORT_ENABLED=1" >> $GPU_DIRECT
          # More variables for adastra to fiabilize GPU communications tips from adastra support:
          # Move into HOST files ?
-	 [ $HOST = adastra ] && echo "# Some flags to enable if issues MI250/MI300:
+         [ $HOST = adastra ] && echo "# Some flags to enable if issues MI250/MI300:
 export MPICH_ASYNC_PROGRESS=1
 export FI_CXI_RX_MATCH_MODE=software
 export FI_CXI_REQ_BUF_SIZE=12582912
 export FI_CXI_REQ_BUF_MIN_POSTED=8
 export FI_CXI_DEFAULT_CQ_SIZE=393216" >> $GPU_DIRECT
       fi
+      PETSC_OPTIONS=$PETSC_OPTIONS" -use_gpu_aware_mpi 1"
    elif [ "$TRUST_USE_GPU" = 1 ]
    then
       PETSC_OPTIONS=$PETSC_OPTIONS" -use_gpu_aware_mpi 0"
@@ -1330,7 +1331,12 @@ export FI_CXI_DEFAULT_CQ_SIZE=393216" >> $GPU_DIRECT
 else
    # Pas de gestionnaire, example PC:
    [ "$cpus_per_task" != "" ]         && [ "$HOST" != "jean-zay" ] && echo "Number of core per task option not supported yet on $HOST. Contact TRUST support" && exit -1
-   if [ "$TRUST_USE_GPU" = 1 ]
+   if [ "$TRUST_MPI_GPU_AWARE" = 1 ] && [ "$TRUST_USE_MPI_GPU_AWARE" != 0 ] # On active par defaut si MPI est GPU Aware
+   then
+      echo "Enabling GPU support for MPI"
+      export TRUST_USE_MPI_GPU_AWARE=1
+      PETSC_OPTIONS=$PETSC_OPTIONS" -use_gpu_aware_mpi 1"
+   elif [ "$TRUST_USE_GPU" = 1 ]
    then
       PETSC_OPTIONS=$PETSC_OPTIONS" -use_gpu_aware_mpi 0"
    fi
@@ -1339,7 +1345,7 @@ else
       run="$profiler $gdb $exec $NOM $PETSC_OPTIONS $quiet"
    else
       mpirun="$TRUST_ROOT/bin/mpirun.sh `[ "$gdb" != "" ] && echo -gdb` -np $NB_PROCS"
-      [ $USE_MPIRUN = 0 ] && [ "$gdb" = "" ] && mpirun=""
+      [ "$USE_MPIRUN" = 0 ] && [ "$gdb" = "" ] && mpirun=""
       run="$profiler $mpirun $exec $NOM $NB_PROCS $PETSC_OPTIONS $quiet"
    fi
    if [ "$create_sub_file" ]
