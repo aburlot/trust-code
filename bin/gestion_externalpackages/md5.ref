@@ -279,7 +279,6 @@ da26c4b43d53a9a6096775245cee847f  petsc/MUMPS_5.5.1.tar.gz
 7d153cfd2b7d8caa1e054beeaa511f64  petsc/MUMPS_5.7.2.tar.gz
 d4c0862c48e6e9742807e6e50bdf5deb  petsc/STRUMPACK_8.0.0.tar.gz
 e659373ed5e9b961d2fcb6d67d250783  petsc/SuiteSparse-7.7.0.tar.gz
-321557481d18242a771096999a253ad8  petsc/hypre-2.32.0.tar.gz
 d4990384b7b1d8b0357fc34d91530d49  petsc/hypre-2.33.0.tar.gz
 1d33f3c66f42ef38076cf19e8f4a1714  petsc/kokkos-kernels-4.6.01.tar.gz
 af200b5cee080a516af4198c06882a7e  petsc/magma-2.7.1.tar.gz

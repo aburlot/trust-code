@@ -63,10 +63,7 @@ cd ${PETSC_ROOT}/..
 mkdir -p build
 cd build
 
-minimal_mumps=0 # && [ $TRUST_ARCH = cygwin ] && minimal_mumps=1
 [ $TRUST_ARCH = cygwin ] && export TRUST_NB_PROCS=1  # mumps KO //
-scotch=1
-[ $minimal_mumps = 1 ] && scotch=0
 
 if [ "$1" = check ]
 then
@@ -160,7 +157,7 @@ then
 
       if [ "$TRUST_DISABLE_MPI" = 0 ]
       then
-	  if [ $scotch -eq 1 ] && [ "`grep 'define PTSCOTCH_' $ptscotch_inc 2>/dev/null`" = "" ]
+	  if [ "`grep 'define PTSCOTCH_' $ptscotch_inc 2>/dev/null`" = "" ]
 	  then
 	     echo "$ptscotch_inc file changed..."
 	     echo "#include <ptscotch.h>
@@ -531,23 +528,17 @@ fi
 # Add other package if MPI is used:
 if [ "$TRUST_DISABLE_MPI" = 0 ]
 then
-   [ "$minimal_mumps" = 0 ] && [ "$PETSC_HAVE_CUDA" = 1 ] && [ "$TRUST_DISABLE_SUPERLU_DIST" != 1 ] && add_package superlu_dist
+   [ "$PETSC_HAVE_CUDA" = 1 ] && [ "$TRUST_DISABLE_SUPERLU_DIST" != 1 ] && add_package superlu_dist
 
    # New (SuiteSparse/Cholmod/UmfPack):
-   if [ "$minimal_mumps" = 0 ]
+   if [ "$TRUST_USE_CUDA" = 1 ] && [ "$TRUST_USE_CHOLMOD_GPU" = 1 ]
    then
-      if [ "$TRUST_USE_CUDA" = 1 ] && [ "$TRUST_USE_CHOLMOD_GPU" = 1 ]
-      then
-         # Cuda support:
-         add_package SuiteSparse 7.10.1
-         with_packages=$with_packages" --with-suitesparse-cuda=1 --with-openmp=1"
-      else
-         add_package SuiteSparse 7.7.0
-      fi	  
+      # Cuda support:
+      add_package SuiteSparse 7.10.1
+      with_packages=$with_packages" --with-suitesparse-cuda=1 --with-openmp=1"
+   else
+      add_package SuiteSparse 7.7.0
    fi
-   # New (Pastix) pb sous cygwin
-   # Test (27/06/15 : probleme pour portabilite sur Ubuntu16 entre autre)
-   #[ $TRUST_ARCH != cygwin ] &&  [ $minimal_mumps = 0 ] && [ $scotch -eq 1 ] && add_package pastix
 
    # PARDISO (Uniquement si support d'OpenMP par TRUST)
    if [ "$PETSC_HAVE_OPENMP" = 1 ] && [ -f $MKLROOT/include/mkl_pardiso.h ]
@@ -562,22 +553,21 @@ then
    ##########
    # SCOTCH #
    ##########
-   if [ $scotch -eq 1 ]
-   then
-      # On ajoute Scotch sur certaines machines
-      add_package ptscotch
+   # On ajoute Scotch sur certaines machines
+   add_package ptscotch
 
-      # flex et bison necessaires pour scotch desormais installes dans conda.
-      if [ "`flex --version 1>/dev/null 2>&1;echo $?`" != 0 ] || [ "`bison --version 1>/dev/null 2>&1;echo $?`" != 0 ]
-      then
-	 echo "Fatal error: flex and bison not found even though installed in conda!"
-	 echo "Contact TRUST support team at trust@cea.fr"
-	 exit -1
-      fi
+   # flex et bison necessaires pour scotch desormais installes dans conda.
+   if [ "`flex --version 1>/dev/null 2>&1;echo $?`" != 0 ] || [ "`bison --version 1>/dev/null 2>&1;echo $?`" != 0 ]
+   then
+   	  echo "Fatal error: flex and bison not found even though installed in conda!"
+      echo "Contact TRUST support team at trust@cea.fr"
+      exit -1
    fi
+   
    #######
    # Hypre
    #######
+   add_package hypre
    if [ "$TRUST_USE_GPU" = 1 ]
    then
        # Ne surtout pas activer UVM: lent sur AMD et CUDA :
@@ -592,10 +582,7 @@ then
 
       [ "$TRUST_USE_CUDA" = 1 ] && GPU_ARCH=$TRUST_CUDA_CC
       [ "$TRUST_USE_ROCM" = 1 ] && GPU_ARCH=$ROCM_ARCH
-      add_package hypre && with_packages=$with_packages" --with-hypre-gpu-arch=$GPU_ARCH"
-   elif [ $minimal_mumps = 0 ]
-   then
-      add_package hypre 2.33.0
+      with_packages=$with_packages" --with-hypre-gpu-arch=$GPU_ARCH"
    fi
 fi
 
