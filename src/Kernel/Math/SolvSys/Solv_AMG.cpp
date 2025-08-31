@@ -92,7 +92,8 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
   // ToDo: not efficient on P0P1Pa (n==3)
   chaine_lue_="cli { -ksp_type ";
   chaine_lue_+=petsc_cg_issue_ ? "bcgs" : "cg";
-  chaine_lue_+=rtol_>0 ? Nom(rtol_, " -ksp_rtol %e") : Nom(atol_, " -ksp_atol %e");
+  chaine_lue_+=rtol_>0 ? Nom(rtol_, " -ksp_rtol %e") : "";
+  chaine_lue_+=atol_>0 ? Nom(atol_, " -ksp_atol %e") : "";
   chaine_lue_+=" -ksp_norm_type UNPRECONDITIONED \
 -pc_type fieldsplit \
 -pc_fieldsplit_type additive";
