@@ -294,8 +294,6 @@ f8559a94ee64c8b70ebd79b65576d08d  petsc/superlu_dist-9.1.0.tar.gz
 e97ed4ddf3b59a05729097ab66a46b03  pip/mpi4py-4.0.0.tar.gz
 c7ef1ee1793c7b9b5a6e2506f70c9320  rocALUTION/rocALUTION-f72a3919b52b64.tar.gz
 c526961bd716f70f12f64b25ec9d6697  rocALUTION/rocm-cmake-master.zip
-fa3a9bf9b2d6ed2431f1baa46f4058b8  tcl_tk/tcl8.5.13-src.tar.gz
-1fc7dbb7495160756dbc805224afa360  tcl_tk/tk8.5.13-src.tar.gz
 d44b5dddebd8a7a7309aea6c36fda117  utils/bc-1.06.tar.gz
 1c789b7043b4d56169b8d2bdb249fe41  utils/ed-1.13.tar.lz
 f20c94ca51b6ebfc9bffb90f95c8ffbb  utils/gawk-4.1.4.tar.gz
