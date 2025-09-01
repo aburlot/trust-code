@@ -59,9 +59,8 @@ add_package()
 DIR=`dirname $0`
 DIR=`(cd $DIR;pwd)`
 mkdir -p ${PETSC_ROOT}
-cd ${PETSC_ROOT}/..
-mkdir -p build
-cd build
+mkdir -p $TRUST_TMP/build
+cd $TRUST_TMP/build
 
 [ $TRUST_ARCH = cygwin ] && export TRUST_NB_PROCS=1  # mumps KO //
 
@@ -573,8 +572,8 @@ then
        # Ne surtout pas activer UVM: lent sur AMD et CUDA :
       #hypre_configure="--enable-unified-memory"
 
-      # Enable MPI GPU awareness for Hypre (plantage encore sur adastra). Pour re-essayer, forcer avec ./configure -force_mpi_gpu_aware
-      [ "$TRUST_FORCE_MPI_GPU_AWARE" = 1 ] && [ "$TRUST_MPI_GPU_AWARE" = 1 ] && hypre_configure=$hypre_configure" --enable-gpu-aware-mpi"
+      # Enable MPI GPU awareness for Hypre (plantage encore sur adastra MI250 pendant KSPSolve: Memory access fault by GPU)
+      #[ "$TRUST_MPI_GPU_AWARE" = 1 ] && [ "$ROCM_ARCH" != gfx90a ] && hypre_configure=$hypre_configure" --enable-gpu-aware-mpi"
       
       # Hack pour Hypre car --download-hypre-configure-arguments difficile a faire marcher avec plusieurs arguments...
       sed -i "1,$ s?--with-MPI-libs?$hypre_configure --with-MPI-libs?g" config/BuildSystem/config/packages/hypre.py || exit -1
@@ -781,7 +780,7 @@ echo "Leaving install PETSc, it seems OK."
 
 # On supprime la doc et autres dossiers de petsc si trust a ete configure avec l'option -without-doc
 # Ceci permet de reduire le nombre de fichiers dans l'installation TRUST
-if [ $TRUST_WITHOUT_DOC -eq 1 ]
+if [ $TRUST_WITHOUT_DOC -eq 1 ] || [ "$TRUST_WITHOUT_HOST" = 0 ]
 then
    (cd $PETSC_ROOT/$TRUST_ARCH"_opt" ; rm -rf docs share src)
 fi
