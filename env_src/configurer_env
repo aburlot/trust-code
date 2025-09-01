@@ -2379,19 +2379,6 @@ then
    Defines=$Defines" -DVTRACE"
 fi
 
-##############
-# rocALUTION #
-##############
-if [ "$TRUST_ROCALUTION" = 0 ]
-then
-   echo "unset TRUST_ROCALUTION" >> $env
-   rm -r -f $TRUST_ROOT/lib/src/LIBROCALUTION
-else   
-   [ "$TRUST_ROCALUTION" = 1 ] && TRUST_ROCALUTION=\""\$TRUST_ROOT/lib/src/LIBROCALUTION"\"
-   m="# PATH to rocALUTION";e="TRUST_ROCALUTION=$TRUST_ROCALUTION && export TRUST_ROCALUTION";ecrit $m"|"$e"|"$env
-   echo "ADD_LD_LIBRARY_PATH $TRUST_ROCALUTION/lib" >> $env
-fi
-
 ############
 # Topology #
 ############
@@ -2631,7 +2618,6 @@ includes="
 $TRUST_ROOT/lib/src/LIBAMGX/AmgXWrapper/include/AmgXSolver.hpp
 $TRUST_ROOT/lib/src/LIBAMGX/AmgX/include/amgx_c.h
 $TRUST_ROOT/lib/src/LIBCUDSS/include/cudss.h
-$TRUST_ROOT/lib/src/LIBROCALUTION/include/rocalution_for_kernel.h
 $TRUST_ROOT/lib/src/LIBMETIS/include/metis.h
 $TRUST_ROOT/lib/src/LIBMED/MED/include/med.h
 $TRUST_ROOT/lib/src/LIBLATAFILTER/include/LataV1_field_definitions.h

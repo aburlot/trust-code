@@ -291,7 +291,6 @@ echo "   -force_latest_openmpi             Download and use the OpenMPI `awk -F=
 echo "   -force_system_mpi                 Use the system-provided MPI library."
 echo "   -force_mpi_gpu_aware              Try to find and use a MPI GPU-Aware. Abort if not found."
 echo " "
-echo "   -rocalution=0|path to rocALUTION  Disable or specify extern rocALUTION library for AMD GPU computing (experimental). Default: using provided rocALUTION library."
 echo "   -cuda[=path/nvcc|=download|=ccXY] Activate the CUDA support into several libraries for NVidia GPU computing (experimental)."
 echo "   -rocm[=gfx...]                    Activate the ROCM support into several libraries for AMD GPU computing (experimental)."
 echo "   -openmp                           Enable OpenMP support."
@@ -378,7 +377,7 @@ if [ "$1" = "-disable-optionals" ]
 then
   shift
   export TRUST_ROOT=$TRUST_ROOT_SA
-  $0 -disable-ccache -disable-openblas -disable-petsc -disable-petsc-optionals -disable-hwloc -disable-gnuplot -disable-vc -disable-valgrind -disable-mpi -disable-cgns -disable-metis -disable-pdi -without-visit -disable-gmsh -disable-plot2d -without-pdflatex -without-doc -disable-jupyter -disable-doxygen -disable-checks -disable-check_sources -rocalution=0 -disable-trustify -disable-gtest $*
+  $0 -disable-ccache -disable-openblas -disable-petsc -disable-petsc-optionals -disable-hwloc -disable-gnuplot -disable-vc -disable-valgrind -disable-mpi -disable-cgns -disable-metis -disable-pdi -without-visit -disable-gmsh -disable-plot2d -without-pdflatex -without-doc -disable-jupyter -disable-doxygen -disable-checks -disable-check_sources -disable-trustify -disable-gtest $*
   exit $?
 fi
 if [ "$1" = "-disable-tools" ]
@@ -631,10 +630,6 @@ do
    then
       export TRUST_USE_REFPROP=1
       export TRUST_REFPROP_HOME_DIR=${1#-with-refprop=}
-
-   elif [ "${1#-rocalution}" != "$1" ]
-   then
-      export TRUST_ROCALUTION=${1#-rocalution=}
 
    elif [ "${1#-with-32-bit-indices}" != "$1" ]
    then

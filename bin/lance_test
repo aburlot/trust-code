@@ -1042,16 +1042,6 @@ then
              i=""
           fi
        fi
-       # Discard rocALUTION test case
-       if [ "$TRUST_ROCALUTION" = "" ]
-       then
-          if [ "`grep -i -e rocalution $REP/* 2>/dev/null | grep -v hierarchie.dump`" != "" ]
-          then
-             echo "Test $i skipped (no rocALUTION)"
-             liste_skipped=$liste_skipped" $i"
-             i=""
-          fi
-       fi
        # Discard PETSc test case if no PETSc capabilities
        if [ "$TRUST_DISABLE_PETSC" = 1 ]
        then

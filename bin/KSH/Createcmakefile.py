@@ -383,7 +383,6 @@ include_directories(SYSTEM
     ${TRUST_ROOT}/lib/src/LIBCUDSS/include 
     ${CUDA_INC_PATH} 
     ${PETSC_ROOT}/${TRUST_ARCH}${OPT}/include 
-    ${TRUST_ROOT}/lib/src/LIBROCALUTION/include 
     ${TRUST_LATAFILTER}/include 
     ${TRUST_ICOCOAPI}/include 
     ${TRUST_ROOT}/lib/src/LIBOSQP/include 

@@ -224,14 +224,6 @@ ALL_P=$ALL_P" "$KOKKOS_P
 ALL_L=$ALL_L" "$KOKKOS_L
 
 ######
-# rocalution
-######
-if [ "`ls ${TRUST_ROCALUTION}/lib/librocalution.* 2>/dev/null`" != "" ]; then
-    ALL_P=$ALL_P" \$ENV{TRUST_ROCALUTION}/lib"
-    ALL_L=$ALL_L" rocalution"
-fi
-
-######
 # cuDSS
 ######
 if [ "$TRUST_USE_CUDA" = 1 ] ; then

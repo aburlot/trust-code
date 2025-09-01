@@ -17,7 +17,6 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <mon_main.h>
-#include <rocalution_for_kernel.h>
 #include <EFichier.h>
 #include <Perf_counters.h>
 #ifdef linux
