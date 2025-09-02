@@ -1160,7 +1160,7 @@ then
    if [ $TRUST_USE_COOLPROP = 1 ]
    then
       echo
-      echo $ECHO_OPTS "# Warning: You enabled CoolProp, Coolprop will be downloaded using pip"
+      echo $ECHO_OPTS "# Warning: You enabled CoolProp, Coolprop has been downloaded using pip"
       echo
    fi
 
