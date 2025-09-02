@@ -434,7 +434,10 @@ double ru_maxrss()
   long rss_kb = usage.ru_maxrss;
   return static_cast<double>(rss_kb*1024);
 }
+
+#ifndef __APPLE__
 #include <malloc.h>
+
 /*
 struct mallinfo2 {
     size_t hblkhd;    // Space in mmapped regions (bytes)
@@ -458,12 +461,19 @@ double heap_allocation()
 }
 
 static double heap_allocated_old=0;
+
+#endif /* ndef __APPLE__ */
+
 void Process::imprimer_ram_totale(int all_process)
 {
   double memoire;
   //memoire = ram_processeur();
   memoire = ru_maxrss();
+
+#ifndef __APPLE__
   double heap_allocated = heap_allocation();
+#endif
+
   if (memoire)
     {
       //Cout << "RAM provisoire: PETSc " << ram_processeur() << "  ru_maxrss " << memoire << " mallinfo " << heap_allocated << finl;
@@ -473,6 +483,7 @@ void Process::imprimer_ram_totale(int all_process)
         double max_memoire=Process::mp_max(memoire);
         double total_memoire=Process::mp_sum(memoire);
         Cout << (int)(total_memoire/Mo) << " MBytes of RAM taken by the calculation (max on a rank: "<<(int)(max_memoire/Mo)<<" MB)." << finl;
+#ifndef __APPLE__
         Cout << "[RAM] Allocated heap on master rank: " << (int)(heap_allocated/Mo) << " Mbytes";
         double delta = heap_allocated - heap_allocated_old;
         if (delta!=0 && heap_allocated_old>0) Cout << " (" << (delta>0 ? "+" : "") << (long)delta << " bytes)";
@@ -484,6 +495,7 @@ void Process::imprimer_ram_totale(int all_process)
         size_t total = DeviceMemory::deviceMemGetInfo(1);
         Cout << 0.1*(int)(10*allocated/Go) << " GBytes of maximal RAM allocated on a GPU (" <<  int(100 * allocated / total) << "%)" << finl;
 #endif
+#endif /* ndef __APPLE__ */
       }
     }
 }
