@@ -142,6 +142,8 @@ LataDB::Element LataDB::element_type_from_string(const Motcle& type_elem)
     type=polyedre;
   else if (type_elem.debute_par("POLYGONE"))
     type=polygone;
+  else if (type_elem.debute_par("POINT"))
+    type=point;
   else
     {
       Journal() << "Error in elem_type_from_string: unknown element type " << type_elem << endl;
@@ -155,6 +157,12 @@ void LataDB::get_element_data(const Motcle& elemtype, int& dimension, int& elem_
   Element elem = element_type_from_string(elemtype);
   switch(elem)
     {
+    case point:
+      dimension = 1;
+      elem_shape=1;
+      face_shape=-1;
+      nb_elem_faces=-1;
+      break;
     case line:
       dimension = 2;
       elem_shape=2;

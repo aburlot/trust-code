@@ -259,7 +259,7 @@ public:
   virtual void read_data(const LataDBField&, BigTIDTab& data, const BigArrOfTID& lines_to_read) const;
 #endif
 
-  enum Element { line, triangle, quadri, tetra, hexa, triangle_3D, quadri_3D, polyedre,polygone, unspecified };
+  enum Element { point, line, triangle, quadri, tetra, hexa, triangle_3D, quadri_3D, polyedre,polygone, unspecified };
   static Element element_type_from_string(const Motcle& type_elem);
 
   // Tools to create/update the database and write lata data to disk

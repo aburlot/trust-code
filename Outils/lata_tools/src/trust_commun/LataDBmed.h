@@ -72,6 +72,9 @@ Nom latadb_name_from_type_geo(const med_geometry_type& type_geo)
     case MED_SEG2:
       type_elem="Segment";
       break;
+    case MED_POINT1:
+      type_elem="Point";
+      break;
     default:
       Cerr<<"type_geo " << (int)type_geo <<" is not a supported element."<<finl;
       throw;
