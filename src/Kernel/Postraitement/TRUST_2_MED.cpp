@@ -242,6 +242,8 @@ med_geometry_type type_geo_trio_to_type_med(const Nom& type_elem_i,med_axis_type
     type_elem_med=MED_OCTA12;
   else if(type_elem=="POINT_1D")
     type_elem_med=MED_POINT1;
+  else if(type_elem=="POINT")
+    type_elem_med=MED_POINT1;
   else
     {
       Cerr<<type_elem<< " no available code" <<finl;

@@ -111,6 +111,8 @@ void Extraire_surface::extraire_surface_without_cleaning(Domaine& domaine_surfac
       domaine_surfacique.typer("Triangle");
     else if (type_elem==Motcle("Segment"))
       domaine_surfacique.typer("Point");
+    else if (type_elem==Motcle("Segment_axi"))
+      domaine_surfacique.typer("Point");
     else if ((type_elem==Motcle("Hexaedre"))|| (type_elem==Motcle("Hexaedre_VEF")))
       domaine_surfacique.typer("Quadrangle");
     else if (type_elem==Motcle("Polyedre"))

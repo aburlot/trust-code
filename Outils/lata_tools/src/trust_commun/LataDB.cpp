@@ -130,6 +130,8 @@ LataDB::Element LataDB::element_type_from_string(const Motcle& type_elem)
     type=line;
   else if (type_elem == "SEGMENT_2D")
     type=line;
+  else if (type_elem == "SEGMENT_AXI")
+    type=line;
   else if (type_elem == "TETRAEDRE")
     type=tetra;
   else if (type_elem == "TRIANGLE")
