@@ -1,6 +1,9 @@
 #!/bin/bash
 # Script pour decouper un maillage d'apres un jeu de donnees
 # si celui contient les balises
+#
+# code retour : si erreur renvoi 0, si OK ca renvoi NB_CPUS.
+#
 OK_make_par ()
 {
    if [ $1 = 0 ]
@@ -29,7 +32,7 @@ SUBSTITUE ()
 
 [ ${#DEC} = 0 ] && echo "Usage: `basename $0` datafile [NB_CPUs]"
 NOM=${1%.data}
-[ ! -f $NOM.data ] && echo "$NOM.data not existent." && exit -1
+[ ! -f $NOM.data ] && echo "$NOM.data not existent." && exit 0
 # To avoid dos files:
 dos2unix_ $NOM.data
 PAR_NOM=PAR_$NOM
@@ -77,12 +80,12 @@ for nom_zone in $nom_zones
 do
    rm -f ${nom_zone}_*.Zones
 done
-[ "$3" = "no_exec" ] && exit -1
+[ "$3" = "no_exec" ] && exit 0
 [ ${#DEC} = 0 ] && echo $ECHO_OPTS "Wait for partitionning...\c"
 trust $DEC_NOM 1>$DEC_NOM.out 2>$DEC_NOM.err
 err=$?
 OK_make_par $err
-[ $err != 0 ] && exit -1
+[ $err != 0 ] && exit 0
 
 # recherche du nombre de NB_CPUSesseurs
 NB_CPUS=""
@@ -99,13 +102,13 @@ do
    # if there's a single .Zones file (written in HDF format), the grep above is wrong
     if [ $NB_CPUS_ZONE = 0 ]
     then
-       [ "`ls $nom_zone'_p'*.Zones 2>/dev/null`" = "" ] && echo "Error, no .Zones created!" && exit -1
+       [ "`ls $nom_zone'_p'*.Zones 2>/dev/null`" = "" ] && echo "Error, no .Zones created!" && exit 0
        FILE_NAME=`find . -name $nom_zone'_p'*.Zones | xargs basename`
        NB_CPUS_ZONE=`echo $FILE_NAME | cut -d '.' -f 1 | $TRUST_Awk -F '_p' '{print $2}'`
     fi
        
    # Verification
-   [ "$NB_CPUS" != "" ] && [ "$NB_CPUS_ZONE" != "$NB_CPUS" ] && echo "Found $NB_CPUS_ZONE $nom_zone.Zones != $NB_CPUS zones." && exit -1 
+   [ "$NB_CPUS" != "" ] && [ "$NB_CPUS_ZONE" != "$NB_CPUS" ] && echo "Found $NB_CPUS_ZONE $nom_zone.Zones != $NB_CPUS zones." && exit 0
    NB_CPUS=$NB_CPUS_ZONE
 done
 

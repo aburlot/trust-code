@@ -1282,6 +1282,7 @@ then
                 gmon
                 NPDEC=$NB_CPUS
                 EP="echo $ECHO_OPTS 'Running parallel calculation on $NB_CPUS cpus...\c' ;trust $PAR_NOM $NB_CPUS 1>$PAR_NOM.out 2>$PAR_NOM.err;OK \$?"
+                [ $NB_CPUS -eq 0 ] && EP="echo $ECHO_OPTS 'Running parallel calculation on $NB_CPUS cpus...\c' ;OK 255? ; echo 'Check partitioning step'"
              fi
           fi
           arret=0
