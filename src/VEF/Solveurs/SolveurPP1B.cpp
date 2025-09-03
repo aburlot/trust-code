@@ -16,7 +16,7 @@
 #include <SolveurPP1B.h>
 #include <Champ_P1_isoP1Bulle.h>
 #include <stat_counters.h>
-#include <Solv_AMG.cpp>
+#include <Solv_AMG.h>
 
 Implemente_instanciable(SolveurPP1B,"SolveurPP1B",SolveurSys_base);
 
