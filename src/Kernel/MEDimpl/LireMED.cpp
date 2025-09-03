@@ -362,6 +362,8 @@ Nom LireMED_32_64<_SIZE_>::type_medcoupling_to_type_geo_trio(int type_cell, bool
     }
   if (Objet_U::bidim_axi && type_cell == INTERP_KERNEL::NORM_QUAD4)
     type_elem = "Rectangle_2D_axi";
+  if (Objet_U::bidim_axi && type_cell == INTERP_KERNEL::NORM_SEG2)
+    type_elem = "quadrilatere_2D_axi";
   if (Objet_U::axi)
     type_elem += "_axi";
 
