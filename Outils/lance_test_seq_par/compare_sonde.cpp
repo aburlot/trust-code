@@ -379,6 +379,15 @@ int main(int argc, char* argv[])
 {
   int max_val_all_comp=1;
   int max_delta=0;
+  // L'erreur relative sur un champ C est calculee par :
+  //    err(C)=ecart(C)/max(C) # Sans --max_delta
+  // ou
+  //    err(C)=ecart(C)/(max(C)-min(C)) # Avec --max_delta
+  // On est plus strict avec --max_delta que sans, mais cela peut poser probleme si max et min sont tres proches...
+  // la formule de l'erreur relative n'est pas codee comme ci-avant, mais modifiee afin de prendre en consideration tous les cas pour devenir :
+  //    err(C)=ecart(C)/(max(C)-min(C)+1e-2) # Avec --max_delta
+  // NB : dans lance_test, l'option --max_delta est utilisee
+
   //char c,c2;
   nom file1,file2,option;
   if (argc<3) usage();

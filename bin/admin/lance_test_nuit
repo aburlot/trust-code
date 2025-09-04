@@ -655,8 +655,8 @@ echo "TRUST configuration on $HOST the `date` ...">$config_log
 echo>>$config_log
 ./configure -force_provided_mpich 1>>$config_log || exit -1
 #grep -i error $config_log
-grep KO $config_log
-tail -n24 $config_log | head -n1
+#grep KO $config_log
+#tail -n24 $config_log | head -n1
 echo " "
 echo "Call to "$TRUST_ROOT"/env_TRUST.sh"
 source env_TRUST.sh #1>/dev/null 2>&1
@@ -986,9 +986,9 @@ rm -f liste_envoie_KO
 grep -i delete $envoie_log | head -n1
 grep "KO " $envoie_log
 #grep error $envoie_log
-mv -f build/rsync_*.log $REP_NUIT/.
-mv -f build/rsync_include_from $REP_NUIT/.
-mv -f build/ssh_*.log $REP_NUIT/.
+mv -f build/rsync_*.log $REP_NUIT/. 2>/dev/null
+mv -f build/rsync_include_from $REP_NUIT/. 2>/dev/null
+mv -f build/ssh_*.log $REP_NUIT/. 2>/dev/null
 # On recupere le nom des machines sur lesquelles les sources n ont pu etre mises a jour
 # Cette liste permettra de ne pas lancer la portabilite des baltiks sur ces machines
 if [ ${#liste_machines_KO} != 0 ] # chaine non vide

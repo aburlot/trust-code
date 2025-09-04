@@ -81,14 +81,13 @@
 }
 
 ######
-###### Cas test upwind sur Ubuntu 22
+###### Cas test upwind sur Ubuntu 22 et Fedora 42
 ######
 
 {
    <insert_a_suppression_name_here>
    Memcheck:Leak
    match-leak-kinds: reachable
-   fun:*alloc
    fun:*alloc
    ...
    fun:_dl_map_object
@@ -100,7 +99,7 @@
    fun:dl_open_worker
    fun:_dl_catch_exception
    fun:_dl_open
-   fun:dlopen_doit
+   ...
    fun:_dl_catch_exception
    fun:_dl_catch_error
 }
