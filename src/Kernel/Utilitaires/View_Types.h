@@ -117,50 +117,54 @@ using CDoubleTabHostView = ConstHostView<double, 2>;
 using CDoubleTabHostView3 = ConstHostView<double, 3>;
 using CDoubleTabHostView4 = ConstHostView<double, 4>;
 
-//Wrapper functions to build a unmanaged view from a pointer and a set of dimensions
+// Wrapper functions to build a unmanaged view from a pointer and a set of dimensions
+// Primary template - not defined
+template <typename ViewType, typename _TYPE_, int _SHAPE_, typename _SIZE_>
+struct ViewCreator;
+
+template <typename ViewType, typename _TYPE_, typename _SIZE_>
+struct ViewCreator<ViewType, _TYPE_, 1, _SIZE_>
+{
+  static ViewType create(_TYPE_* ptr, const std::array<_SIZE_, 4>& dims)
+  {
+    return ViewType(ptr, dims[0]);
+  }
+};
+template <typename ViewType, typename _TYPE_, typename _SIZE_>
+struct ViewCreator<ViewType, _TYPE_, 2, _SIZE_>
+{
+  static ViewType create(_TYPE_* ptr, const std::array<_SIZE_, 4>& dims)
+  {
+    return ViewType(ptr, dims[0], dims[1]);
+  }
+};
+template <typename ViewType, typename _TYPE_, typename _SIZE_>
+struct ViewCreator<ViewType, _TYPE_, 3, _SIZE_>
+{
+  static ViewType create(_TYPE_* ptr, const std::array<_SIZE_, 4>& dims)
+  {
+    return ViewType(ptr, dims[0], dims[1], dims[2]);
+  }
+};
+template <typename ViewType, typename _TYPE_, typename _SIZE_>
+struct ViewCreator<ViewType, _TYPE_, 4, _SIZE_>
+{
+  static ViewType create(_TYPE_* ptr, const std::array<_SIZE_, 4>& dims)
+  {
+    return ViewType(ptr, dims[0], dims[1], dims[2], dims[3]);
+  }
+};
 template <typename ViewType, typename _TYPE_, int _SHAPE_, typename _SIZE_>
 inline ViewType createView(_TYPE_* ptr, const std::array<_SIZE_, 4>& dims)
 {
-  if constexpr (_SHAPE_ == 1)
-    {
-      return ViewType((_TYPE_*)(ptr), dims[0]);
-    }
-  else if constexpr (_SHAPE_ == 2)
-    {
-      return ViewType((_TYPE_*)(ptr), dims[0], dims[1]);
-    }
-  else if constexpr (_SHAPE_ == 3)
-    {
-      return ViewType((_TYPE_*)(ptr), dims[0], dims[1], dims[2]);
-    }
-  else if constexpr (_SHAPE_ == 4)
-    {
-      return ViewType((_TYPE_ *) (ptr), dims[0], dims[1], dims[2], dims[3]);
-    }
-  else
-    static_assert(_SHAPE_ <= 4, "Invalid _SHAPE_ !");
+  static_assert(_SHAPE_ >= 1 && _SHAPE_ <= 4, "Invalid _SHAPE_!");
+  return ViewCreator<ViewType, _TYPE_, _SHAPE_, _SIZE_>::create(ptr, dims);
 }
 template <typename ViewType, typename _TYPE_, int _SHAPE_, typename _SIZE_>
 inline ViewType createView(const _TYPE_* ptr, const std::array<_SIZE_, 4>& dims)
 {
-  if constexpr (_SHAPE_ == 1)
-    {
-      return ViewType((_TYPE_*)(ptr), dims[0]);
-    }
-  else if constexpr (_SHAPE_ == 2)
-    {
-      return ViewType((_TYPE_*)(ptr), dims[0], dims[1]);
-    }
-  else if constexpr (_SHAPE_ == 3)
-    {
-      return ViewType((_TYPE_*)(ptr), dims[0], dims[1], dims[2]);
-    }
-  else if constexpr (_SHAPE_ == 4)
-    {
-      return ViewType((_TYPE_ *) (ptr), dims[0], dims[1], dims[2], dims[3]);
-    }
-  else
-    static_assert(_SHAPE_ <= 4, "Invalid _SHAPE_ !");
+  static_assert(_SHAPE_ >= 1 && _SHAPE_ <= 4, "Invalid _SHAPE_!");
+  return ViewCreator<ViewType, _TYPE_, _SHAPE_, _SIZE_>::create(const_cast<_TYPE_*>(ptr), dims);
 }
 extern void kokkos_self_test();
 
