@@ -115,6 +115,8 @@ void Piso::iterer_NS(Equation_base& eqn,DoubleTab& current,DoubleTab& pression,
   Navier_Stokes_std& eqnNS = ref_cast(Navier_Stokes_std,eqn);
   const bool is_NS_IBM = sub_type(Navier_Stokes_IBM, eqnNS);
 
+  eqnNS.setPressureTimeN(); //sometimes we need a second special treatement like for ALE for example
+
   if (eqnNS.discretisation().que_suis_je() == "PolyMAC")
     return iterer_NS_PolyMAC(eqnNS, current, pression, dt, matrice, ok);
 
@@ -124,6 +126,8 @@ void Piso::iterer_NS(Equation_base& eqn,DoubleTab& current,DoubleTab& pression,
   DoubleTrav gradP(current);
   DoubleTrav correction_en_pression(pression);
   DoubleTrav resu(current);
+
+
   int is_dilat = eqn.probleme().is_dilatable();
 
   double vitesse_norme,vitesse_norme_old ;
@@ -250,6 +254,7 @@ void Piso::iterer_NS(Equation_base& eqn,DoubleTab& current,DoubleTab& pression,
       // </IBM>
       eqnNS.assembleur_pression()->modifier_solution(pression);
       pression.echange_espace_virtuel();
+
       Debog::verifier("Piso::iterer_NS pression finale",pression);
       Debog::verifier("Piso::iterer_NS current final",current);
       if (is_dilat)
@@ -259,6 +264,7 @@ void Piso::iterer_NS(Equation_base& eqn,DoubleTab& current,DoubleTab& pression,
         }
 
       eqnNS.updateFluidForce(current);
+
       return;
     }
 

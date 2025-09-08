@@ -161,6 +161,8 @@ public :
   // Retrieve true if implicit coupling with another code
   // required to perform filtering of pressure Champ_P1_isoP1Bull during sub-iterations of the implicit loop
   virtual bool getCouplingInfoForFiltering() const {return false;}
+  inline DoubleTab getPressureTimeN() {return P_n; } // Pressure at start of time step (used for FSI implicit coupling in sub-iterations)
+  virtual void setPressureTimeN() {}
   virtual void update_pressure_matrix();
   void update_y_plus(const DoubleTab& tab) ;
 
