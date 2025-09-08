@@ -156,15 +156,6 @@ void EOS_Tools_VEF::secmembre_divU_Z(DoubleTab& tab_W) const
   int nb_faces_tot = le_dom->nb_faces_tot();
   const Equation_base& eq = le_fluide().vitesse().equation();
 
-  // Dimensionnement de tab_dZ
-  const Navier_Stokes_std& eqns = ref_cast(Navier_Stokes_std, eq);
-  const DoubleVect& pression = eqns.pression().valeurs();
-
-  DoubleTrav tab_dZ = pression;
-  DoubleTrav tab_rhon_som(nb_som_tot);
-  DoubleTrav volume_int_som(nb_som_tot);
-  DoubleTrav tab_rhonp1_som(nb_som_tot);
-
   const DoubleTab& tab_rhon = le_fluide().loi_etat()->rho_n();
   const DoubleTab& tab_rhonp1 = le_fluide().loi_etat()->rho_np1();
   DoubleTrav tab_rhonP1_, tab_rhonp1P1_;
@@ -179,7 +170,7 @@ void EOS_Tools_VEF::secmembre_divU_Z(DoubleTab& tab_W) const
   const Domaine& dom = le_dom->domaine();
 
   // calcul de la somme des volumes entrelacees autour d'un sommet
-  volume_int_som = 0.;
+  DoubleTrav volume_int_som(nb_som_tot);
   CIntTabView face_sommets_v = face_sommets.view_ro();
   CDoubleArrView volumes_entrelaces_v = static_cast<const DoubleVect&>(volumes_entrelaces).view_ro();
   CIntArrView renum_som_perio_v = dom.get_renum_som_perio().view_ro();
@@ -196,15 +187,15 @@ void EOS_Tools_VEF::secmembre_divU_Z(DoubleTab& tab_W) const
   end_gpu_timer(__KERNEL_NAME__);
 
   //discretisation de rho sur les sommets
-  tab_rhon_som = 0;
-  tab_rhonp1_som = 0;
+  DoubleTrav tab_rhon_som(nb_som_tot);
+  DoubleTrav tab_rhonp1_som(nb_som_tot);
 
   CDoubleTabView tab_rhonP1_v = tab_rhonP1.view_ro();
   CDoubleTabView tab_rhonp1P1_v = tab_rhonp1P1.view_ro();
   DoubleArrView tab_rhon_som_v = static_cast<DoubleVect&>(tab_rhon_som).view_rw();
   DoubleArrView tab_rhonp1_som_v = static_cast<DoubleVect&>(tab_rhonp1_som).view_rw();
-  Kokkos::parallel_for(  start_gpu_timer(__KERNEL_NAME__), nb_faces_tot, KOKKOS_LAMBDA(
-                           const int face)
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_faces_tot, KOKKOS_LAMBDA(
+                         const int face)
   {
     for (int som = 0; som < nsf; som++)
       {
@@ -218,7 +209,10 @@ void EOS_Tools_VEF::secmembre_divU_Z(DoubleTab& tab_W) const
   end_gpu_timer(__KERNEL_NAME__);
 
 //Corrections pour test de la moyenne de la derivee de la masse volumique
-  Debog::verifier("EOS_Tools_VEF::secmembre_divU_Z tab_dZ=",tab_dZ);
+  // Dimensionnement de tab_dZ
+  const Navier_Stokes_std& eqns = ref_cast(Navier_Stokes_std, eq);
+  const DoubleVect& pression = eqns.pression().valeurs();
+  Debog::verifier("EOS_Tools_VEF::secmembre_divU_Z pression=",pression);
   Debog::verifier("EOS_Tools_VEF::secmembre_divU_Z tab_rhonP1=",tab_rhonP1);
   Debog::verifier("EOS_Tools_VEF::secmembre_divU_Z tab_rhonp1P1=",tab_rhonp1P1);
   Debog::verifier("EOS_Tools_VEF::secmembre_divU_Z dt=",dt);
@@ -230,6 +224,7 @@ void EOS_Tools_VEF::secmembre_divU_Z(DoubleTab& tab_W) const
 
   // ToDo_Kokkos, try to merge all theses kernels for efficiency:
   int decal=0;
+  DoubleTrav tab_dZ = pression;
   DoubleArrView tab_dZ_v = static_cast<DoubleVect&>(tab_dZ).view_rw();
   if (p_has_elem)
     {
