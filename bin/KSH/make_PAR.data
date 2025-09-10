@@ -75,7 +75,7 @@ rm -f $tmpdec
 # On cherche le nom des zones
 nom_zones=`grep -i ZoneS_name $DEC_NOM.data | $TRUST_Awk '{print $2}'`
 [ "$nom_zones" = "" ] && nom_zones=`grep -i Nom_Zones  $DEC_NOM.data | $TRUST_Awk '{print $2}'`
-# On efface les .Zones precedantes
+# On efface les .Zones precedentes
 for nom_zone in $nom_zones
 do
    rm -f ${nom_zone}_*.Zones

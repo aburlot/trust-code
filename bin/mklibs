@@ -73,7 +73,7 @@ then
           PETSC_P=$PETSC_P" $AMGX_ROOT/AmgX/lib $AMGX_ROOT/AmgXWrapper/lib64"
           PETSC_L=$PETSC_L" amgx`[ "$LINK_CUDA" != _static ] && echo sh` AmgXWrapper"
       fi
-      # Le fichier suivant pourrait peut etre permettre de simplifier les choses precedantes:
+      # Le fichier suivant pourrait peut etre permettre de simplifier les choses precedentes:
       # car desormais on l'utilise pour avoir le nombre des librairies BLAS optimisees et des librairies eventuelles CUDA
       petscmachineinfo=$PETSC_ROOT/$TRUST_ARCH$OPT/include/petscmachineinfo.h
       if [ -f $petscmachineinfo ]

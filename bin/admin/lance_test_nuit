@@ -2494,7 +2494,7 @@ echo "<--- End at "`date '+%H:%M:%S %d/%m'`
 #               log=`awk -v adr=$machine '($2==adr) {print $4}' ~/.netrc | head -1`
 #               scp $log@$machine:~/$WORKBASE$hostname/TRUST/Validation/Modules/$module/$module.log . 2>/dev/null
 #               scp $log@$machine:~/$WORKBASE$hostname/TRUST/Validation/Modules/$module/compare_resultat.log . 2>/dev/null
-#               # On efface les rapports precedants
+#               # On efface les rapports precedents
 #               rm -f .tests_TRUST_*
 #               scp $log@$machine:~/$WORKBASE$hostname/TRUST/Validation/Modules/$module/.tests_TRUST_* . 2>/dev/null
 #               if [ ! -f $module.log ]
