@@ -169,7 +169,7 @@ DoubleTab& Op_Diff_DG_base::calculer(const DoubleTab& inco, DoubleTab& resu) con
 void Op_Diff_DG_base::completer()
 {
   Operateur_base::completer();
-  nu_.resize(0, equation().que_suis_je() == "Transport_K_Eps" ? 2 : diffusivite().valeurs().line_size());
+  nu_.resize(0, equation().que_suis_je() == "Transport_K_Epsilon" ? 2 : diffusivite().valeurs().line_size());
   le_dom_dg_->domaine().creer_tableau_elements(nu_);
   nu_a_jour_ = 0;
 }
@@ -181,7 +181,7 @@ void Op_Diff_DG_base::update_nu() const
   int i, j;
 
   const DoubleTab& diffu = diffusivite().valeurs();
-  if (equation().que_suis_je() != "Transport_K_Eps")
+  if (equation().que_suis_je() != "Transport_K_Epsilon")
     {
       if (!diffu.get_md_vector().non_nul())
         {
@@ -208,7 +208,7 @@ void Op_Diff_DG_base::update_nu() const
       throw;
 
       const DoubleTab& diffu_turb = diffusivite_turbulente().valeurs();
-      if (equation().que_suis_je() == "Transport_K_Eps")
+      if (equation().que_suis_je() == "Transport_K_Epsilon")
         {
           bool nu_uniforme = sub_type(Champ_Uniforme, diffusivite());
           double val_nu = diffu(0, 0);

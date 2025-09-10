@@ -357,7 +357,7 @@ Nom Discretisation_base::get_name_of_type_for(const Nom& class_operateur, const 
 
       int isQC = eqn.probleme().is_dilatable();
 
-      if (isQC && ((eqn.que_suis_je() != "Transport_K_Eps") && (eqn.que_suis_je() != "Transport_K_Eps_Bas_Reynolds") && (eqn.que_suis_je() != "Transport_K_Eps_Realisable") && (eqn.que_suis_je() != "Transport_K_Eps_V2")))
+      if (isQC && ((eqn.que_suis_je() != "Transport_K_Epsilon") && (eqn.que_suis_je() != "Transport_K_Epsilon_Bas_Reynolds") && (eqn.que_suis_je() != "Transport_K_Epsilon_Realisable") && (eqn.que_suis_je() != "Transport_K_Epsilon_V2")))
         type += "_QC";
 
       // sauf pour le term boussinesq

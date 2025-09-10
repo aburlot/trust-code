@@ -145,7 +145,7 @@ double Op_Diff_PolyMAC_base::calculer_dt_stab() const
 void Op_Diff_PolyMAC_base::completer()
 {
   Operateur_base::completer();
-  nu_.resize(0, equation().que_suis_je() == "Transport_K_Eps" ? 2 : diffusivite().valeurs().line_size());
+  nu_.resize(0, equation().que_suis_je() == "Transport_K_Epsilon" ? 2 : diffusivite().valeurs().line_size());
   le_dom_poly_->domaine().creer_tableau_elements(nu_);
   le_dom_poly_->creer_tableau_faces(nu_fac_);
   nu_a_jour_ = 0;
@@ -162,7 +162,7 @@ void Op_Diff_PolyMAC_base::update_nu() const
   /* 1. nu_ */
   //dimensionnement
   const DoubleTab& diffu = diffusivite().valeurs();
-  if (equation().que_suis_je() != "Transport_K_Eps")
+  if (equation().que_suis_je() != "Transport_K_Epsilon")
     {
       if (!diffu.get_md_vector().non_nul())
         {
@@ -187,7 +187,7 @@ void Op_Diff_PolyMAC_base::update_nu() const
   if (has_diffusivite_turbulente())
     {
       const DoubleTab& diffu_turb = diffusivite_turbulente().valeurs();
-      if (equation().que_suis_je() == "Transport_K_Eps")
+      if (equation().que_suis_je() == "Transport_K_Epsilon")
         {
           bool nu_uniforme = sub_type(Champ_Uniforme, diffusivite());
           double val_nu = diffu(0, 0);

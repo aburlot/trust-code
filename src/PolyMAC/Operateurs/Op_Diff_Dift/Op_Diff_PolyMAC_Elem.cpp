@@ -46,7 +46,7 @@ void Op_Diff_PolyMAC_Elem::completer()
   if (domaine.domaine().nb_joints() && domaine.domaine().joint(0).epaisseur() < 1)
     Cerr << "Op_Diff_PolyMAC_Elem : largeur de joint insuffisante (minimum 1)!" << finl, Process::exit();
   ch.fcl();
-  int nb_comp = (equation().que_suis_je() == "Transport_K_Eps") ? 2 : ch.valeurs().line_size();
+  int nb_comp = (equation().que_suis_je() == "Transport_K_Epsilon") ? 2 : ch.valeurs().line_size();
   flux_bords_.resize(domaine.premiere_face_int(), nb_comp);
 
   stab_ = que_suis_je().find("nonlinear") >= 0;
