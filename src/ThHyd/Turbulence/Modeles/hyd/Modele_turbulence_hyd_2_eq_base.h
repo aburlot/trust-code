@@ -37,13 +37,13 @@ public:
 
   virtual int nombre_d_equations() const { return 1; }
 
-  inline double get_Prandtl_K() const { return Prandtl_K_; }
-  inline double get_Prandtl_Eps() const { return Prandtl_Eps_; }
-  inline double get_Prandtl_Omega() const { return Prandtl_Omega_; }
   inline double get_EPS_MIN() const { return EPS_MIN_; }
   inline double get_EPS_MAX() const { return EPS_MAX_; }
   inline double get_OMEGA_MIN() const { return OMEGA_MIN_; }
   inline double get_OMEGA_MAX() const { return OMEGA_MAX_; }
+  inline double get_Sigma_K() const { return Sigma_K_; }
+  inline double get_Sigma_Eps() const { return Sigma_Eps_; }
+  inline double get_Sigma_Omega() const { return Sigma_Omega_; }
   inline double get_K_MIN() const { return K_MIN_; }
   inline int get_lquiet() const { return lquiet_; }
   virtual inline Transport_2eq_base& get_set_eq_transport() { return ptr_eq_transport_.valeur(); }
@@ -54,7 +54,7 @@ public:
 
 protected:
   OWN_PTR(Transport_2eq_base) ptr_eq_transport_;
-  double Prandtl_K_ = 1., Prandtl_Eps_ = 1.3, Prandtl_Omega_ = 2.;
+  double Sigma_K_=1., Sigma_Eps_=1.3, Sigma_Omega_=1./2.;
   double K_MIN_ = 1.e-20, EPS_MIN_ = 1.e-20, EPS_MAX_ = 1.e+10, OMEGA_MIN_ = 1.e-20, OMEGA_MAX_ = 1.e+10;
   bool lquiet_ = false;
 };
