@@ -442,6 +442,8 @@ void ReaderFORT21::fix_bad_times()
                 }
               else
                 {
+                  if (verbosity_ > 3)
+                    std::cout <<" removing duplicate times " << told <<"  for "<< a.first  << std::endl;
                   // on garde le dernier enregistrement pour cela on change l'offset
                   a.second.offset_rel_time_[itold-myvector.begin()] = (offset_a_time_[i]-offset_a_time_[i-1] )   + a.second.offset_rel_time_[it-myvector.begin()];
                   a.second.offset_rel_time_.erase(a.second.offset_rel_time_.begin()+(it-myvector.begin()));
@@ -630,17 +632,17 @@ template <typename _TYPE_> void ReaderFORT21::getValuesVarFieldOnIndex(const std
       if (datap.size()==1)
         data[local_index_time]= datap[0];
       else
-      {
-        if ((id_index<0)||(id_index>=int(datap.size())))
         {
-          std::stringstream ss;
-          ss << "index out of bounds for "+ name_stack <<  " " << name_field  << " " << id_index << "/" << datap.size() << std::endl;
-          throw std::invalid_argument(ss.str());
+          if ((id_index<0)||(id_index>=int(datap.size())))
+            {
+              std::stringstream ss;
+              ss << "index out of bounds for "+ name_stack <<  " " << name_field  << " " << id_index << "/" << datap.size() << std::endl;
+              throw std::invalid_argument(ss.str());
+            }
+          //std::cerr<< "Celliiiii "<< cellId-1 << " / " << data.size()<<std::endl;
+          data[local_index_time] = datap[id_index];
         }
-      //std::cerr<< "Celliiiii "<< cellId-1 << " / " << data.size()<<std::endl;
-      data[local_index_time] = datap[id_index];
-     }
-   }
+    }
 }
 
 template <typename _TYPE_> void ReaderFORT21::getValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<_TYPE_>& data, const int& id_time_field) const
@@ -672,7 +674,7 @@ template <typename _TYPE_> void ReaderFORT21::getValuesVarField(const std::strin
                   datab[c]=float(data2[c]);
                 }
               if (verbosity_>3)
-                std::cerr<<"field int, data no conversion to float " << name_field<< " "<< id_time_field<<std::endl;
+                std::cerr<<"field int, data conversion to float " << name_field<< " "<< id_time_field<<std::endl;
               return;
             }
           else
@@ -868,9 +870,45 @@ int ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::stri
         {
           try
             {
-              getValuesConstField(name_stack,  "ZVW",  zv) ;
-              getValuesConstField(name_stack,  "YVW", yv);
-              getValuesConstField(name_stack,  "XVW",  xv) ;
+              std::vector<float> xs,ys,zs;
+              getValuesConstField(name_stack,  "ZS",  zs) ;
+              getValuesConstField(name_stack,  "YS", ys);
+              getValuesConstField(name_stack,  "XS",  xs) ;
+              std::vector<float> bounds;
+              getValuesConstField(name_stack,  "PAVEBOUNDS",  bounds) ;
+              auto glambda = [](float xmin, float xmax, std::vector<float> xs)
+              {
+                std::vector<float> xv ;
+                int first=0;
+                float x1=0;
+                xv.push_back(xmin);
+                for (auto x : xs)
+                  {
+                    if (first==1)
+                      {
+                        if (x<xmax)
+                          {
+                            xv.push_back((x1+x)*0.5f);
+                            x1=x;
+                          }
+                        else
+                          {
+                            break;
+                          }
+                      }
+                    if ((first==0) && (x>xmin))
+                      {
+                        x1=x;
+                        first=1;
+                      }
+                  }
+
+                xv.push_back(xmax);
+                return xv;
+              };
+              xv = glambda( bounds[0],bounds[1],xs);
+              yv = glambda( bounds[2],bounds[3],ys);
+              zv = glambda( bounds[4],bounds[5],zs);
             }
           catch(...)
             {
@@ -926,9 +964,9 @@ float ReaderFORT21::getPosFromIndex(const std::string& name_stack, const std::st
 {
   std::vector<float> data;
   getInterpolatedValuesVarPos(name_stack, name_field, data);
-  if (data.size()==1) 
+  if (data.size()==1)
     {
-       return data[0];
+      return data[0];
     }
   if ((index<0) || (index>=int(data.size())))
     {
@@ -1123,7 +1161,7 @@ bool ReaderFORT21::readHeader()
 
   // IsC3()
   std::string aStr(aBuf);
-  myIsC3 = find(aStr, "c3") >= 0;
+  myIsC3 = ((find(aStr, "c3") >= 0)|| (find(aStr, "C3") >= 0));
 
   // get title of calculation
   strncpy(aBuf, aData + 88, 80);
@@ -1488,8 +1526,17 @@ bool ReaderFORT21::readDesStack(bool theSkip)
                   if (eleminfo.VarFields_.count(aQName)>0)
                     {
                       auto& fieldinfom = eleminfo.VarFields_[aQName];
-                      fieldinfom.offsets_.push_back(posdata);
-                      fieldinfom.times_.push_back(float(Times_glob_.back()));
+                      int sizeT = int(fieldinfom.times_.size());
+                      // if time already exits stock the new posdata
+                      if ((sizeT>0)&& float(Times_glob_.back()) !=   fieldinfom.times_[sizeT-1])
+                        {
+                          fieldinfom.offsets_.push_back(posdata);
+                          fieldinfom.times_.push_back(float(Times_glob_.back()));
+                        }
+                      else
+                        {
+                          fieldinfom.offsets_[sizeT-1]=(posdata);
+                        }
                       //std::cout<<aQName <<" iiii "<< Times_glob_.back()<<" "<<fieldinfom.times_.size()<<std::endl;
                     }
                   else
@@ -1564,7 +1611,7 @@ bool ReaderFORT21::Field::read(int theSize)
   // if the size is known beforehand
   if ((theSize > 0 && aSize != theSize) || aSize < 0 || aSize > myMaxSizeInt)
     {
-      std::cout << " KO " << theSize << std::endl;
+      std::cout << "reading KO " << std::endl;
       return false;
     }
   if (aSize > myCapacity)
@@ -1595,7 +1642,7 @@ bool ReaderFORT21::Field::read(int theSize)
   // control check (hz may be should be removed)
   if (aSize != mySize)
     {
-      std::cout << " KO2 " << theSize << std::endl;
+      std::cout << "reading KO2 " << theSize << std::endl;
       mySize = 0;
       return false;
     }
