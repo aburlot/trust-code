@@ -8,7 +8,7 @@
 * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-* IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LoSS OF USE, DATA, OR PROFITS;
+* IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
 * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
@@ -626,15 +626,21 @@ template <typename _TYPE_> void ReaderFORT21::getValuesVarFieldOnIndex(const std
     {
       std::vector<_TYPE_> datap;
       getValuesVarField(name_stack, name_field, datap, local_index_time);
-      if ((id_index<0)||(id_index>=int(datap.size())))
+
+      if (datap.size()==1)
+        data[local_index_time]= datap[0];
+      else
+      {
+        if ((id_index<0)||(id_index>=int(datap.size())))
         {
           std::stringstream ss;
-          ss << "index too big for "+ name_stack <<  " " << name_field  << " " << id_index << "/" << datap.size() << std::endl;
+          ss << "index out of bounds for "+ name_stack <<  " " << name_field  << " " << id_index << "/" << datap.size() << std::endl;
           throw std::invalid_argument(ss.str());
         }
       //std::cerr<< "Celliiiii "<< cellId-1 << " / " << data.size()<<std::endl;
       data[local_index_time] = datap[id_index];
-    }
+     }
+   }
 }
 
 template <typename _TYPE_> void ReaderFORT21::getValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<_TYPE_>& data, const int& id_time_field) const
@@ -915,6 +921,25 @@ int ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::stri
   std::cout<< "unkonwn conversion from pos to Index "<<eleminfo.type_<<std::endl;
   return 0;
 }
+
+float ReaderFORT21::getPosFromIndex(const std::string& name_stack, const std::string& name_field, int index) const
+{
+  std::vector<float> data;
+  getInterpolatedValuesVarPos(name_stack, name_field, data);
+  if (data.size()==1) 
+    {
+       return data[0];
+    }
+  if ((index<0) || (index>=int(data.size())))
+    {
+      std::stringstream ss;
+      ss << "index out of bounds for "+ name_stack <<  " " << name_field  << " " << index << "/" << data.size() << std::endl;
+      throw std::invalid_argument(ss.str());
+    }
+
+  return data[index];
+}
+
 void ReaderFORT21::getInterpolatedValuesVarPos(const std::string& name_stack, const std::string& name_field, std::vector<float>& data) const
 {
 
@@ -1371,7 +1396,7 @@ bool ReaderFORT21::readDesStack(bool theSkip)
           /*
           // provisoire pour guithare slt
           if ( catType != T_INT && catType != T_REAL)
-          continue;
+            continue;
            */
 
 
@@ -1947,7 +1972,7 @@ ReaderFORT21::BasicMesh ReaderFORT21::getMeshStack(const std::string& name_stack
         for (int cy=0; cy<ny+1; cy++)
           for (int cz=0; cz<nz+1; cz++)
             {
-              //	    int elem=cx+cy*nx+ nx*ny*cz;
+              //    int elem=cx+cy*nx+ nx*ny*cz;
               int som=cz+(nz+1)*(cy+(ny+1)*cx);
 
               nodes_(som,0)= tabx[cx];

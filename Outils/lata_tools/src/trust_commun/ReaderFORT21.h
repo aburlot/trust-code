@@ -334,6 +334,7 @@ public:
   void getInterpolatedValuesVarPos(const std::string& name_stack, const std::string& name_field, std::vector<float>& data) const;
   int getIndexFromPos(const std::string& name_stack, const std::string& name_field, const float& x, const float& y, const float& z) const;
   int getIndexFromPos(const std::string& name_stack, const std::string& name_field, const float& pos) const ;
+  float getPosFromIndex(const std::string& name_stack, const std::string& name_field, int index) const;
   int getIndexFromTime(const std::string& name_stack, const double& t, const std::string& method="") const;
 
 
