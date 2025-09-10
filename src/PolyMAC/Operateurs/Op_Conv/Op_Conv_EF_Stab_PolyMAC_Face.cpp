@@ -124,55 +124,35 @@ void Op_Conv_EF_Stab_PolyMAC_Face::dimensionner(Matrice_Morse& mat) const
   const Domaine_PolyMAC& domaine = le_dom_poly_.valeur();
   const Champ_Face_PolyMAC& ch = ref_cast(Champ_Face_PolyMAC, equation().inconnue());
   const IntTab& e_f = domaine.elem_faces(), &f_e = domaine.face_voisins(), &equiv = domaine.equiv();
-  const DoubleTab& xp = domaine.xp(), &xv = domaine.xv();
-  const DoubleVect& fs = domaine.face_surfaces(), &vf = domaine.volumes_entrelaces();
+  int i, j, k, l, e, eb, f, fb, fd, fc;
 
-  ch.fcl(), domaine.init_ve();
+  ch.fcl();
 
   IntTab stencil(0, 2);
 
-  for (int e = 0; e < domaine.nb_elem_tot(); e++)
-    {
-      // Calcul de la divergence et contributions aux equations
-      for (int i = 0; i < e_f.dimension(1); i++)
-        {
-          int f = e_f(e, i);
-          if (f < 0) continue;
-
-          // Contributions des faces voisines
-          if (f < domaine.nb_faces() && ch.fcl()(f, 0) < 2)
+  for (f = 0; f < domaine.nb_faces_tot(); f++)
+    if (f_e(f, 0) >= 0 && (f_e(f, 1) >= 0 ||  ch.fcl()(f, 0) == 1 ||  ch.fcl()(f, 0) == 3))
+      {
+        for (i = 0; i < 2; i++)
+          if ((e = f_e(f, i)) >= 0)
             {
-              for (int j = 0; j < e_f.dimension(1); j++)
-                {
-                  int fb = e_f(e, j);
-                  if (fb < 0) continue;
-
-                  for (int k = 0; k < 2; k++)
-                    {
-                      if (ch.fcl()(fb, 0) < 2 || ch.fcl()(fb, 0) == 3)
+              for (k = 0; k < e_f.dimension(1) && (fb = e_f(e, k)) >= 0; k++)
+                if (fb < domaine.nb_faces() &&  ch.fcl()(fb, 0) < 2) //partie "faces"
+                  {
+                    if ((fc = equiv(f, i, k)) >= 0 || f_e(f, 1) < 0)
+                      for (j = 0; j < 2; j++) //equivalence : face fd -> face fb
                         {
-                          int eb = f_e(fb, k);
-                          if (eb < 0) continue;
-
-                          int fc = equiv(fb, e != f_e(fb, 0), i);
-                          if (fc  >= 0 )
-                            stencil.append_line(f, fc);
-                          else
-                            {
-                              // Convection pour les faces internes sans equivalence
-                              for (int l = domaine.vedeb(eb); l < domaine.vedeb(eb + 1); l++)
-                                {
-                                  fc = domaine.veji(l);
-                                  if (ch.fcl()(fc, 0) < 2 && std::fabs(domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0))) > 1e-8 * vf(f) / fs(f))
-                                    stencil.append_line(f, fc);
-                                }
-                            }
+                          fd = (j == i ? fb : fc); //element/face sources
+                          if (fd >= 0) stencil.append_line(fb,fd);
                         }
-                    }
-                }
+                    else for (j = 0; j < 2; j++)  //pas d'equivalence : n_f * operateur aux elements
+                        {
+                          for (eb = f_e(f, j), l = 0; l < e_f.dimension(1) && (fc = e_f(eb, l)) >= 0; l++)
+                            stencil.append_line(fb,fc);
+                        }
+                  }
             }
-        }
-    }
+      }
 
   // Tri et suppression des doublons
   tableau_trier_retirer_doublons(stencil);
@@ -184,98 +164,117 @@ void Op_Conv_EF_Stab_PolyMAC_Face::dimensionner(Matrice_Morse& mat) const
 
 // ajoute la contribution de la convection au second membre resu
 // renvoie resu
-inline DoubleTab& Op_Conv_EF_Stab_PolyMAC_Face::ajouter(const DoubleTab& tab_inco, DoubleTab& tab_resu) const
+inline DoubleTab& Op_Conv_EF_Stab_PolyMAC_Face::ajouter(const DoubleTab& inco, DoubleTab& secmem) const
 {
   if (has_interface_blocs())
-    return Operateur_base::ajouter(tab_inco, tab_resu);
+    return Operateur_base::ajouter(inco, secmem);
 
   const Domaine_PolyMAC& domaine = le_dom_poly_.valeur();
   const Champ_Face_PolyMAC& ch = ref_cast(Champ_Face_PolyMAC, equation().inconnue());
   const Conds_lim& cls = la_zcl_poly_->les_conditions_limites();
-
-  domaine.init_ve();
 
   const IntTab& f_e = domaine.face_voisins(), &e_f = domaine.elem_faces(), &equiv = domaine.equiv();
   const DoubleTab& xp = domaine.xp(), &xv = domaine.xv(), &vfd = domaine.volumes_entrelaces_dir(), &vit = vitesse_->valeurs();
   const DoubleVect& fs = domaine.face_surfaces(), &ve = domaine.volumes(),  &pf = porosite_f, &pe = porosite_e;
   const DoubleTab& nf = domaine.face_normales();
 
-  for (int e = 0; e < domaine.nb_elem_tot(); e++)
-    {
-      for (int i = 0; i < e_f.dimension(1); i++)
-        {
-          int f = e_f(e, i);
-          if (f < 0) continue;
+  int i, j, k, l, e, eb, f, fb, fc, fd, m, n, N = inco.line_size(), d, D = dimension, comp = !incompressible_;
+  double mult;
 
-          int dir_f = (e == f_e(f, 0) ? 1 : -1);
-
-          // Traitement de la convection pour cette face
-          if (f < domaine.nb_faces() && ch.fcl()(f, 0) < 2)
-            for (int j = 0; j < e_f.dimension(1); j++)
-              {
-                int fb = e_f(e, j);
-                if (fb < 0) continue;
-
-                int dir_fb = (e == f_e(fb, 0) ? 1 : -1);
-
-                for (int k = 0; k < 2; k++)
+  assert(N == 1);
+  DoubleTrav dfac(2, N, N);
+  for (f = 0; f < domaine.nb_faces_tot(); f++)
+    if (f_e(f, 0) >= 0 && (f_e(f, 1) >= 0 ||  ch.fcl()(f, 0) == 1 ||  ch.fcl()(f, 0) == 3))
+      {
+        for (i = 0, dfac = 0; i < 2; i++)
+          {
+            //contribution a dfac
+            for (eb = f_e(f, i), n = 0; n < N; n++)
+              for (m = 0; m < N; m++)
+                dfac( ch.fcl()(f, 0) == 1 ? 0 : i, n, m) += fs(f) * inco[f] * pe(eb >= 0 ? eb : f_e(f, 0))
+                                                            * (1. + (vit[f] * (i ? -1 : 1) >= 0 ? 1. : vit[f] ? -1. : 0.) * alpha_) / 2;
+          }
+        for (i = 0; i < 2; i++)
+          if ((e = f_e(f, i)) >= 0)
+            {
+              for (k = 0; k < e_f.dimension(1) && (fb = e_f(e, k)) >= 0; k++)
+                if (fb < domaine.nb_faces() &&  ch.fcl()(fb, 0) < 2) //partie "faces"
                   {
-                    int eb = f_e(fb, k);
-                    double fac = dir_f * tab_inco(fb) * dir_fb * fs(fb) * pe(eb >= 0 ? eb : f_e(fb, 0)) / ve(e) * (1. + (vit(fb) * (k ? -1 : 1) >= 0 ? 1. : vit[fb] ? -1. : 0.) * alpha_) / 2;
-
-                    int fc = equiv(fb, e != f_e(fb, 0), i);
-                    if (fc  >= 0 || f_e(fb, 0) < 0 || f_e(fb, 1) < 0)
-                      {
-                        if (eb >= 0)
-                          {
-                            int fd = (eb == e ? f : fc); //face source
-                            double mult = (fd < 0 || domaine.dot(&nf(f, 0), &nf(fd, 0)) > 0) ? 1 : -1;
-                            mult *= (fd >= 0) ? pf(fd) / pe(eb) : 1;
-
-                            tab_resu(f) -= fac * mult * dir_f * vfd(f, e != f_e(f, 0)) * vit(fd);
-
-                          }
-                        else if (ch.fcl()(fb, 0) == 3 )
-                          {
-                            double masse = std::fabs(vit[fb]) > 1e-10 ? tab_inco(fb) / vit[fb] : 1.0;
-                            for (int l = 0; l < dimension; l++)
-                              tab_resu(f) -= fac * dir_f * vfd(f, e != f_e(f, 0))* nf(f, l) / fs(f) * ref_cast(Dirichlet, cls[ch.fcl()(fb, 1)].valeur()).val_imp(ch.fcl()(fb, 2), l) / masse;
-                          }
-                        if (!incompressible_)
-                          tab_resu(f) += fac * dir_f * vfd(f, e != f_e(f, 0)) * vit(f);
-                      }
-                    else
-                      {
-                        for (int l = domaine.vedeb(eb); l < domaine.vedeb(eb + 1); l++)
-                          {
-                            fc = domaine.veji(l);
-                            tab_resu(f) -= fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0)) * vit(fc);
-                          }
-                        if (!incompressible_)
-                          {
-                            for (int l = domaine.vedeb(e); l < domaine.vedeb(e + 1); l++)
+                    if ((fc = equiv(f, i, k)) >= 0 || f_e(f, 1) < 0)
+                      for (j = 0; j < 2; j++) //equivalence : face fd -> face fb
+                        {
+                          eb = f_e(f, j), fd = (j == i ? fb : fc); //element/face sources
+                          mult = (fd < 0 || domaine.dot(&nf(fb, 0), &nf(fd, 0)) > 0 ? 1 : -1) * (fd >= 0 ? pf(fd) / pe(eb) : 1); //multiplicateur pour passer de vf a ve
+                          for (n = 0; n < N; n++)
+                            for (m = 0; m < N; m++)
+                              if (dfac(j, n, m))
+                                {
+                                  double fac = (e == f_e(f, 0) ? 1 : -1) * vfd(fb, e != f_e(fb, 0)) * dfac(j, n, m) / ve(e);
+                                  if (fd >= 0)
+                                    secmem[fb] -= fac * mult * vit[fd]; //autre face calculee
+                                  else
+                                    {
+                                      const Cond_lim_base& my_cl = cls[ ch.fcl()(f, 1)].valeur();
+                                      //masse : diagonale + masse ajoutee si correlation
+                                      double masse = std::fabs(vit[f]) > 1e-10 ? inco(f) / vit[f] : 1.0;
+                                      if (sub_type(Dirichlet, my_cl)) // sinon : paroi -> pas de contrib
+                                        for (d = 0; d < D; d++)  //CL de Dirichlet
+                                          secmem[fb] -= fac * nf(fb, d) / fs(fb) * ref_cast(Dirichlet, my_cl).val_imp( ch.fcl()(f, 2), N * d + m) / masse;
+                                    }
+                                  if (comp) secmem[fb] += fac * vit[fb]; //partie v div(alpha rho v)
+                                }
+                        }
+                    else for (j = 0; j < 2; j++)  //pas d'equivalence : n_f * operateur aux elements
+                        {
+                          for (eb = f_e(f, j), l = 0; l < e_f.dimension(1) && (fc = e_f(eb, l)) >= 0; l++)
+                            {
+                              double num = (e == f_e(fb, 0) ? 1 : -1) * (e == f_e(f, 0) ? 1 : -1) * fs(fc) * fs(fb) * domaine.dot(&xv(fc, 0), &xv(fb, 0), &xp(eb, 0), &xp(e, 0)) * (eb == f_e(fc, 0) ? 1 : -1);
+                              double den = ve(eb) * ve(e);
+                              if (std::fabs(num) > 1e-9 * den)
+                                {
+                                  double num_den = num/den;
+                                  for (n = 0; n < N; n++)
+                                    for (m = 0; m < N; m++)
+                                      if (dfac(j, n, m))
+                                        {
+                                          double fac = dfac(j, n, m) * num_den;
+                                          secmem[fb] -= fac * vit[fc];
+                                        }
+                                }
+                            }
+                          if (comp)
+                            for (l = 0; l < e_f.dimension(1) && (fc = e_f(e, l)) >= 0; l++)
                               {
-                                fc = domaine.veji(l);
-                                tab_resu(f) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0)) * vit(fc);
+                                double num = (e == f_e(fb, 0) ? 1 : -1) * (e == f_e(f, 0) ? 1 : -1) * fs(fc) * fs(fb) * domaine.dot(&xv(fc, 0), &xv(fb, 0), &xp(e, 0), &xp(e, 0)) * (e == f_e(fc, 0) ? 1 : -1);
+                                double den = ve(e) * ve(e);
+                                if (std::fabs(num) > 1e-9 * den)
+                                  {
+                                    double num_den = num/den;
+                                    for (n = 0; n < N; n++)
+                                      for (m = 0; m < N; m++)
+                                        if (dfac(j, n, m))
+                                          {
+                                            double fac = dfac(j, n, m) * num_den;
+                                            secmem[fb] += fac * vit[fc];
+                                          }
+                                  }
                               }
-                          }
-                      }
+                        }
                   }
-              }
-        }
-    }
+            }
+      }
 
-  return tab_resu;
+  return secmem;
 }
 
 /*! @brief on assemble la matrice.
  *
  */
-inline void Op_Conv_EF_Stab_PolyMAC_Face::contribuer_a_avec(const DoubleTab& tab_inco, Matrice_Morse& matrice) const
+inline void Op_Conv_EF_Stab_PolyMAC_Face::contribuer_a_avec(const DoubleTab& inco, Matrice_Morse& matrice) const
 {
   if (has_interface_blocs())
     {
-      Operateur_base::contribuer_a_avec(tab_inco, matrice);
+      Operateur_base::contribuer_a_avec(inco, matrice);
       return;
     }
 
@@ -283,78 +282,86 @@ inline void Op_Conv_EF_Stab_PolyMAC_Face::contribuer_a_avec(const DoubleTab& tab
   const Champ_Face_PolyMAC& ch = ref_cast(Champ_Face_PolyMAC, equation().inconnue());
   const IntTab& f_e = domaine.face_voisins(), &e_f = domaine.elem_faces(), &equiv = domaine.equiv();
   const DoubleTab& xp = domaine.xp(), &xv = domaine.xv(), &vfd = domaine.volumes_entrelaces_dir(), &vit = vitesse_->valeurs();
-  const DoubleVect& fs = domaine.face_surfaces(), &vf = domaine.volumes_entrelaces(), &ve = domaine.volumes(), &pf = porosite_f, &pe = porosite_e;
+  const DoubleVect& fs = domaine.face_surfaces(), &ve = domaine.volumes(), &pf = porosite_f, &pe = porosite_e;
   const DoubleTab& nf = domaine.face_normales();
 
-  for (int e = 0; e < domaine.nb_elem_tot(); e++)
-    {
-      // Calcul de la divergence et contributions aux equations
-      for (int i = 0; i < e_f.dimension(1); i++)
-        {
-          int f = e_f(e, i);
-          if (f < 0) continue;
+  int i, j, k, l, e, eb, f, fb, fc, fd, m, n, N = inco.line_size(), comp = !incompressible_;
+  double mult;
 
-          int dir_f = (e == f_e(f, 0) ? 1 : -1);
-
-          // Contributions des faces voisines
-          if (f < domaine.nb_faces() && ch.fcl()(f, 0) < 2)
+  assert(N == 1);
+  DoubleTrav dfac(2, N, N), masse(N, N);
+  for (f = 0; f < domaine.nb_faces_tot(); f++)
+    if (f_e(f, 0) >= 0 && (f_e(f, 1) >= 0 ||  ch.fcl()(f, 0) == 1 ||  ch.fcl()(f, 0) == 3))
+      {
+        for (i = 0, dfac = 0; i < 2; i++)
+          {
+            //masse : diagonale + masse ajoutee si correlation
+            masse(0, 0) = std::fabs(vit[f]) > 1e-10 ? inco(f) / vit[f] : 1.0;
+            //contribution a dfac
+            for (eb = f_e(f, i), n = 0; n < N; n++)
+              for (m = 0; m < N; m++)
+                dfac( ch.fcl()(f, 0) == 1 ? 0 : i, n, m) += fs(f) * inco[f] * pe(eb >= 0 ? eb : f_e(f, 0))
+                                                            * (1. + (vit[f] * (i ? -1 : 1) >= 0 ? 1. : vit[f] ? -1. : 0.) * alpha_) / 2;
+          }
+        for (i = 0; i < 2; i++)
+          if ((e = f_e(f, i)) >= 0)
             {
-              for (int j = 0; j < e_f.dimension(1); j++)
-                {
-                  int fb = e_f(e, j);
-                  if (fb < 0) continue;
-
-                  int dir_fb = (e == f_e(fb, 0) ? 1 : -1);
-
-                  for (int k = 0; k < 2; k++)
-                    {
-                      if (ch.fcl()(fb, 0) < 2 || ch.fcl()(fb, 0) == 3)
+              for (k = 0; k < e_f.dimension(1) && (fb = e_f(e, k)) >= 0; k++)
+                if (fb < domaine.nb_faces() &&  ch.fcl()(fb, 0) < 2) //partie "faces"
+                  {
+                    if ((fc = equiv(f, i, k)) >= 0 || f_e(f, 1) < 0)
+                      for (j = 0; j < 2; j++) //equivalence : face fd -> face fb
                         {
-                          int eb = f_e(fb, k);
-                          double fac = dir_f * tab_inco(fb) * dir_fb * fs(fb) * pe(eb >= 0 ? eb : f_e(fb, 0)) / ve(e) * (1. + (vit(fb) * (k ? -1 : 1) >= 0 ? 1. : vit[fb] ? -1. : 0.) * alpha_) / 2;
-
-                          // Convection pour les equivalences ou bords
-
-
-                          int fc = equiv(fb, e != f_e(fb, 0), i);
-                          if (fc  >= 0 || f_e(fb, 0) < 0 || f_e(fb, 1) < 0)
-                            {
-                              if (eb >= 0)
+                          eb = f_e(f, j), fd = (j == i ? fb : fc); //element/face sources
+                          mult = (fd < 0 || domaine.dot(&nf(fb, 0), &nf(fd, 0)) > 0 ? 1 : -1) * (fd >= 0 ? pf(fd) / pe(eb) : 1); //multiplicateur pour passer de vf a ve
+                          for (n = 0; n < N; n++)
+                            for (m = 0; m < N; m++)
+                              if (dfac(j, n, m))
                                 {
-                                  int fd = (eb == e ? f : fc); //face source
-                                  double mult = (fd < 0 || domaine.dot(&nf(f, 0), &nf(fd, 0)) > 0) ? 1 : -1;
-                                  mult *= (fd >= 0) ? pf(fd) / pe(eb) : 1;
-
-                                  matrice(f, fd) += fac * mult * dir_f * vfd(f, e != f_e(f, 0));
+                                  double fac = (e == f_e(f, 0) ? 1 : -1) * vfd(fb, e != f_e(fb, 0)) * dfac(j, n, m) / ve(e);
+                                  if (fd >= 0) matrice(fb,fd) += fac * mult; //autre face calculee
+                                  if (comp) matrice(fb,fb) -= fac; //partie v div(alpha rho v)
                                 }
-
-                              if (!incompressible_)
-                                matrice(f, f) -= fac * dir_f * vfd(f, e != f_e(f, 0));
-                            }
-                          else
-                            {
-                              // Convection pour les faces internes sans equivalence
-                              for (int l = domaine.vedeb(eb); l < domaine.vedeb(eb + 1); l++)
-                                {
-                                  fc = domaine.veji(l);
-                                  if (ch.fcl()(fc, 0) < 2 && std::fabs(domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0))) > 1e-8 * vf(f) / fs(f))
-                                    matrice(f, fc) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0));
-                                }
-                              if (!incompressible_)
-                                // Convection pour les faces internes sans equivalence
-                                for (int l = domaine.vedeb(e); l < domaine.vedeb(e + 1); l++)
-                                  {
-                                    fc = domaine.veji(l);
-                                    if (ch.fcl()(fc, 0) < 2 && std::fabs(domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0))) > 1e-8 * vf(f) / fs(f))
-                                      matrice(f, fc) += fac * fs(f) * domaine.dot(&xv(f, 0), &domaine.veci(l, 0), &xp(e, 0));
-                                  }
-                            }
                         }
-                    }
-                }
+                    else for (j = 0; j < 2; j++)  //pas d'equivalence : n_f * operateur aux elements
+                        {
+                          for (eb = f_e(f, j), l = 0; l < e_f.dimension(1) && (fc = e_f(eb, l)) >= 0; l++)
+                            {
+                              double num = (e == f_e(fb, 0) ? 1 : -1) * (e == f_e(f, 0) ? 1 : -1) * fs(fc) * fs(fb) * domaine.dot(&xv(fc, 0), &xv(fb, 0), &xp(eb, 0), &xp(e, 0)) * (eb == f_e(fc, 0) ? 1 : -1);
+                              double den = ve(eb) * ve(e);
+                              if (std::fabs(num) > 1e-9 * den)
+                                {
+                                  double num_den = num/den;
+                                  for (n = 0; n < N; n++)
+                                    for (m = 0; m < N; m++)
+                                      if (dfac(j, n, m))
+                                        {
+                                          double fac = dfac(j, n, m) * num_den;
+                                          matrice(fb,fc) += fac;
+                                        }
+                                }
+                            }
+                          if (comp)
+                            for (l = 0; l < e_f.dimension(1) && (fc = e_f(e, l)) >= 0; l++)
+                              {
+                                double num = (e == f_e(fb, 0) ? 1 : -1) * (e == f_e(f, 0) ? 1 : -1) * fs(fc) * fs(fb) * domaine.dot(&xv(fc, 0), &xv(fb, 0), &xp(e, 0), &xp(e, 0)) * (e == f_e(fc, 0) ? 1 : -1);
+                                double den = ve(e) * ve(e);
+                                if (std::fabs(num) > 1e-9 * den)
+                                  {
+                                    double num_den = num/den;
+                                    for (n = 0; n < N; n++)
+                                      for (m = 0; m < N; m++)
+                                        if (dfac(j, n, m))
+                                          {
+                                            double fac = dfac(j, n, m) * num_den;
+                                            matrice(fb,fc) -= fac;
+                                          }
+                                  }
+                              }
+                        }
+                  }
             }
-        }
-    }
+      }
 }
 
 void Op_Conv_EF_Stab_PolyMAC_Face::set_incompressible(const int flag)
