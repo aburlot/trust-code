@@ -37,6 +37,11 @@ def extract_cases(book):
              s += loc
    # Now execute this code - it will perform whatever action the user wants to have as 'prepare' steps
    # and it will finally print out the list of test cases.
+
+   print("=========== Here is the part extracted from the notebook ===========")
+   print(s)
+   print("======== Here is the output when executing previous python code ==========")
+
    exec(s, globals())
 
 if __name__ == "__main__":
