@@ -98,10 +98,13 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
   chaine_lue_+=" -ksp_norm_type UNPRECONDITIONED \
 -pc_type fieldsplit \
 -pc_fieldsplit_type additive";
+  // Gamg is using MPI GPU-Aware but less robust than Boomeramg
+  // Il faut -pc_gamg_agg_nsmooths 0 (defaut 1) si crash mais plus lent
   if (precond=="gamg")
     {
-      // ToDo: fix crash on multi-GPU (issue sent to PETSc support)
-      chaine_lue_+=" -fieldsplit_P0_ksp_type preonly \
+      Cerr << "If Gamg setup crashes during MatProductSymbolic_SeqAIJCUSPARSE_SeqAIJCUSPARSE, it is related to not enough RAM device." << finl;
+      Cerr << "Use more GPUs, or try slower options: -fieldsplit_P0_pc_gamg_agg_nsmooths 0 -fieldsplit_P1_pc_gamg_agg_nsmooths 0" << finl;
+      chaine_lue_+=" -info :pc -fieldsplit_P0_ksp_type preonly \
 -fieldsplit_P0_pc_type gamg \
 -fieldsplit_P0_pc_gamg_threshold 0.01 \
 -fieldsplit_P0_pc_gamg_square_graph 1 \
@@ -118,6 +121,7 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
 -fieldsplit_Pa_pc_gamg_square_graph 1";
         }
     }
+  // Boomeramg do not exploit MPI GPU-Aware (issue reported to Hypre: https://github.com/hypre-space/hypre/issues/1354)
   else if (precond=="boomeramg")
     {
       chaine_lue_+=" -fieldsplit_P0_ksp_type preonly \
@@ -150,16 +154,19 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
       Cerr << "Warning! PETSc with AmgX preconditioner was not tested yet for nnz>2^31 !" << finl;
       chaine_lue_+=" -fieldsplit_P0_ksp_type preonly \
 -fieldsplit_P0_pc_type amgx \
+-fieldsplit_P0_pc_amgx_strength_threshold 0.1 \
 -fieldsplit_P0_pc_amgx_verbose 1 \
 -fieldsplit_P0_pc_amgx_print_grid_stats 1 \
 -fieldsplit_P1_ksp_type preonly \
 -fieldsplit_P1_pc_type amgx \
+-fieldsplit_P1_pc_amgx_strength_threshold 0.1 \
 -fieldsplit_P1_pc_amgx_verbose 1 \
 -fieldsplit_P1_pc_amgx_print_grid_stats 1";
       if (n==3)
         {
           chaine_lue_+=" -fieldsplit_Pa_ksp_type preonly \
 -fieldsplit_Pa_pc_type amgx \
+-fieldsplit_Pa_pc_amgx_strength_threshold 0.5 \
 -fieldsplit_Pa_pc_amgx_verbose 1 \
 -fieldsplit_Pa_pc_amgx_print_grid_stats 1";
         }
