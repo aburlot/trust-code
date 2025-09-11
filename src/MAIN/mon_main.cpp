@@ -25,6 +25,10 @@
 #include <Perf_counters.h>
 #include <communications.h>
 #include <petsc_for_kernel.h>
+#ifdef PETSCKSP_H
+#include <petscdevice.h>
+#include <petscsys.h>
+#endif
 #include <Baltik_Version.h>
 #include <info_atelier.h>
 #include <unistd.h> // Pour chdir for other compiler
@@ -69,6 +73,12 @@ static int init_petsc(True_int argc, char **argv, bool with_mpi,bool& trio_began
     }
 #else
   PetscInitialize(&argc, &argv, (char*)0, help);
+#endif
+#ifdef TRUST_USE_GPU
+  PetscDevice device;
+  PetscDeviceCreate(PETSC_DEVICE_DEFAULT(), PETSC_DECIDE, &device);
+  PetscDeviceView(device, PETSC_VIEWER_STDERR_WORLD);
+  //if (instance==1) PetscLogGpuTime(); // Slow down calculation ! Use -log_view_gpu_time
 #endif
   // Bizarrerie qui se produit sur une machine (ioulia, MPICH natif): PetscInitialize change le pwd()
   // en sequentiel et si le binaire n'est pas dans le repertoire de l'etude, le pwd est perdu...

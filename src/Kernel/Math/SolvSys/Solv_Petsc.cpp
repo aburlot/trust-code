@@ -2790,6 +2790,9 @@ void Solv_Petsc::Create_objects(const Matrice_Morse& mat, int blocksize)
   /*************************************/
   Perf_counters::time_point start = statistics().start_clock();
   KSPSetUp(SolveurPetsc_);
+  PCSetUpOnBlocks(PreconditionneurPetsc_); // Sets up the preconditioner for each block in the block Jacobi, overlapping Schwarz, and fieldsplit methods.
+  // IF gamg preconditioner, print grid stats has there is no specific option:
+  if (limpr()>0 && chaine_lue_.contient("gamg_")) KSPView(SolveurPetsc_, PETSC_VIEWER_STDOUT_WORLD);
   if (verbose) Cout << "[Petsc] Time to setup solver:    \t" << statistics().compute_time(start) << finl;
 }
 
