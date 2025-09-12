@@ -185,8 +185,20 @@ void Domaine_PolyMAC::init_equiv() const
                     ok &= std::fabs((xv_(f1, d) - xp_(e1, d)) - (xv_(f2, d) - xp_(e2, d))) < 1e-12; //xv - xp identiques?
               }
             else
-              for (ok = 1, d = 0; d < D; d++)
-                ok &= std::fabs((xv_(f1, d) - xp_(e1, d)) - (xv_(f2, d) - xp_(e2, d))) < (is_polymac ? 1.e-6 /* XXX Elie Saikali : comme avant pour le moment */ : 1e-12); //xv - xp identiques?
+              {
+                std::array<double, 3> v1 = cross(D, D, &xv_(f1, 0), &nf(f1, 0), &xp_(e1, 0));//produit vectoriel (xs - xf)xnf
+                std::array<double, 3> v2 = cross(D, D, &xv_(f2, 0), &nf(f2, 0), &xp_(e2, 0));//produit vectoriel (xs - xf)xnf
+
+                double norm1 = (D < 3 ? v1[2]*v1[2] : 0.), norm2 = (D < 3 ? v2[2]*v2[2] : 0.);
+                for (ok = 1, d = 0; d < D; d++)
+                  {
+                    ok &= std::fabs((xv_(f1, d) - xp_(e1, d)) - (xv_(f2, d) - xp_(e2, d))) < (is_polymac ? 1.e-12 /* XXX Elie Saikali : comme avant pour le moment */ : 1e-12); //xv - xp identiques?
+                    norm1 += v1[d]*v1[d];
+                    norm2 += v2[d]*v2[d];
+                  }
+                ok &= sqrt(norm1) < 1e-12;
+                ok &= sqrt(norm2) < 1e-12;
+              }
 
             if (!ok)
               continue;

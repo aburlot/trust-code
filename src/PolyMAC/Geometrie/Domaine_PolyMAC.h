@@ -42,7 +42,6 @@ public :
 
   inline double dot (const double *a, const double *b, const double *ma = nullptr, const double *mb = nullptr) const { return dot(dimension, a, b, ma, mb); }
   KOKKOS_INLINE_FUNCTION double dot (const int dim, const double *a, const double *b, const double *ma = nullptr, const double *mb = nullptr) const;
-  inline std::array<double, 3> cross(int dima, int dimb, const double *a, const double *b, const double *ma = nullptr, const double *mb = nullptr) const;
 
   IntVect cyclic; // cyclic(i) = 1 i le poly i est cyclique
 
@@ -105,16 +104,6 @@ KOKKOS_INLINE_FUNCTION double Domaine_PolyMAC::dot(const int dim, const double *
 {
   double res = 0;
   for (int i = 0; i < dim; i++) res += (a[i] - (ma ? ma[i] : 0)) * (b[i] - (mb ? mb[i] : 0));
-  return res;
-}
-
-/* produit vectoriel de deux vecteurs (toujours 3D, meme en 2D) */
-inline std::array<double, 3> Domaine_PolyMAC::cross(int dima, int dimb, const double *a, const double *b, const double *ma, const double *mb) const
-{
-  std::array<double, 3> va = {{ 0, 0, 0 }}, vb = {{ 0, 0, 0 }}, res;
-  for (int i = 0; i < dima; i++) va[i] = a[i] - (ma ? ma[i] : 0);
-  for (int i = 0; i < dimb; i++) vb[i] = b[i] - (mb ? mb[i] : 0);
-  for (int i = 0; i < 3; i++) res[i] = va[(i + 1) % 3] * vb[(i + 2) % 3] - va[(i + 2) % 3] * vb[(i + 1) % 3];
   return res;
 }
 

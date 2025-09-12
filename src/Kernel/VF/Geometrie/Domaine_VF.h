@@ -667,6 +667,7 @@ inline std::array<double, 3> Domaine_VF::cross(int dima, int dimb, const double 
   for (int i = 0; i < dima; i++) va[i] = a[i] - (ma ? ma[i] : 0);
   for (int i = 0; i < dimb; i++) vb[i] = b[i] - (mb ? mb[i] : 0);
   for (int i = 0; i < 3; i++) res[i] = va[(i + 1) % 3] * vb[(i + 2) % 3] - va[(i + 2) % 3] * vb[(i + 1) % 3];
+  // note : in 2D, the relevant results corresponding to the determinant is res[2]
   return res;
 }
 
