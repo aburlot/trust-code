@@ -322,8 +322,8 @@ int Assembleur_P_VEFPreP1B::assembler_mat(Matrice& la_matrice,const DoubleVect& 
           updateP0Pa(domaine_vef, domaine_Cl_VEF, la_matrice_bloc_sym_de_travail.get_bloc(P0, Pa),
                      inverse_quantitee_entrelacee);
       }
-      trustIdType ordre_matrice = mp_sum(la_matrice_bloc_sym_de_travail.nb_lignes());
-      Cerr << "Order of the matrix = " << ordre_matrice << finl;
+      //trustIdType ordre_matrice = mp_sum(la_matrice_bloc_sym_de_travail.nb_lignes());
+      //Cerr << "Order of the matrix = " << ordre_matrice << finl;
 
       // Methode verifier
       char *theValue = getenv("TRUST_VERIFIE_MATRICE_VEF");

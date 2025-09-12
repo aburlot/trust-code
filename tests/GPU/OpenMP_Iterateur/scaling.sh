@@ -55,7 +55,7 @@ do
 	    i=0 && [ "$HOST" = adastra ] && i=1
 	    hram=`awk -v i=$i '/RAM taken/ {if ($(13+i)>RAM) RAM=$(13+i)} END {print 0.1*int(0.01*RAM)}' $jdd.out_err`
 	    dram=`awk -v i=$i '/RAM allocated on a GPU/ {if ($(1+i)>RAM) RAM=$(1+i)} END {print RAM}' $jdd.out_err`
-            row=`awk '/Order of the matrix/ {print $NF;exit}' $jdd.out_err`
+            row=`awk '/Order of the PETSc matrix/ {print $7;exit}' $jdd.out_err`
             faces=`awk '/Total number of faces/ {print $NF;exit}' $jdd.out_err`
             elems=`awk '/Total number of elements/ {printf($NF);exit}' $jdd.out_err`
             # No better to use dof=row
