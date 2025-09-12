@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+12/09/25 (TRUST) Fix          : In 3D VDF, if the boundary with normal vector in x-direction is moving in y-direction, wall velocity norm was not correctly computed
 04/09/25 (TRUST) Fix          : Fix lata postprocessing and lata_to_med conversion in EF_Axi discretization
 01/09/25 (TRUST) Memory       : Reduced footprint again (-40%) for VEF discretization (now ~2.5KB/tetra) during a typical calculation with algebric multigrid solver
 01/09/25 (TRUST) GPU          : Blackwell architecture partially supported (B200, B100, RTX 50xx) cause needs Nvidia HPC SDK>=25.3 and Cuda 12.8. Use ./configure -cuda=cc100
