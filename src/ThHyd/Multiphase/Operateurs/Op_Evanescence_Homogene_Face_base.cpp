@@ -172,13 +172,13 @@ void Op_Evanescence_Homogene_Face_base::ajouter_blocs(matrices_t matrices, Doubl
               for (d = 0; d < D; d++) in.v(d, n) = inco(f, n) * domaine.face_normales(f, d) / domaine.face_surfaces(f);
             for (in.alpha = 0, in.rho = 0, in.mu = 0, in.d_bulles = 0, in.k = 0, in.nut = 0, in.dh = 0, in.g = 0, i = 0; i < 2 && (e = f_e(f, i)) >= 0; i++)
               {
+                in.dh += vfd(f, i) / vf(f) * dh_e(e); // should not be in the loop on N below.
                 for (n = 0; n < N; n++)
                   {
                     in.alpha(n) += vfd(f, i) / vf(f) * alpha(e, n);
                     in.rho(n) += vfd(f, i) / vf(f) * rho(!cR * e, n);
                     in.mu(n) += vfd(f, i) / vf(f) * mu(!cM * e, n);
                     in.d_bulles(n)+=vfd(f, i) / vf(f) *((d_bulles) ? (*d_bulles)(e, n) : -1.) ;
-                    in.dh += vfd(f, i) / vf(f) * dh_e(e);
                     for (m = n+1; m < N; m++)
                       if (milc.has_interface(n, m))
                         {
