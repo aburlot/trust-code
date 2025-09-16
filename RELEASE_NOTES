@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+17/09/25 (TRUST) Tools        : Upgrade MEDCoupling to 9.15.0 and MED to 4.2.0
 16/09/25 (TRUST) Fix          : When reading a mesh from med file in bidim_axi, area of domain boundaries were not correctly computed.
 12/09/25 (TRUST) Fix          : In 3D VDF, if the boundary with normal vector in x-direction is moving in y-direction, wall velocity norm was not correctly computed
 04/09/25 (TRUST) Fix          : Fix lata postprocessing and lata_to_med conversion in EF_Axi discretization
