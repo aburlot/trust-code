@@ -1,13 +1,19 @@
 Installation de docker rootless:
 
+# Ajout de droits (sudo necessaire):
+sudo usermod --add-subuids 100000-165535 $USER
+sudo usermod --add-subgids 100000-165535 $USER
+
+# Installation
 curl -fsSL https://get.docker.com/rootless | sh
 mkdir -p ~/.config/docker
 mkdir -p /volatile/formation/$USER/docker
 
 # stockage des images sur le volatile
-echo "{\"data-root\": \"/volatile/formation/$USER/docker\"}" > ~/.config/docker/daemon.json
+echo "{\"data-root\": \"/export/home/catA/$USER/docker\"}" > ~/.config/docker/daemon.json
 systemctl --user enable --now docker
 
+# Configuration:
 echo "export PATH=${HOME}/bin:\$PATH" >> ~/.bashrc
 echo "export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock" >> ~/.bashrc
 

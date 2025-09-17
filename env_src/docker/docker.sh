@@ -9,14 +9,14 @@ TRUST_ROOT=`pwd`/../..
 exec=$TRUST_ROOT/exec/TRUST_mpi_opt
 
 # Build the container to build TRUST on a specific OS
-docker build --rm --build-arg MY_OS=$MY_OS -t $image .
+docker build --rm --build-arg MY_OS=$MY_OS -t $image . 2>&1 | tee step1.log
 
 # Run the container 
 docker run -v $TRUST_ROOT:/home/trust $image `[ -f $exec ] && echo "Binary $exec ready."`
 
 # Build the container with the binary for the specific OS
 cp $exec .
-docker build --rm --build-arg MY_OS=$MY_OS -f Dockerfile2 -t $image .
+docker build --rm --build-arg MY_OS=$MY_OS -f Dockerfile2 -t $image . 2>&1 | tee step2.log
 rm -f ./TRUST_mpi_opt
 
 # Test the container locally with a data file:
