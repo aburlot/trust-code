@@ -297,7 +297,8 @@ Sortie& Solv_Optimal::printOn(Sortie& s ) const
 
 Entree& Solv_Optimal::readOn(Entree& is )
 {
-  bool impr,quiet;
+  bool impr = false;
+  bool quiet = false;
   Param param((*this).que_suis_je());
   param.ajouter("seuil",&seuil_,Param::REQUIRED); // seuil de resolution
   param.ajouter_flag("impr",&impr); // active impression des solveurs

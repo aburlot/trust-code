@@ -416,9 +416,10 @@ void Param::ajouter_flag(const char *mot, bool *quoi, Param::Nature nat)
 
   if (*quoi)
     {
-      Cerr << "WARNING: flag " << mot << " is set to true before being passed to Param::ajouter_flag." << finl;
-      Cerr << "         Flags should be set to false by default. Then, the value will be set to true if the keyword is present in the .data file." << finl;
-      Cerr << "         Current value will be overridden to false." << finl;
+      Cerr << "ERROR: flag '" << mot << "' is set to true before being passed to Param::ajouter_flag." << finl;
+      Cerr << "       Flags should be set to false by default. Then, the value will be set to true if the keyword '"<<mot<<"' is present in the .data file." << finl;
+      Cerr << "       Change the default value of the flag to 'false' to fix this problem. (This error may come from the parameter not being initialized)" << finl;
+      Process::exit();
     }
 
   Objet_a_lire& obj = create_or_get_objet_a_lire(mot);

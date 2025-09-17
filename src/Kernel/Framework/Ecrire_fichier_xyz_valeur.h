@@ -47,7 +47,7 @@ private :
   void writeValuesOnBoundary_(const Nom& fname, const std::string& bname, const DoubleTab& pos, const DoubleTab& val) const;
 
   OBS_PTR(Equation_base) eqn_;
-  bool binary_file_ = true;
+  bool binary_file_ = false;
   double dt_ = -123.; //file writing frequency
   Noms fields_names_;
   Noms boundary_names_;

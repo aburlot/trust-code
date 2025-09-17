@@ -540,7 +540,7 @@ Entree& MaillerParallel::interpreter(Entree& is)
   ArrOfInt nb_noeuds;
   ArrOfInt decoupage;
   int   epaisseur_joint;
-  bool perio[3];
+  bool perio[3] = {false, false, false};
   Noms fonctions_coord(3);
   Noms nom_bords_min(3);
   Noms nom_bords_max(3);
