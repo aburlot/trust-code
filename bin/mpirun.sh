@@ -150,7 +150,7 @@ case ${Mpirun} in
         MPIWRAP_DEBUG="verbose"
         val=$(command -v valgrind)
         VALGRIND_ROOT="$(dirname "${val}")/.."
-        LD_PRELOAD=$(\ls "${VALGRIND_ROOT}/lib/valgrind/libmpiwrap*.so" 2>/dev/null)
+        LD_PRELOAD=`\ls $VALGRIND_ROOT/lib/valgrind/libmpiwrap*.so 2>/dev/null`
         if [[ "${LD_PRELOAD}" = "" ]]; then
             echo "The debug debug wrapper library not found ${TRUST_ROOT}/exec/valgrind/lib/valgrind/libmpiwrap*.so ?"
             echo "You can't use valgrind in parallel."
