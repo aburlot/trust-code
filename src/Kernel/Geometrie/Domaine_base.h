@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -75,7 +75,7 @@ public:
   //
   // Various
   //
-  inline bool axi1d() const {  return axi1d_;  }
+  inline bool axi1d() const { return que_suis_je()=="DomaineAxi1d"; }
   inline void fixer_epsilon(double eps)  { epsilon_=eps; }
   inline bool deformable() const  {   return deformable_;  }
   inline bool& deformable() {   return deformable_;  }
@@ -90,7 +90,6 @@ protected:
   LIST(Nom) bords_a_imprimer_;
   LIST(Nom) bords_a_imprimer_sum_;
 
-  int axi1d_;
   double epsilon_;
   bool deformable_;
   Nom fichier_lu_;

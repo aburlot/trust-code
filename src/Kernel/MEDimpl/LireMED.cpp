@@ -895,7 +895,7 @@ void LireMED_32_64<_SIZE_>::lire_geom(bool subDom)
   Domaine_t& dom = this->domaine();
   const Nom& nom_dom_trio = dom.le_nom();
 
-  axi1d_ = dom.que_suis_je() == "DomaineAxi1d";
+  axi1d_ = dom.axi1d();
   // pour verif
   if (Objet_U::dimension==0)
     {

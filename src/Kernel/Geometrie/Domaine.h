@@ -293,7 +293,7 @@ public:
   ///
   inline void calculer_centres_gravite(DoubleTab_t& xp) const;
   void calculer_centres_gravite_aretes(DoubleTab_t& xa) const;
-  void calculer_volumes(DoubleVect_t& volumes, DoubleVect_t& inv_volumes) const;
+  virtual void calculer_volumes(DoubleVect_t& volumes, DoubleVect_t& inv_volumes) const;
   void calculer_mon_centre_de_gravite(ArrOfDouble& c);
   double volume_total() const;
   inline const ArrOfDouble& cg_moments() const  {  return cg_moments_;  }

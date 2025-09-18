@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -36,8 +36,7 @@ class DomaineAxi1d_32_64 : public Domaine_32_64<_SIZE_>
 public :
   using int_t = _SIZE_;
   using DoubleTab_t = DoubleTab_T<_SIZE_>;
-
-
+  using DoubleVect_t = DoubleVect_T<_SIZE_>;
   const Champ_base& champ_origine() const {   return champ_orig.valeur(); }
   const Champ_base& champ_origine()  {   return champ_orig.valeur(); }
   bool has_champ_origine() const  {   return champ_orig.non_nul(); }
@@ -46,6 +45,13 @@ public :
   void associer_origine_repere(const DoubleTab_t& orig) {   ref_origine_ = orig; }
   inline double origine_repere(int_t i,int j) { return ref_origine_.valeur()(i,j); }
   inline double origine_repere(int_t i,int j) const { return ref_origine_.valeur()(i,j); }
+  void calculer_volumes(DoubleVect_t& volumes, DoubleVect_t& inverse_volumes) const override
+  {
+    if (ref_origine_.non_nul())
+      Domaine_32_64<_SIZE_>::calculer_volumes(volumes, inverse_volumes);
+    else
+      Cerr << "DomaineAxi1d should be descritized before computing volumes." << finl;
+  }
 
 protected :
   void set_param(Param& param);
