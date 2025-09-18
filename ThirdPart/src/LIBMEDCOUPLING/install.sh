@@ -76,8 +76,8 @@ build_and_test_mc()
     echo "Applying patch for configuration to use static HDF5 ..."
     (cd ../../configuration* ; sed -i "s/FIND_PACKAGE(HDF5)/set(HDF5_USE_STATIC_LIBRARIES ON)\nFIND_PACKAGE(HDF5)/g" cmake/FindSalomeHDF5.cmake ) || exit -1
 
-    #echo "Applying patch for Apple ..."
-    #(cd $src_dir; patch -p1 -f < $TRUST_ROOT/ThirdPart/src/LIBMEDCOUPLING/apple.patch ) || exit -1
+    echo "Applying patch for Apple ..."
+    (cd $src_dir; patch -p1 -f < $TRUST_ROOT/ThirdPart/src/LIBMEDCOUPLING/apple.patch ) || exit -1
     echo "Applying patch for OverlapDEC accessors in Python ..."
     (cd $src_dir; patch -p1 < $TRUST_ROOT/ThirdPart/src/LIBMEDCOUPLING/py_odec_accessors.patch )
 
