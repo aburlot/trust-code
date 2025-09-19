@@ -22,7 +22,6 @@
 using std::ifstream;
 
 Entree::Entree() : AbstractIO(),
-  check_types_(false),
   error_action_(ERROR_CONTINUE),
   diffuse_(true),
   istream_(nullptr)

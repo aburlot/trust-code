@@ -67,7 +67,7 @@ protected:
   DoubleTab sig_;
   IntTab nfaces_elem_;
   int order_quad_=-1;
-  bool gram_schmidt_;
+  bool gram_schmidt_ = true; // init from Option_DG::GRAM_SCHMIDT which is 1 by default
 // DoubleVect h_, sigma;
 
   IntTab stencil_sorted_; //table of stencil sorted for each elements

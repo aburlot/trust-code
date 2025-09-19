@@ -27,8 +27,6 @@ Implemente_instanciable_sans_constructeur(IJK_Grid_Geometry, "IJK_Grid_Geometry"
 
 IJK_Grid_Geometry::IJK_Grid_Geometry()
 {
-  uniform_[0] = uniform_[1] = uniform_[2] = false;
-  periodic_[0] = periodic_[1] = periodic_[2] = false;
   delta_xyz_.dimensionner(3);
   node_coordinates_xyz_.dimensionner(3);
 }

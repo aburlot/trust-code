@@ -180,15 +180,7 @@ void Matrice_Grossiere::ajoute_coeff(int i, int j, int k,
   int indice=renum(i, j, k);
   int indice_voisin = renum(i_voisin, j_voisin, k_voisin);
 
-  bool voisin_shear ;
-  if (shear_perio == 0.)
-    {
-      voisin_shear = false;
-    }
-  else
-    {
-      voisin_shear = true;
-    }
+  bool voisin_shear = !(shear_perio == 0.);
 
   // coefficient extra diagonal (- surface_face / distance_centres_elements)
   double x = -coeff;

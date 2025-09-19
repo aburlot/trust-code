@@ -109,7 +109,6 @@ void Solv_rocALUTION::initialize()
   local_solver = nullptr;
   sp_ls = nullptr;
   sp_p = nullptr;
-  write_system_ = false;
 #endif
 }
 

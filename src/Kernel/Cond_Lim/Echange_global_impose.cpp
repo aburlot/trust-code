@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,7 +30,6 @@ Implemente_instanciable_sans_constructeur(Echange_global_impose,"Paroi_echange_g
 
 Echange_global_impose::Echange_global_impose()
 {
-  phi_ext_lu_ = false;
 }
 
 Sortie& Echange_global_impose::printOn(Sortie& s ) const
@@ -47,7 +46,6 @@ Sortie& Echange_global_impose::printOn(Sortie& s ) const
  */
 Entree& Echange_global_impose::readOn(Entree& s )
 {
-  phi_ext_lu_ = false;
 
   // TODO : optional reading of phi_ext
   Echange_impose_base::readOn(s);

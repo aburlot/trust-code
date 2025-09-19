@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,13 +18,13 @@
 int EChaineJDD::file_cur_line_ = 1;
 
 EChaineJDD::EChaineJDD() :
-  Entree(), istrstream_(0), track_lines_(true)
+  Entree(), istrstream_(0)
 {
   set_check_types(1);
 }
 
 EChaineJDD::EChaineJDD(const char* str) :
-  Entree(),  istrstream_(0), track_lines_(true)
+  Entree(),  istrstream_(0)
 {
   set_check_types(1);
   init(str);

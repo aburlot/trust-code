@@ -156,7 +156,7 @@ protected :
   double seuil_;
   double seuil_relatif_;
   double divtol_;
-  bool nouveau_stencil_;
+  bool nouveau_stencil_ = true;
 
   // Objets Petsc
   Mat MatricePetsc_;

@@ -91,7 +91,7 @@ protected:
   LIST(Nom) bords_a_imprimer_sum_;
 
   double epsilon_;
-  bool deformable_;
+  bool deformable_ = false;
   Nom fichier_lu_;
 
   void duplique_bords_internes();

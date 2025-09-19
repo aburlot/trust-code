@@ -25,12 +25,6 @@ Implemente_base_sans_constructeur(SolveurSys_base,"SolveurSys_base",Objet_U);
 
 SolveurSys_base::SolveurSys_base()
 {
-  limpr_=0;
-  schema_temps_limpr_=1;
-  nouvelle_matrice_=1;
-  // By default: result will have an updated virtual space:
-  echange_ev_resu_ = 1;
-  reuse_preconditioner_=false;
 }
 
 Sortie& SolveurSys_base::printOn(Sortie& s ) const

@@ -29,10 +29,6 @@ Implemente_instanciable_sans_constructeur(Solv_GCP,"Solv_GCP",solv_iteratif);
 Solv_GCP::Solv_GCP()
 {
   seuil_=1.e-12;
-  reinit_ = 0;
-  precond_diag_ = 0;
-  optimized_ = 0;
-  nb_it_max_=-1;
 }
 
 Sortie& Solv_GCP::printOn(Sortie& s ) const
@@ -54,7 +50,7 @@ Sortie& Solv_GCP::printOn(Sortie& s ) const
 Entree& Solv_GCP::readOn(Entree& is )
 {
   bool precond_nul = false;
-  bool impr = false; // this is not used I think (teo boutin)
+  bool impr = false;
   bool quiet = false;
   Param param((*this).que_suis_je());
   param.ajouter("seuil",&seuil_,Param::REQUIRED);  // XD attr seuil floattant seuil 0 Value of the final residue. The gradient ceases iteration when the Euclidean residue standard ||Ax-B|| is less than this value.

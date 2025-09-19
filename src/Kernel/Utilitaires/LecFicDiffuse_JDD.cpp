@@ -31,10 +31,8 @@ Sortie& LecFicDiffuse_JDD::printOn(Sortie& s) const
   throw;
 }
 
-LecFicDiffuse_JDD::LecFicDiffuse_JDD() :
-  apply_verif(true)
+LecFicDiffuse_JDD::LecFicDiffuse_JDD()
 {
-  // file_.set_error_action(ERROR_CONTINUE);
 }
 
 /*! @brief ouverture du fichier name.
@@ -48,8 +46,6 @@ LecFicDiffuse_JDD::LecFicDiffuse_JDD(const char* name,
                                      bool apply_verification) :
   apply_verif(apply_verification)
 {
-
-  //file_.set_error_action(ERROR_CONTINUE);
   int ok = ouvrir(name, mode);
   if (!ok && Process::je_suis_maitre())
     {

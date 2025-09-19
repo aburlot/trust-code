@@ -44,8 +44,6 @@ Domaine_IJK::Domaine_IJK()
     {
       nb_elem_local_[i] = 0;
       nb_nodes_local_[i] = 0;
-      uniform_[i] = false;
-      periodic_[i] = false;
       offset_[i] = 0;
       nproc_per_direction_[i] = 0;
       for(int j = 0; j < 3; ++j)

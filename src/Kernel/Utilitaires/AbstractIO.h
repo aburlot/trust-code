@@ -47,14 +47,14 @@ protected:
 
   template<typename _TYPE_> bool must_convert() const;
 
-  bool bin_;              ///< Is this a binary flux?
-  bool is_64b_;           ///< Will we be reading/writing in 64b?
+  bool bin_ = false;              ///< Is this a binary flux?
+  bool is_64b_;           ///< Will we be reading/writing in 64b? (Init in ctor to avoid including arch.h probably)
 
   /*! If true, no hacking on int/long is performed in operator_template() methods of Entree/Sortie
    * This is useful for CommBuffer classes (=MPI exchanges) where we always want int to be sent as int, and long to be
    * sent as long.
    */
-  bool avoid_conversion_;
+  bool avoid_conversion_ = false;
 };
 
 #endif /* AbstractIO_included */

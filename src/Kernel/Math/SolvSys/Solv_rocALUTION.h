@@ -82,7 +82,7 @@ private :
   IterativeLinearSolver<GlobalMatrix<float>, GlobalVector<float>, float>* sp_ls;
   Solver<GlobalMatrix<float>, GlobalVector<float>, float>* sp_p;
   double atol_, rtol_;
-  bool write_system_;
+  bool write_system_ = false;
   bool first_solve_ = true;
   int precond_verbosity_;
   Motcle smoother_= "JACOBI";

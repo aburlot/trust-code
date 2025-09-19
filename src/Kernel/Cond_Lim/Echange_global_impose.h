@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -65,7 +65,7 @@ public:
   const bool& has_phi_ext() const { return phi_ext_lu_; }
 
 protected:
-  bool phi_ext_lu_;
+  bool phi_ext_lu_ = false;
   OWN_PTR(Champ_front_base) derivee_phi_ext_, phi_ext_;
 };
 

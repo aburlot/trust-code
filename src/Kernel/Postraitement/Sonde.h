@@ -112,7 +112,11 @@ protected :
   double periode;                         ///< periode d'echantillonnage
   /** cles pour typage des sondes (sondes redefinies aux noeuds ou d'apres les valeurs aux sommets ou au centre de gravite ou aux sommets)
    */
-  bool nodes,chsom,grav,gravcl,som;
+  bool nodes = false;
+  bool chsom = false;
+  bool grav = false;
+  bool gravcl = false; // Valeurs aux centres de gravite (comme grav) mais avec ajout eventuel des valeurs aux bords via domaine Cl du champ post-traite
+  bool som = false;
   DoubleTab valeurs_locales,valeurs_sur_maitre;     ///< valeurs_locales les valeurs sur chaque proc, valeurs_sur_maitre les valeurs regroupes sur le maitre
   double nb_bip;
   SFichier le_fichier_;

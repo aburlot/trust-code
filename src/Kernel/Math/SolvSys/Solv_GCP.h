@@ -44,7 +44,7 @@ protected:
   void prepare_data(const Matrice_Base& matrice, const DoubleVect& secmem, DoubleVect& solution);
   int resoudre_(const Matrice_Base&, const DoubleVect&, DoubleVect&, int);
 
-  bool optimized_;
+  bool optimized_ = false;
   OWN_PTR(Precond_base) le_precond_;
   // Parametre du jdd: veut-on appliquer un preconditionnement diagonal global ?
   // Dans ce cas, on copie la matrice, on multiplie la matrice a gauche et a droite par 1/sqrt(diagonale)
@@ -54,7 +54,7 @@ protected:
   // <=> D * A * X = D * B    (avec D = 1 / sqrt(diagonale))
   // <=> (D * A * D) * Y = D * B, et X = D * Y
   // Propriete: les termes diagonaux de D * A * D sont egaux a 1
-  bool precond_diag_;
+  bool precond_diag_ = false;
   // Un tableau avec items virtuels
   DoubleVect tmp_p_avec_items_virt_;
   // Quatre tableaux sans items virtuels (on pourrait mettre des espaces virtuels a tous les vecteurs,
@@ -83,8 +83,8 @@ protected:
   // Attention, on met l'espace virtuel de ce vecteur a jour car on en a besoin
   // pour D*A*D
   DoubleVect inv_sqrt_diag_;
-  int reinit_; // 0=> rien n'est pret 1=> memoire allouee, coeffs matrice a copier, 2=> ok
-  int nb_it_max_;
+  int reinit_ = 0; // 0=> rien n'est pret 1=> memoire allouee, coeffs matrice a copier, 2=> ok
+  int nb_it_max_ = -1;
 };
 
 #endif /* Solv_GCP_included */

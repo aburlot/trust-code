@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,13 +18,11 @@
 #include <type_traits>
 
 AbstractIO::AbstractIO() :
-  bin_(false),
 #ifdef INT_is_64_   // in 64b, we write 64b integers by default. But sometimes (save/restart files for example) we might want to still write 32b.
-  is_64b_(true),
+  is_64b_(true)
 #else
-  is_64b_(false),
+  is_64b_(false)
 #endif
-  avoid_conversion_(false)
 { }
 
 

@@ -118,11 +118,6 @@ Sonde::Sonde(const Nom& nom)  :
   ncomp(-1),
   numero_elem_(-1),
   periode(1.e10),   // initialisation de periode par defaut
-  nodes(false),
-  chsom(false),
-  grav(false),
-  gravcl(false),  // Valeurs aux centres de gravite (comme grav) mais avec ajout eventuel des valeurs aux bords via domaine Cl du champ post-traite
-  som(false),
   nb_bip(0.),
   orientation_faces_(-1)
 {}

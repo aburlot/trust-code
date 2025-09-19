@@ -127,7 +127,6 @@ void Domaine_32_64<_SZ_>::clear()
   bords_a_imprimer_sum_.vide();
 
   epsilon_ = Objet_U::precision_geom;
-  deformable_ = false;
   fichier_lu_ = Nom();
 
 #ifdef MEDCOUPLING_

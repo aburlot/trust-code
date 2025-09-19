@@ -70,7 +70,7 @@ public :
   void set_save_matrix(int flag) { save_matrice_ = flag; };
 
 protected :
-  bool nouvelle_matrice_; // Drapeau pour savoir si un stockage ou une factorisation est a refaire
+  bool nouvelle_matrice_ = true; // Drapeau pour savoir si un stockage ou une factorisation est a refaire
 
   // Valeur pour savoir si une matrice est a sauver (entier car plusieurs formats possibles: 1: TRUST 2: PETSc format 3: Matrix Market)
   // ATTENTION: pas un flag au sens de Param::ajouter_flag !!!
@@ -85,8 +85,8 @@ private:
   bool read_matrix_ = false; // Drapeau pour savoir si une matrice est a lire
   int limpr_ = 0;            // Drapeau pour impression ou non de la convergence du solveur
   int schema_temps_limpr_ = 1; // Authorization printing flag set by the time scheme
-  bool echange_ev_resu_;  // User set flag to tell if the solver must do echange_espace_virtuel() on the result.
-  bool reuse_preconditioner_; // Flag to reuse previous preconditioner (default false)
+  bool echange_ev_resu_ = true;  // User set flag to tell if the solver must do echange_espace_virtuel() on the result.
+  bool reuse_preconditioner_ = false; // Flag to reuse previous preconditioner (default false)
 };
 
 #endif

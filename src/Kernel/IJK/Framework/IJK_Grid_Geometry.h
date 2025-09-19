@@ -101,8 +101,8 @@ protected:
   // If possible, this data is not computed from nodes (less truncation errors for uniform meshes)
   VECT(ArrOfDouble) delta_xyz_;
   // Is grid uniform in each direction ?
-  bool uniform_[3];
+  bool uniform_[3] = {false, false, false};
   // Is grid periodic in each direction ?
-  bool periodic_[3];
+  bool periodic_[3] = {false, false, false};
 };
 #endif

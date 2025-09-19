@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2022, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,7 @@ public :
   double inverser_Pth(double T, double rho) override; // forbidden
 
 protected :
-  bool is_exp_;
+  bool is_exp_ = false;
   OWN_PTR(Champ_Don_base) rho_xyz_;
   DoubleTab rho_;
   double TMIN_=-1000;

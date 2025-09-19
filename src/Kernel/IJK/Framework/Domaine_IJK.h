@@ -611,9 +611,9 @@ private:
   /*! @brief For each direction, size of all slices */
   VECT(ArrOfInt) sizes_all_slices_;
   /*! @brief Stores the uniform flag for each direction */
-  bool uniform_[3];
+  bool uniform_[3] = {false, false, false};
   /*! @brief Stores the periodic flag for each direction */
-  bool periodic_[3];
+  bool periodic_[3] = {false, false, false};
 
 
   // Local data (processor dependent)

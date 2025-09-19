@@ -54,17 +54,6 @@ bool Couplage_U::initTimeStep(double dt)
   return ok;
 }
 
-// bool Couplage_U::solveTimeStep() {
-//   bool converged;
-//   bool ok=iterateTimeStep(converged);
-
-//   while (!converged && ok) {
-//     updateGivenFields(); // Field exchange between iterations.
-//     ok = iterateTimeStep(converged);
-//   }
-
-//   return ok;
-// }
 
 void Couplage_U::validateTimeStep()
 {

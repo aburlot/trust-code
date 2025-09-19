@@ -34,7 +34,7 @@ Entree& Extraire_surface::interpreter_(Entree& is)
   Nom nom_pb;
   Nom nom_domaine_surfacique;
   Nom expr_elements("1"),expr_faces("1");
-  bool avec_les_bords;
+  bool avec_les_bords = false;
   Noms noms_des_bords;
   Param param(que_suis_je());
   param.ajouter("domaine",&nom_domaine_surfacique,Param::REQUIRED); // XD_ADD_P ref_domaine Domain in which faces are saved

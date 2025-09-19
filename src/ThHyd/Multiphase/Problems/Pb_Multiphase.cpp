@@ -79,7 +79,7 @@ Entree& Pb_Multiphase::lire_equations(Entree& is, Motcle& mot)
         }
     }
 
-  bool already_read {true};
+  bool already_read = true;
 
   is >> mot;
   if (mot == "correlations" || mot == "models")
