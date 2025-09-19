@@ -97,8 +97,13 @@ void Champs_compris_T<FIELD_TYPE>::ajoute_champ(const FIELD_TYPE& champ)
   // ...and its components
   int nb_composantes = champ.nb_comp();
   for (int i = 0; i < nb_composantes; i++)
-    if(champ.nom_compo(i) != "??")
-      add_key(champ.nom_compo(i));
+    if(i < champ.noms_compo().size() and champ.nom_compo(i) != "??")
+      {
+        // teo.boutin: champ.nom_compo(i) could check outside the range of the list of name, resulting in valgrind error (not initialized).
+        // Added an assert in Field_Base, but maybe wrong solution
+        // Finally check for bound here. I still think the asser should be added back
+        add_key(champ.nom_compo(i));
+      }
 
   Cerr<<"Champs_compris_T<FIELD_TYPE>::ajoute_champ " << champ.le_nom() <<finl;
 }

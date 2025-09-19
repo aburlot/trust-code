@@ -56,6 +56,7 @@ public:
   const Noms& noms_compo() const;
   const Nom& nom_compo(int) const;
   const Nom& nom_compo() const;
+
   virtual const Noms& fixer_noms_compo(const Noms&);
   virtual const Nom& fixer_nom_compo(int, const Nom&);
   virtual const Nom& fixer_nom_compo(const Nom&);

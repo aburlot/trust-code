@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2022, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -64,6 +64,10 @@ void Field_base::fixer_nb_comp(int i)
  */
 const Noms& Field_base::fixer_noms_compo(const Noms& noms)
 {
+  // teo boutin: not sure this assert is in line with the use of the method.
+  // Maybe a madman sets the first 2 fields here then uses fixer_nom_compo(2, xxx) for the third one
+  // Remove the assert for now, but I think it is necessary. Though a lot of tests may fail
+  // assert(noms.size() == nb_comp());
   return noms_compo_ = noms;
 }
 
@@ -96,7 +100,13 @@ const Nom& Field_base::fixer_nom_compo(int i, const Nom& nom)
  */
 const Nom& Field_base::nom_compo(int i) const
 {
+  // teo boutin: those are not intensive operation I think. Maybe check those bounds all the time and exit in case of mistakes.
+  // assert should be kept for very intensive operations in big loops, otherwise users who are also developers will make mistakes and never know... because they only run big simulations in optim
   assert(i < nb_comp());
+
+  // it is important to check this bound too...
+  // Surprinsingly otherwise does not cause a segfault. only valgrind error...
+  assert(i < noms_compo_.size());
   return noms_compo_[i];
 }
 
