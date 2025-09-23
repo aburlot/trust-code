@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -100,11 +100,11 @@ void Faces_builder::creer_faces_reeles(Domaine& domaine,
   //   (les faces de l'element sont dans l'ordre donne par faces_element_reference)
   //  espaces distants et virtuels appropries pour les elements
   const int nb_elements          = les_elements().dimension(0);
-  const int nb_faces_par_element = faces_element_reference(0).dimension(0) ? faces_element_reference(0).dimension(0) : 4;
+  const int nb_faces_par_element = faces_element_reference(0).dimension(0);
   elem_faces.resize(nb_elements, nb_faces_par_element);
   elem_faces = -1;
 
-  const int nb_sommets_par_face = faces_element_reference(0).dimension(0) ? faces_element_reference(0).dimension(1) : 3;
+  const int nb_sommets_par_face = faces_element_reference(0).dimension(1);
   // On ajoute chaque face avec resize(n+1,...), donc smart_resize:
   // Calcul du nombre theorique de faces:
   const int nb_faces_front = domaine.nb_faces_frontiere() + domaine.nb_faces_joint();
@@ -368,9 +368,8 @@ template int Faces_builder::chercher_face_element(const IntTab_T<trustIdType>& e
 
 const IntTab& Faces_builder::faces_element_reference(int elem) const
 {
-  if (is_polyedre_==1 && les_elements_ptr_->dimension(0))
+  if (is_polyedre_==1)
     {
-      assert(is_polyedre_==1);
       const Poly_geom_base& poly=ref_cast(Poly_geom_base,ref_domaine_->type_elem().valeur());
       IntTab& elem_ref_mod=ref_cast_non_const(IntTab,faces_element_reference_old_);
       poly.get_tab_faces_sommets_locaux(elem_ref_mod,elem);

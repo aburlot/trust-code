@@ -341,6 +341,8 @@ void Polygone_32_64<_SIZE_>::affecte_connectivite_numero_global(const ArrOfInt_t
       int nbsom=prov.size();
       if (nbsom>nb_som_elem_max_) nb_som_elem_max_=nbsom;
     }
+  nb_som_elem_max_ = Process::mp_max(nb_som_elem_max_);
+  nb_face_elem_max_ = Process::mp_max(nb_face_elem_max_);
   Cerr<<" Polygon information nb_som_elem_max "<< nb_som_elem_max_<<" nb_face_elem_max "<<nb_face_elem_max_<<finl;
   les_elems.resize(nelem,nb_som_elem_max_);
   les_elems=-1;
