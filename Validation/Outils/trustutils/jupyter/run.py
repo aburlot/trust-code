@@ -659,6 +659,7 @@ class TRUSTSuite(object):
                     allOK, case = False, lstC[i]
                     print(err_msg % (case.dir_, case.name_))
                     print(getLastLines_(log_lst[i]))
+                    raise ValueError ("at least one case has failed ! See previous logs to get more information")
         else:
             for case in lstC:
                 try:
