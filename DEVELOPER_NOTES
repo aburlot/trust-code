@@ -1,6 +1,7 @@
 -------------------------------------------------------------
 Developer notes version 1.9.7_beta : Changes since version 1.9.6 :
 -------------------------------------------------------------
+24/09/25 (TRUST) Minor change : Dataset flags must now be booleans and initialized to false (previously, flags in datafiles were declared as integers). See method Param::ajouter_flag
 12/09/25 (TRUST) NR Tests     : if error when extracting NR cases from a jupyter notebook, output is written into a file to help during debug process
 01/09/25 (TRUST) GPU          : Update Kokkos from 4.5 to 4.7
 26/08/25 (TRUST) New feature  : Tag 'TRUSTIFY NOT' can be put at the begining of a dataset to skip the trustify check.
