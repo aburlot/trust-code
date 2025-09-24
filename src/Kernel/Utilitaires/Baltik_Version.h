@@ -1,0 +1,2 @@
+#undef BALTIK_VERSION
+#undef BALTIK_NAME

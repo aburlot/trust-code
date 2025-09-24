@@ -25,6 +25,7 @@
 #include <Perf_counters.h>
 #include <communications.h>
 #include <petsc_for_kernel.h>
+#include <Baltik_Version.h>
 #include <info_atelier.h>
 #include <unistd.h> // Pour chdir for other compiler
 #ifndef __CYGWIN__
@@ -401,9 +402,14 @@ void mon_main::dowork(const Nom& nom_du_cas)
   Cout<< " *     )_(    |/   \\__/ (_______) \\_______)    )_(     *   " << finl;
   Cout<< " *                                                     *     " << finl;
   Cout<< " *                  version : " << TRUST_VERSION << "               *     "  << finl;
+  Cout<< " *                                                     *     " << finl;
+#ifdef BALTIK_VERSION
+  Cout<< " *           Using " << BALTIK_NAME << " version : " << BALTIK_VERSION << "             *" << finl;
+#endif
+  Cout<< " *                                                     *     " << finl;
   Cout<< " *                       CEA - DES                     *     " << finl;
   Cout<< " *                                                     *     " << finl;
-  Cout<< " * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << finl;
+  Cout<< " * * * * * * * * * * * * * * * * * * * * * * * * * * * *     " << finl;
   Cout<< " " << finl;
 
   info_atelier(Cout);

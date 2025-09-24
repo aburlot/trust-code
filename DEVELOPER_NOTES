@@ -1,6 +1,7 @@
 -------------------------------------------------------------
 Developer notes version 1.9.7_beta : Changes since version 1.9.6 :
 -------------------------------------------------------------
+16/10/25 (TRUST) Baltiks      : It is now possible in baltiks to add new file 'Baltik_Version.h' (to override $TRUST_ROOT/src/Kernel/Utilitaires/Baltik_Version.h) in which BALTIK_VERSION and BALTIK_NAME are set. If it is the case, BALTIK_NAME and BALTIK_VERSION will be displayed when running baltik executable.
 03/10/25 (TRUST) Statistics   : Complete redesign of counters in TRUST. Everything is now managed by the Perf_counters class. A new time wrapper include in Perf_counters. Custom counters can be now added more easily
 24/09/25 (TRUST) Minor change : Dataset flags must now be booleans and initialized to false (previously, flags in datafiles were declared as integers). See method Param::ajouter_flag
 12/09/25 (TRUST) NR Tests     : if error when extracting NR cases from a jupyter notebook, output is written into a file to help during debug process

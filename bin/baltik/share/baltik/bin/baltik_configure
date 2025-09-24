@@ -88,6 +88,8 @@ done
 # extraction du nom du projet
 project_name=`extract_field "$project_description" name`
 
+
+
 # verification du nom du projet
 if [ "${project_name}" = "" ]
 then
@@ -869,8 +871,20 @@ else
 export project_directory=\$(cd \"\$( dirname \"\${BASH_SOURCE[0]:-\${(%):-%x}}\" )\" && pwd)" > $env_file
 fi
 
+if [ -f $project_directory/RELEASE_NOTES ]
+then
+   BALTIK_VERSION=`awk '/version/ && /Release notes/ {print $4;exit}' $project_directory/RELEASE_NOTES`
+elif [ -f $project_directory/RELEASE_NOTES ]
+then
+   BALTIK_VERSION=`awk '/version/ && /Release notes/ {print $4;exit}' $project_directory/share/RELEASE_NOTES`
+else
+   BALTIK_VERSION=$TRUST_VERSION
+fi
+
 echo "# Initial install performed here:
 #export project_directory=${project_directory}
+export project_name=${project_name}
+export project_version=${BALTIK_VERSION}
 export ${project_name}_project_directory=\${project_directory}
 export PATH=\${project_directory}/build/xdata:\$PATH
 export TRUST_TESTS=\${project_directory}/build/tests/all/
