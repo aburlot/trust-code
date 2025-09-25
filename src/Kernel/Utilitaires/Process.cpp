@@ -31,6 +31,7 @@
 #include <EChaineJDD.h>
 #include <DeviceMemory.h>
 #include <kokkos++.h>
+#include <fstream>
 
 // Chacun des fichiers Cerr, Cout et Journal(i)
 // peut etre redirige vers l'un des quatre fichiers suivants:
@@ -503,6 +504,32 @@ void Process::imprimer_ram_totale(int all_process)
 #endif
 #endif /* ndef __APPLE__ */
       }
+      // sUnreclaim sur chaque process:
+      std::ifstream meminfo("/proc/meminfo");
+      std::string line;
+      size_t sunreclaim_kb = 0;
+      size_t mem_available_kb = 0;
+      size_t mem_total_kb = 0;
+      while (std::getline(meminfo, line))
+        {
+          if (line.substr(0, 9) == "MemTotal:")
+            {
+              size_t pos = line.find_first_of("0123456789");
+              mem_total_kb = std::stoull(line.substr(pos));
+            }
+          if (line.substr(0, 13) == "MemAvailable:")
+            {
+              size_t pos = line.find_first_of("0123456789");
+              mem_available_kb = std::stoull(line.substr(pos));
+            }
+          if (line.substr(0, 11) == "SUnreclaim:")
+            {
+              size_t pos = line.find_first_of("0123456789");
+              sunreclaim_kb = std::stoull(line.substr(pos));
+              break;
+            }
+        }
+      Process::Journal() << "[RAM] SUnreclaim: " << sunreclaim_kb/1024 << " MB MemAvailable: " << mem_available_kb/1024 << " MB MemTotal: " << mem_total_kb/1024 << " MB " << finl;
     }
 }
 
