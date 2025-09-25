@@ -44,7 +44,22 @@ int SolveurPP1B::resoudre_systeme(const Matrice_Base& A,
   assembleur_pression_->changer_base_second_membre(b_);
   assembleur_pression_->changer_base_pression(x);
   int nb_iter=solveur_pression_.resoudre_systeme(A,b_,x);
-  assembleur_pression_.changer_base_pression_inverse(x);
+  // Advice to use AMG solver based on PCFieldsplit from PETSc
+  if (!sub_type(Solv_AMG, solveur_pression_.valeur()))
+    {
+      nw++;
+      if (nw<100 && x.size_array()*Process::nproc()>100000)
+        {
+          Cerr << finl;
+          Cerr << "************** Advice (printed only on the first 100 time steps) **************" << finl;
+          Cerr << "You should use AMG (Algebric Multigrid) solver for your pressure solver problem" << finl;
+          Cerr << "which benefits from the block P0P1 structure of the pressure matrix." << finl;
+          Cerr << "Something like: solveur_pression AMG GCP { atol|rtol XXX impr } " << finl;
+          Cerr << "For the caracteristics of your problem, it will have much faster convergence !" << finl;
+          Cerr << "*******************************************************************************" << finl << finl;
+        }
+    }
+  assembleur_pression_->changer_base_pression_inverse(x);
   statistics().begin_count(STD_COUNTERS::system_solver,statistics().get_last_opened_counter_level()+1);
   return nb_iter;
 }

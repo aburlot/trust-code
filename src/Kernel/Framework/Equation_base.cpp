@@ -1482,43 +1482,44 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
           Process::exit();
         }
       statistics().begin_count(STD_COUNTERS::matrix_assembly,statistics().get_last_opened_counter_level()+1);
-      DoubleTrav present(solution); // I(n)
-      present = solution;
-
+      // On multiplie secmem par M (qui etait divise par M avant l'appel...)
+      {
         // Scope to release Trav quickly
         DoubleTrav copie(secmem);
         copie = secmem;
         secmem = 0;
         solveur_masse->ajouter_masse(1, secmem, copie);
+      }
       // Build matrix A:
       Matrice_Morse& matrice = ref_cast(Parametre_diffusion_implicite, parametre_equation().valeur()).matrice();
       if (matrice.ordre()==0) dimensionner_matrice(matrice);
       matrice.clean(); // A=0
       // Add diffusion matrix L into matrix
-      operateur(0).l_op_base().contribuer_a_avec(present, matrice); // A=L
-      statistics().end_count(STD_COUNTERS::matrix_assembly);
-      operateur(0).ajouter(present, secmem);
-      statistics().begin_count(STD_COUNTERS::matrix_assembly,statistics().get_last_opened_counter_level()+1);
-      matrice.ajouter_multvect(present, secmem);
-      // Add M/dt into matrix
-      schema_temps().ajouter_inertie(matrice,secmem,(*this)); // A=M/dt+L
-      modifier_pour_Cl(matrice,secmem);
-      statistics().end_count(STD_COUNTERS::matrix_assembly);
-      // Solve to get I(n+1):
-      SolveurSys& solveur = ref_cast(Parametre_diffusion_implicite, parametre_equation().valeur()).solveur();
-      solveur->reinit(); // New matrix but same sparsity
-      int niter = solveur.resoudre_systeme(matrice, secmem, solution);
-      Cout << "Diffusion operator implicited for the equation " << que_suis_je()
-           << " : Conjugate gradient converged in " << niter << " iterations." << finl;
-      // CHD 230501 : Call to diffusive operator to update flux_bords (boundary fluxes):
-      operateur(0).ajouter(inconnue(), secmem);
+      {
+        DoubleTrav present(solution); // I(n)
+        present = solution;
+        operateur(0).l_op_base().contribuer_a_avec(present, matrice); // A=L
+        statistics().end_count(STD_COUNTERS::matrix_assembly);
+        operateur(0).ajouter(present, secmem);
+        statistics().begin_count(STD_COUNTERS::matrix_assembly,statistics().get_last_opened_counter_level()+1);
+        matrice.ajouter_multvect(present, secmem);
+        // Add M/dt into matrix
+        schema_temps().ajouter_inertie(matrice,secmem,(*this)); // A=M/dt+L
+        modifier_pour_Cl(matrice,secmem);
+        statistics().end_count(STD_COUNTERS::matrix_assembly);
+        // Solve to get I(n+1):
+        SolveurSys& solveur = ref_cast(Parametre_diffusion_implicite, parametre_equation().valeur()).solveur();
+        solveur->reinit(); // New matrix but same sparsity
+        int niter = solveur.resoudre_systeme(matrice, secmem, solution);
+        Cout << "Diffusion operator implicited for the equation " << que_suis_je()
+             << " : Conjugate gradient converged in " << niter << " iterations." << finl;
+        // CHD 230501 : Call to diffusive operator to update flux_bords (boundary fluxes):
+        operateur(0).ajouter(inconnue(), secmem);
 
-      solution-=present; // dI=I(n+1)-I(n)
-      solution/=schema_temps().pas_de_temps(); // dI/dt
-
-        solution -= present; // dI=I(n+1)-I(n)
-        solution /= schema_temps().pas_de_temps(); // dI/dt
+        solution-=present; // dI=I(n+1)-I(n)
+        solution/=schema_temps().pas_de_temps(); // dI/dt
       }
+    }
   else
     {
       statistics().begin_count(STD_COUNTERS::implicit_diffusion,statistics().get_last_opened_counter_level()+1);
@@ -1656,6 +1657,7 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
 
       // Stop the counter because operator diffusion is also counted
       statistics().end_count(STD_COUNTERS::implicit_diffusion,0,0);
+      DoubleTrav resu(solution);
       operateur(0).ajouter(solution, resu);
       if (marq_tot)
         {
