@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -161,6 +161,11 @@ double Table::val(const std::vector<double>& vals_param, int ncomp) const
       for (int ip = 0; ip < nb_param; ip++)
         {
           const DoubleVect& p = les_parametres[ip];
+          if (p.size()==1)
+            {
+              Cerr << "Error, a table should have more than one single value." << finl;
+              Process::exit();
+            }
           nb_comp /= p.size();
           int i_interval = p.size() - 1;
           for (int i = 1; i < p.size(); i++)
