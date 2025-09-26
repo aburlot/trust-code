@@ -263,6 +263,7 @@ Mise a jour du jeu de donnees seulement... A vous de voir pour le .lml.gz"
    fi
 fi
 
+echo $ECHO_OPTS "Test running in $(pwd)"
 # Pre requis (script prepare)
 if [ -f ./prepare ]
 then
