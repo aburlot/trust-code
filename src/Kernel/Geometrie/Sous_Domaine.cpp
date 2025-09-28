@@ -20,6 +20,7 @@
 #include <Interprete.h>
 #include <Polynome.h>
 #include <Parser_U.h>
+#include <ParserView.h>
 #include <Domaine.h>
 
 Implemente_instanciable_32_64(Sous_Domaine_32_64,"Sous_Domaine",Objet_U);
@@ -142,12 +143,6 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
   const Domaine_t& dom=ledomaine;
   ArrOfInt_t les_polys_possibles_;
 
-  // GF de prendre nb_elem_tot au lieu de nb_elem permet de ne plus avoir besoin de decouper les sous domaines..
-  int_t nb_pol_possible=ledomaine.nb_elem_tot();
-  les_polys_possibles_.resize_array(nb_pol_possible);
-  for (int_t i=0; i<nb_pol_possible; i++)
-    les_polys_possibles_[i]=i;
-
   Motcle motlu;
   is >>  motlu;
   if(motlu != Motcle("{"))
@@ -158,6 +153,10 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
     }
   is >> motlu;
 
+  using Int_tArrView = View<int_t, 1>; // ToDo report in ViewTypes.h
+  using CInt_tArrView = ConstView<int_t, 1>; // ToDo report in ViewTypes.h
+  using CInt_tTabView = ConstView<int_t, 2>; // ToDo report in ViewTypes.h
+  int_t nb_pol_possible;
   if (motlu=="restriction")
     {
       Nom nom_ss_domaine;
@@ -165,10 +164,26 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
       const Sous_Domaine_32_64& ssz=ref_cast(Sous_Domaine_32_64,interprete().objet(nom_ss_domaine));
       nb_pol_possible=ssz.nb_elem_tot();
       les_polys_possibles_.resize_array(nb_pol_possible);
-
-      for (int_t i=0; i<nb_pol_possible; i++)
-        les_polys_possibles_[i]=ssz(i);
+      CInt_tArrView les_elems = ssz.les_elems().view_ro();
+      Int_tArrView les_polys_possibles = les_polys_possibles_.view_wo();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_pol_possible, KOKKOS_LAMBDA(const int_t i)
+      {
+        les_polys_possibles(i)=les_elems(i);
+      });
+      end_gpu_timer(__KERNEL_NAME__);
       is>>motlu;
+    }
+  else
+    {
+      // GF de prendre nb_elem_tot au lieu de nb_elem permet de ne plus avoir besoin de decouper les sous domaines..
+      nb_pol_possible=ledomaine.nb_elem_tot();
+      les_polys_possibles_.resize_array(nb_pol_possible);
+      Int_tArrView les_polys_possibles = les_polys_possibles_.view_wo();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_pol_possible, KOKKOS_LAMBDA(const int_t i)
+      {
+        les_polys_possibles(i)=i;
+      });
+      end_gpu_timer(__KERNEL_NAME__);
     }
   int rang = les_mots.search(motlu);
   if (rang==-1)
@@ -224,6 +239,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
           int_t compteur=0;
 
           les_elems_.resize(nb_pol_possible);
+          ToDo_Kokkos("critical");
           for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
             {
               le_poly=les_polys_possibles_[n_pol];
@@ -302,6 +318,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
           // int nb_poly=le_dom.nb_elem();
           Cerr << "Construction of the subarea " << le_nom()<< finl;
           les_elems_.resize(nb_pol_possible);
+          ToDo_Kokkos("critical");
           for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
             {
               le_poly=les_polys_possibles_[n_pol];
@@ -370,6 +387,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
 
           Cerr << "Construction of the subarea " << le_nom() << finl;
           les_elems_.resize(nb_pol_possible);
+          ToDo_Kokkos("critical");
           for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
             {
               le_poly=les_polys_possibles_[n_pol];
@@ -406,6 +424,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
         int_t prems, nombre;
         is >> prems >> nombre;
         les_elems_.resize(nombre);
+        ToDo_Kokkos("critical");
         for(int_t i=0; i<nombre; i++)
           les_elems_[i]=prems+i;
         break;
@@ -447,6 +466,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
         IntVect_t marqueurs;
         dom.creer_tableau_elements(marqueurs);
         const int_t nb_polys_reels = les_elems_.size();
+        ToDo_Kokkos("critical");
         for (int_t i = 0; i < nb_polys_reels; i++)
           {
             const int_t elem = les_elems_[i];
@@ -513,6 +533,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
           int_t compteur=0;
           Cerr << "Construction of the subarea " << le_nom() << finl;
           les_elems_.resize(nb_pol_possible);
+          ToDo_Kokkos("critical");
           for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
             {
               le_poly=les_polys_possibles_[n_pol];
@@ -608,6 +629,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
           int_t compteur=0;
           Cerr << "Construction of the subarea " << le_nom() << finl;
           les_elems_.resize(nb_pol_possible);
+          ToDo_Kokkos("critical");
           for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
             {
               le_poly=les_polys_possibles_[n_pol];
@@ -690,6 +712,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
           int_t compteur=0;
           Cerr << "Construction of the subarea " << le_nom() << finl;
           les_elems_.resize(nb_pol_possible);
+          ToDo_Kokkos("critical");
           for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
             {
               int_t le_poly=les_polys_possibles_[n_pol];
@@ -806,6 +829,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
           int_t compteur=0;
           Cerr << "Construction of the subarea " << le_nom() << finl;
           les_elems_.resize(nb_pol_possible);
+          ToDo_Kokkos("critical");
           for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
             {
               le_poly=les_polys_possibles_[n_pol];
@@ -868,6 +892,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
           Cerr << "Construction of the subarea " << le_nom()<< finl;
 
           les_elems_.resize(nb_pol_possible);
+          ToDo_Kokkos("critical");
           for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
             {
               le_poly=les_polys_possibles_[n_pol];
@@ -918,40 +943,64 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
         F.parseString();
 
         {
+          ParserView parser(F);
+          parser.parseString();
           const Domaine_t& le_dom=le_dom_.valeur();
           int nbsom=le_dom.nb_som_elem();
-          int_t le_poly;
-          DoubleVect x(dimension);
-          int_t compteur=0;
           Cerr << "Construction of the subarea " << le_nom()<< finl;
-          les_elems_.resize(nb_pol_possible);
-          for (int_t n_pol=0; n_pol<nb_pol_possible; n_pol++)
-            {
-              le_poly=les_polys_possibles_[n_pol];
-              x=0;
-              int nbsom_loc = 0;
-              for(int le_som=0; le_som<nbsom; le_som++)
-                if (ledomaine.sommet_elem(le_poly,le_som) >= 0)
-                  {
-                    for(int k=0; k<dimension; k++)
-                      x(k)+=dom.coord(ledomaine.sommet_elem(le_poly,le_som),k);
-                    nbsom_loc++;
-                  }
-              x *= 1. / nbsom_loc;
-              F.setVar(0,x[0]);
-              F.setVar(1,x[1]);
-              if (dimension==3)
-                F.setVar(2,x[2]);
-              double test=F.eval();
-              // attention le test absolu est voulu
-              // si on fait une fonction qui vaut 0 ou 1 ....
-              if (test>0)
+          int_t compteur=0;
+          int dim = Objet_U::dimension;
+          CDoubleTabView coord = dom.coord_sommets().view_ro();
+          Int_tArrView les_polys_possibles = les_polys_possibles_.view_rw();
+          CInt_tTabView sommet_elem = ledomaine.les_elems().view_ro();
+          Kokkos::parallel_reduce(start_gpu_timer(__KERNEL_NAME__), nb_pol_possible, KOKKOS_LAMBDA(const int_t i, int_t& local_compteur)
+          {
+            int_t le_poly=les_polys_possibles(i);
+            double x[3] = {0.,0.,0.};
+            int nbsom_loc = 0;
+            for(int le_som=0; le_som<nbsom; le_som++)
+              if (sommet_elem(le_poly,le_som) >= 0)
                 {
-                  les_elems_(compteur)=le_poly;
-                  compteur++;
+                  for(int k=0; k<dim; k++)
+                    x[k]+=coord(sommet_elem(le_poly,le_som),k);
+                  nbsom_loc++;
                 }
-            }
+            for(int k=0; k<dim; k++)
+              x[k]/=nbsom_loc;
+            int threadId = parser.acquire();
+            parser.setVar(0,x[0],threadId);
+            parser.setVar(1,x[1],threadId);
+            if (dim==3)
+              parser.setVar(2,x[2],threadId);
+            double test=parser.eval(threadId);
+            // attention le test absolu est voulu
+            // si on fait une fonction qui vaut 0 ou 1 ....
+            if (test>0)
+              local_compteur++;
+            else
+              les_polys_possibles(i) = -1;
+            parser.release(threadId);
+          }, compteur);
+          end_gpu_timer(__KERNEL_NAME__);
           les_elems_.resize(compteur);
+          ArrOfInt_t tab_indices(nb_pol_possible);
+          Int_tArrView indices = tab_indices.view_wo();
+          Kokkos::parallel_scan(start_gpu_timer(__KERNEL_NAME__), nb_pol_possible, KOKKOS_LAMBDA(const int_t i, int& update, const bool final)
+          {
+            if (les_polys_possibles(i) >= 0)
+              {
+                if (final) indices(i) = update;
+                update++;
+              }
+          });
+          end_gpu_timer(__KERNEL_NAME__);
+          Int_tArrView les_elems = les_elems_.view_wo();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_pol_possible, KOKKOS_LAMBDA(const int_t i)
+          {
+            if (les_polys_possibles(i) >= 0)
+              les_elems(indices(i)) = les_polys_possibles(i);
+          });
+          end_gpu_timer(__KERNEL_NAME__);
           Cerr << "Construction of the subarea OK" << finl;
         }
         break;
@@ -973,6 +1022,7 @@ Entree& Sous_Domaine_32_64<_SIZE_>::readOn(Entree& is)
       is >> nom_ss_domaine;
       const Sous_Domaine_32_64& ssz=ref_cast(Sous_Domaine_32_64, interprete().objet(nom_ss_domaine));
       std::set<trustIdType> poly_set(les_elems_.begin(), les_elems_.end()); //to detect already present elements
+      ToDo_Kokkos("critical");
       for (int i = 0; i < ssz.nb_elem_tot(); i++)
         if (!poly_set.count(ssz(i))) //only add new elements
           {
