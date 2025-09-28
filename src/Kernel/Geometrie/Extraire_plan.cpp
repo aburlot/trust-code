@@ -31,17 +31,9 @@ Sortie& Extraire_plan::printOn(Sortie& os) const { return Interprete::printOn(os
 
 Entree& Extraire_plan::readOn(Entree& is) { return Interprete::readOn(is); }
 
-void calcul_normal(const ArrOfDouble& origine,const ArrOfDouble& point1, const ArrOfDouble& point2,ArrOfDouble& normal)
+void calcul_normal_norme(const ArrOfDouble& org, const ArrOfDouble& point1, const ArrOfDouble& point2, ArrOfDouble& normal)
 {
-  normal[0]=(point1[1]-origine[1])*(point2[2]-origine[2])-((point2[1]-origine[1])*(point1[2]-origine[2]));
-
-  normal[1]=(point1[2]-origine[2])*(point2[0]-origine[0])-((point2[2]-origine[2])*(point1[0]-origine[0]));
-  normal[2]=(point1[0]-origine[0])*(point2[1]-origine[1])-((point2[0]-origine[0])*(point1[1]-origine[1]));
-}
-
-void calcul_normal_norme(const ArrOfDouble& org,const ArrOfDouble& point1, const ArrOfDouble& point2,ArrOfDouble& normal)
-{
-  calcul_normal(org, point1,  point2,normal);
+  calcul_normal(org.addr(), point1.addr(),  point2.addr(), normal.addr());
   normal/=norme_array(normal);
 }
 
@@ -275,13 +267,12 @@ Entree& Extraire_plan::interpreter_(Entree& is)
             point1b[i]=coord(les_elems(nb,1),i);
             point2b[i]=coord(les_elems(nb,2),i);
           }
-        calcul_normal(point0b,point1b,point2b,normal_b);
+        calcul_normal(point0b.addr(),point1b.addr(),point2b.addr(),normal_b.addr());
         if (dotproduct_array(normal,normal_b)<0)
           {
             // si normal a l'envers on inverse les deux sommets
             les_elems(nb,1)=face_sommets(fac,2);
             les_elems(nb,2)=face_sommets(fac,1);
-
           }
         nb++;
       }

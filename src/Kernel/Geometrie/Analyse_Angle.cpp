@@ -116,6 +116,7 @@ void histogramme_angle(const Domaine& dom , Sortie& out,  int nb_histo )
   int dim_space=som.dimension(1);
   int nb_som_elem=les_elems.dimension(1);
   DoubleTab coords(nb_som_elem,3);
+  ToDo_Kokkos("critical");
   for (int elem=0; elem<nb_elem; elem++)
     {
       for (int s=0; s<nb_som_elem; s++)
@@ -123,7 +124,6 @@ void histogramme_angle(const Domaine& dom , Sortie& out,  int nb_histo )
           int sommet=les_elems(elem,s);
           for (int dir=0; dir<dim_space; dir++)
             coords(s,dir)=som(sommet,dir);
-
         }
       double teta=largest_angle(coords);
 

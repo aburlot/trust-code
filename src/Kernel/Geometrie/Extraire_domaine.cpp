@@ -23,6 +23,7 @@
 #include <Domaine.h>
 #include <Scatter.h>
 #include <Param.h>
+#include <ParserView.h>
 
 Implemente_instanciable(Extraire_domaine,"Extraire_Domaine",Interprete_geometrique_base);
 // XD extraire_domaine interprete extraire_domaine -3 Keyword to create a new domain built with the domain elements of the pb_name problem verifying the two conditions given by Condition_elements. The problem pb_name should have been discretized.
@@ -67,112 +68,96 @@ Entree& Extraire_domaine::interpreter_(Entree& is)
   dom.les_sommets()=domaine_vf.domaine().les_sommets();
   dom.typer(domaine_vf.domaine().type_elem()->que_suis_je());
 
-  const DoubleTab& xp =domaine_vf.xp();
-
   int nb_elem=domaine_vf.nb_elem();
-  IntTab marq_elem;
-
-  // on marque les elts qui nous interessent
-  domaine_vf.domaine().creer_tableau_elements(marq_elem);
+  IntTrav tab_marq_elem;
+  domaine_vf.domaine().creer_tableau_elements(tab_marq_elem);
+  IntArrView marq_elem = static_cast<ArrOfInt&>(tab_marq_elem).view_wo();
   int nb_elem_m=0;
+  // on marque les elts qui nous interessent
   if (nom_sous_domaine== Nom())
     {
-      for (int elem=0; elem<nb_elem; elem++)
-        {
-          condition_elements.setVar("x",xp(elem,0));
-          condition_elements.setVar("y",xp(elem,1));
-          if (dimension==3)
-            condition_elements.setVar("z",xp(elem,2));
-          double res=condition_elements.eval();
-          if (std::fabs(res)>1e-5)
-            {
-              marq_elem(elem)=1;
-              nb_elem_m++;
-            }
-          else
-            marq_elem(elem)=0;
-
-        }
+      int dim = Objet_U::dimension;
+      ParserView parser_condition_elements(condition_elements);
+      parser_condition_elements.parseString();
+      CDoubleTabView xp = domaine_vf.xp().view_ro();
+      Kokkos::parallel_reduce(start_gpu_timer(__KERNEL_NAME__), nb_elem, KOKKOS_LAMBDA(const int elem, int& local_nb_elem_m)
+      {
+        int threadId = parser_condition_elements.acquire();
+        parser_condition_elements.setVar(0,xp(elem,0),threadId);
+        parser_condition_elements.setVar(1,xp(elem,1),threadId);
+        if (dim==3)
+          parser_condition_elements.setVar(2,xp(elem,2),threadId);
+        double res=parser_condition_elements.eval(threadId);
+        if (std::fabs(res)>1e-5)
+          {
+            marq_elem(elem)=1;
+            local_nb_elem_m++;
+          }
+        else
+          marq_elem(elem)=0;
+        parser_condition_elements.release(threadId);
+      }, nb_elem_m);
+      end_gpu_timer(__KERNEL_NAME__);
     }
   else
     {
       const Sous_Domaine& ssz= ref_cast(Sous_Domaine,objet(nom_sous_domaine));
-      int npol=ssz.nb_elem_tot();
-      for (int i=0; i<npol; i++)
-        {
-          if (ssz(i)<nb_elem)
-            {
-              marq_elem(ssz(i))=1;
-              nb_elem_m++;
-            }
-        }
+      CIntArrView les_elems = ssz.les_elems().view_ro();
+      Kokkos::parallel_reduce(start_gpu_timer(__KERNEL_NAME__), ssz.nb_elem_tot(), KOKKOS_LAMBDA(const int i, int& local_nb_elem_m)
+      {
+        int elem = les_elems(i);
+        if (elem<nb_elem)
+          {
+            marq_elem(elem)=1;
+            local_nb_elem_m++;
+          }
+      }, nb_elem_m);
+      end_gpu_timer(__KERNEL_NAME__);
     }
   // Attention grosse ruse on echange pas les espaces virtuels pour que le joint devienne un bord
-  //marq_elem.echange_espace_virtuel();
-  // const DoubleTab& xv =domaine_vf.xv();
-
+  // marq_elem.echange_espace_virtuel();
   int nb_faces=domaine_vf.nb_faces();
-  const IntTab& face_voisin=domaine_vf.face_voisins();
-
-  ArrOfInt marq(nb_faces);
-  // on marque les joints
-  //const Joints& joints=domaine_vf.face_joints();
-  // int nbjoints=domaine_vf.nb_joints();
-
-  //  for(int njoint=0; njoint<nbjoints; njoint++)
-  //    {
-  //      const Joint& joint_temp = domaine_vf.joint(njoint);
-  //      int pe_voisin=joint_temp.PEvoisin();
-  //      if (pe_voisin<me())
-  //        {
-  //          const IntTab & indices_faces_joint = joint_temp.joint_item(JOINT_ITEM::FACE).renum_items_communs();
-  //          const int nb_faces = indices_faces_joint.dimension(0);
-  //          for (int j = 0; j < nb_faces; j++) {
-  //            int face_de_joint = indices_faces_joint(j, 1);
-  //            marq(face_de_joint) = -1;
-  //          }
-  //        }
-  //    }
-
   // on cherche les faces au bord du domaine (joint compris)
   int nb_t=0;
+  ArrOfInt tab_marq(nb_faces);
+  IntArrView marq = tab_marq.view_rw();
+  CIntTabView face_voisin = domaine_vf.face_voisins().view_ro();
+  Kokkos::parallel_reduce(start_gpu_timer(__KERNEL_NAME__), nb_faces, KOKKOS_LAMBDA(const int fac, int& local_nb_t)
+  {
+    int elem0 = face_voisin(fac, 0);
+    int elem1 = face_voisin(fac, 1);
+    int val0 = -1;
+    if (elem0 != -1) val0 = marq_elem(elem0);
+    int val1 = -1;
+    if (elem1 != -1) val1 = marq_elem(elem1);
 
-  for (int fac=0; fac<nb_faces; fac++)
-    {
-      int elem0=face_voisin(fac,0);
-      int elem1=face_voisin(fac,1);
-      int val0=-1;
-      if (elem0!=-1) val0=marq_elem(elem0);
-      int val1=-1;
-      if (elem1!=-1) val1=marq_elem(elem1);
+    if (val0 != val1)
+      {
+        if ((val0 == 1) || (val1 == 1))
+          {
+            if (marq[fac] != -1) //pas un joint
+              {
+                marq[fac] = 1;
+                local_nb_t++;
+              }
+          }
+      }
+  }, nb_t);
+  end_gpu_timer(__KERNEL_NAME__);
 
-      if (val0!=val1)
-        {
-          if ((val0==1)||(val1==1))
-            {
-              if (marq[fac]!=-1) //pas un joint
-                {
-                  marq[fac]=1;
-                  nb_t++;
-                }
-            }
-        }
-    }
-
-  Cerr<<me()<<" nb_elem_m "<<nb_elem_m<<finl;
-  Cerr<<me()<<" nb_t "<<nb_t<<finl;
   IntTab& les_elems=dom.les_elems();
   const IntTab& les_elems_old=domaine_vf.domaine().les_elems();
   int nb_som_elem=les_elems_old.dimension(1);
   les_elems.resize(nb_elem_m,nb_som_elem);
   const IntTab& face_sommets=domaine_vf.face_sommets();
   int nb=0;
-  for (int ele=0; ele<nb_elem; ele++)
+  ToDo_Kokkos("critical");
+  for (int elem=0; elem<nb_elem; elem++)
     {
-      if (marq_elem(ele)==1)
+      if (tab_marq_elem(elem)==1)
         {
           for (int k=0; k<nb_som_elem; k++)
-            les_elems(nb,k)=les_elems_old(ele,k);
+            les_elems(nb,k)=les_elems_old(elem,k);
           nb++;
         }
     }
@@ -181,18 +166,16 @@ Entree& Extraire_domaine::interpreter_(Entree& is)
   faces.nommer("Bord");
   faces.typer_faces(domaine_vf.domaine().type_elem()->type_face());
   Faces& les_faces=faces.faces();
-  // const IntTab& faces_sommets=domaine_vf.faces_sommets();
   int nb_som_face=face_sommets.dimension(1);
   IntTab& indfaces=les_faces.les_sommets();
   indfaces.resize(nb_t,nb_som_face);
   IntTab& facesv=les_faces.voisins();
   facesv.resize(nb_t,2);
   facesv=-1;
-
-
   nb=0;
+  ToDo_Kokkos("critical");
   for (int fac=0; fac<nb_faces; fac++)
-    if (marq[fac]==1)
+    if (tab_marq[fac]==1)
       {
         for (int s=0; s<nb_som_face; s++)
           indfaces(nb,s)=face_sommets(fac,s);

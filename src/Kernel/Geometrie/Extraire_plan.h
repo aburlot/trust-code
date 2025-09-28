@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2023, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -31,5 +31,13 @@ class Extraire_plan : public Interprete_geometrique_base
 public :
   Entree& interpreter_(Entree&) override;
 };
+
+KOKKOS_INLINE_FUNCTION
+void calcul_normal(const double* origine,const double* point1, const double* point2, double* normal)
+{
+  normal[0]=(point1[1]-origine[1])*(point2[2]-origine[2])-((point2[1]-origine[1])*(point1[2]-origine[2]));
+  normal[1]=(point1[2]-origine[2])*(point2[0]-origine[0])-((point2[2]-origine[2])*(point1[0]-origine[0]));
+  normal[2]=(point1[0]-origine[0])*(point2[1]-origine[1])-((point2[0]-origine[0])*(point1[1]-origine[1]));
+}
 
 #endif /* Extraire_plan_included */

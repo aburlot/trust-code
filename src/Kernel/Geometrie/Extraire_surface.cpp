@@ -21,6 +21,8 @@
 #include <Domaine.h>
 #include <Domaine_VF.h>
 #include <Param.h>
+#include <ParserView.h>
+#include <Extraire_plan.h>
 
 Implemente_instanciable(Extraire_surface,"Extraire_surface",Interprete_geometrique_base);
 // XD extraire_surface interprete extraire_surface -3 This keyword extracts a surface mesh named domain_name (this domain should have been declared before) from the mesh of the pb_name problem. The surface mesh is defined by one or two conditions. The first condition is about elements with Condition_elements. For example: Condition_elements x*x+y*y+z*z<1 NL2 Will define a surface mesh with external faces of the mesh elements inside the sphere of radius 1 located at (0,0,0). The second condition Condition_faces is useful to give a restriction.NL2 By default, the faces from the boundaries are not added to the surface mesh excepted if option avec_les_bords is given (all the boundaries are added), or if the option avec_certains_bords is used to add only some boundaries.
@@ -72,8 +74,6 @@ Entree& Extraire_surface::interpreter_(Entree& is)
   return is;
 }
 
-void calcul_normal(const ArrOfDouble& origine,const ArrOfDouble& point1, const ArrOfDouble& point2,ArrOfDouble& normal);
-
 // Extraction d'une ou plusieurs frontieres du domaine volumique selon certaines conditions
 
 void Extraire_surface::extraire_surface(Domaine& domaine_surfacique,const Domaine& domaine_volumique, const Nom& nom_domaine_surfacique, const Domaine_VF& domaine_vf, const Nom& expr_elements,const Nom& expr_faces, bool avec_les_bords, const Noms& noms_des_bords)
@@ -103,7 +103,6 @@ void Extraire_surface::extraire_surface_without_cleaning(Domaine& domaine_surfac
 
   // Copie des sommets
   domaine_surfacique.les_sommets()=domaine_volumique.les_sommets();
-  const DoubleTab& coord=domaine_surfacique.les_sommets();
   const Nom& type_elem=domaine_vf.domaine().type_elem()->que_suis_je();
 
   if (dimension==3)
@@ -126,36 +125,38 @@ void Extraire_surface::extraire_surface_without_cleaning(Domaine& domaine_surfac
   else
     domaine_surfacique.typer("segment");
 
-  const DoubleTab& xp =domaine_vf.xp();
-
+  int dim = Objet_U::dimension;
   int nb_elem=domaine_vf.nb_elem();
-  IntTab marq_elem;
+  IntTrav tab_marq_elem;
+  domaine_vf.domaine().creer_tableau_elements(tab_marq_elem);
 
-  domaine_vf.domaine().creer_tableau_elements(marq_elem);
-  std::string X("X"), Y("Y"), Z("Z");
-  for (int elem=0; elem<nb_elem; elem++)
-    {
-      condition_elements.setVar(X,xp(elem,0));
-      condition_elements.setVar(Y,xp(elem,1));
-      if (dimension==3)
-        condition_elements.setVar(Z,xp(elem,2));
-      double res=condition_elements.eval();
-      if (std::fabs(res)>1e-5)
-        marq_elem(elem)=1;
-      else
-        marq_elem(elem)=0;
-
-    }
-  marq_elem.echange_espace_virtuel();
-  const DoubleTab& xv =domaine_vf.xv();
+  ParserView parser_condition_elements(condition_elements);
+  parser_condition_elements.parseString();
+  CDoubleTabView xp = domaine_vf.xp().view_ro();
+  IntArrView marq_elem = static_cast<ArrOfInt&>(tab_marq_elem).view_wo();
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_elem, KOKKOS_LAMBDA(const int elem)
+  {
+    int threadId = parser_condition_elements.acquire();
+    parser_condition_elements.setVar(0,xp(elem,0),threadId);
+    parser_condition_elements.setVar(1,xp(elem,1),threadId);
+    if (dim==3)
+      parser_condition_elements.setVar(2,xp(elem,2),threadId);
+    double res = parser_condition_elements.eval(threadId);
+    marq_elem(elem) = std::fabs(res)>1e-5 ? 1 : 0;
+    parser_condition_elements.release(threadId);
+  });
+  end_gpu_timer(__KERNEL_NAME__);
+  tab_marq_elem.echange_espace_virtuel();
 
   int nb_faces=domaine_vf.nb_faces();
-  const IntTab& face_voisin=domaine_vf.face_voisins();
 
-  ArrOfInt marq(nb_faces);
+  ArrOfInt tab_marq(nb_faces);
   // on marque les joints
   int nbjoints=domaine_vf.nb_joints();
-
+  if (nbjoints>0)
+    {
+      ToDo_Kokkos("critical");
+    }
   for(int njoint=0; njoint<nbjoints; njoint++)
     {
       const Joint& joint_temp = domaine_vf.joint(njoint);
@@ -167,16 +168,16 @@ void Extraire_surface::extraire_surface_without_cleaning(Domaine& domaine_surfac
           for (int j = 0; j < nbfaces; j++)
             {
               int face_de_joint = indices_faces_joint(j, 1);
-              marq[face_de_joint] = -1;
+              tab_marq[face_de_joint] = -1;
             }
         }
     }
   int nb_t=0;
 
   // on flage les face sde bords qui nous interesse
-  ArrOfInt face_bord_int(nb_faces);
+  ArrOfInt tab_face_bord_int(nb_faces);
   if (avec_les_bords)
-    face_bord_int=1;
+    tab_face_bord_int=1;
   if (noms_des_bords.size()!=0)
     {
       if (avec_les_bords)
@@ -184,103 +185,125 @@ void Extraire_surface::extraire_surface_without_cleaning(Domaine& domaine_surfac
           Cerr<<" the option avec_les_bords is incompatible with the option avec_certains_bords"<<finl;
           exit();
         }
+      ToDo_Kokkos("critical");
       for (int b=0; b<noms_des_bords.size(); b++)
         {
           const Frontiere& fr=domaine_vf.frontiere_dis(domaine_vf.rang_frontiere(noms_des_bords[b])).frontiere();
           int deb=fr.num_premiere_face();
           int fin=deb+fr.nb_faces();
           for (int f=deb; f<fin; f++)
-            face_bord_int[f]=1;
+            tab_face_bord_int[f]=1;
         }
-
     }
 
   // on marque toutes les faces que l'on veut mettre dans le domaine
-  for (int fac=0; fac<nb_faces; fac++)
-    {
-      int elem0=face_voisin(fac,0);
-      int elem1=face_voisin(fac,1);
-      int val0=-1;
-      if (elem0!=-1) val0=marq_elem(elem0);
-      int val1=-1;
-      if (elem1!=-1) val1=marq_elem(elem1);
+  ParserView parser_condition_faces(condition_faces);
+  parser_condition_faces.parseString();
+  CDoubleTabView xv = domaine_vf.xv().view_ro();
+  CIntTabView face_voisin = domaine_vf.face_voisins().view_ro();
+  CIntArrView face_bord_int = tab_face_bord_int.view_ro();
+  IntArrView marq = tab_marq.view_rw();
+  Kokkos::parallel_reduce(start_gpu_timer(__KERNEL_NAME__), nb_faces, KOKKOS_LAMBDA(const int fac, int& local_nb_t)
+  {
+    int elem0=face_voisin(fac,0);
+    int elem1=face_voisin(fac,1);
+    int val0=-1;
+    if (elem0!=-1) val0=marq_elem(elem0);
+    int val1=-1;
+    if (elem1!=-1) val1=marq_elem(elem1);
 
-      if (val0!=val1)
-        {
-          if (((val0*val1==0)&&(val0+val1==1))||((val0==1)&&(face_bord_int[fac]==1))||((val1==1)&&(face_bord_int[fac]==1)))
-            //if (domaine_test.chercher_elements(xv(fac,0),xv(fac,1),xv(fac,2))==0)
-            {
-              condition_faces.setVar(X,xv(fac,0));
-              condition_faces.setVar(Y,xv(fac,1));
-              if (dimension==3)
-                condition_faces.setVar(Z,xv(fac,2));
-              double res=condition_faces.eval();
-              if (std::fabs(res)>1e-5)
-                if (marq[fac]!=-1)  // pas un joint, ou on est le proprietaire
-                  {
-                    marq[fac]=1;
-                    nb_t++;
-                  }
-            }
-        }
-    }
-
-  ArrOfDouble point0b(3),point1b(3),point2b(3);
-  Cerr<<"Number of elements of the new domain : "<<nb_t<<finl;
-  IntTab& les_elems=domaine_surfacique.les_elems();
-
-  const IntTab& face_sommets=domaine_vf.face_sommets();
-  int nb_sommet_face=face_sommets.dimension(1);
-  les_elems.resize(nb_t,nb_sommet_face);
-  int nb=0;
-  ArrOfDouble normal(dimension);
-  ArrOfDouble normal_b(3);
-  for (int fac=0; fac<nb_faces; fac++)
-    if (marq[fac]==1)
+    if (val0!=val1)
       {
-        int el1=face_voisin(fac,0);
-        if (el1==-1)  el1=face_voisin(fac,1);
-        if (marq_elem(el1)!=1)
-          el1=face_voisin(fac,1);
-        for (int i=0; i<dimension; i++)
-          normal[i]=xv(fac,i)-xp(el1,i);
-        for (int s=0; s<nb_sommet_face; s++)
-          les_elems(nb,s)=face_sommets(fac,s);
-        // on calcule la normale
-        if (nb_sommet_face>1)
+        if (((val0*val1==0)&&(val0+val1==1))||((val0==1)&&(face_bord_int[fac]==1))||((val1==1)&&(face_bord_int[fac]==1)))
+          //if (domaine_test.chercher_elements(xv(fac,0),xv(fac,1),xv(fac,2))==0)
           {
-            if (dimension==3)
+            int threadId = parser_condition_faces.acquire();
+            parser_condition_faces.setVar(0,xv(fac,0),threadId);
+            parser_condition_faces.setVar(1,xv(fac,1),threadId);
+            if (dim==3)
+              parser_condition_faces.setVar(2,xv(fac,2),threadId);
+            double res=parser_condition_faces.eval(threadId);
+            if (std::fabs(res)>1e-5)
+              if (marq[fac]!=-1)  // pas un joint, ou on est le proprietaire
+                {
+                  marq[fac]=1;
+                  local_nb_t++;
+                }
+            parser_condition_faces.release(threadId);
+          }
+      }
+  }, nb_t);
+  end_gpu_timer(__KERNEL_NAME__);
+
+  ArrOfInt tab_indices(nb_faces);
+  IntArrView indices = tab_indices.view_wo();
+  Kokkos::parallel_scan(start_gpu_timer(__KERNEL_NAME__), nb_faces, KOKKOS_LAMBDA(const int fac, int& update, const bool final)
+  {
+    if (marq[fac] == 1)
+      {
+        if (final) indices(fac) = update;
+        update++;
+      }
+  });
+  end_gpu_timer(__KERNEL_NAME__);
+
+  Cerr<<"Number of elements of the new domain : "<<nb_t<<finl;
+  CIntTabView face_sommets = domaine_vf.face_sommets().view_ro();
+  int nb_sommet_face=(int)face_sommets.extent(1);
+  IntTab& tab_les_elems=domaine_surfacique.les_elems();
+  tab_les_elems.resize(nb_t,nb_sommet_face);
+  CDoubleTabView coord = domaine_surfacique.les_sommets().view_ro();
+  IntTabView les_elems = tab_les_elems.view_wo();
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_faces, KOKKOS_LAMBDA(const int fac)
+  {
+    if (marq[fac] == 1)
+      {
+        int nb = indices(fac);
+        double normal[3], normal_b[3], point0b[3], point1b[3], point2b[3];
+        int el1 = face_voisin(fac, 0);
+        if (el1 == -1) el1 = face_voisin(fac, 1);
+        if (marq_elem(el1) != 1)
+          el1 = face_voisin(fac, 1);
+        for (int i = 0; i < dim; i++)
+          normal[i] = xv(fac, i) - xp(el1, i);
+        for (int s = 0; s < nb_sommet_face; s++)
+          les_elems(nb, s) = face_sommets(fac, s);
+        // on calcule la normale
+        if (nb_sommet_face > 1)
+          {
+            if (dim == 3)
               {
-                for (int i=0; i<3; i++)
+                for (int i = 0; i < 3; i++)
                   {
-                    point0b[i]=coord(les_elems(nb,0),i);
-                    point1b[i]=coord(les_elems(nb,1),i);
-                    point2b[i]=coord(les_elems(nb,2),i);
+                    point0b[i] = coord(les_elems(nb, 0), i);
+                    point1b[i] = coord(les_elems(nb, 1), i);
+                    point2b[i] = coord(les_elems(nb, 2), i);
                   }
-                calcul_normal(point0b,point1b,point2b,normal_b);
-                if (dotproduct_array(normal,normal_b)<0)
+                calcul_normal(point0b, point1b, point2b, normal_b);
+                double dot_product=0;
+                for (int i = 0; i < dim; i++)
+                  dot_product+=normal[i]*normal_b[i];
+                if (dot_product < 0)
                   {
                     // si normal a l'envers on inverse les deux sommets
-                    les_elems(nb,1)=face_sommets(fac,2);
-                    les_elems(nb,2)=face_sommets(fac,1);
+                    les_elems(nb, 1) = face_sommets(fac, 2);
+                    les_elems(nb, 2) = face_sommets(fac, 1);
                   }
               }
             else
               {
-                for (int i=0; i<nb_sommet_face; i++)
-                  point0b[i]=coord(les_elems(nb,1),i)-coord(les_elems(nb,0),i);
-                double produit=normal[0]*point0b[1]-normal[1]*point0b[0];
-                if (produit<0)
+                for (int i = 0; i < nb_sommet_face; i++)
+                  point0b[i] = coord(les_elems(nb, 1), i) - coord(les_elems(nb, 0), i);
+                double produit = normal[0] * point0b[1] - normal[1] * point0b[0];
+                if (produit < 0)
                   {
                     // si normal a l'envers on inverse les deux sommets
-                    les_elems(nb,0)=face_sommets(fac,1);
-                    les_elems(nb,1)=face_sommets(fac,0);
+                    les_elems(nb, 0) = face_sommets(fac, 1);
+                    les_elems(nb, 1) = face_sommets(fac, 0);
                   }
               }
           }
-        nb++;
       }
-
-  assert(nb==nb_t);
-
+  });
+  end_gpu_timer(__KERNEL_NAME__);
 }
