@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,6 +21,7 @@
 #include <Domaine_DG.h>
 #include <TRUST_Ref.h>
 #include <SFichier.h>
+#include <Champ_Uniforme.h>
 
 class Domaine_Cl_DG;
 
@@ -32,7 +33,12 @@ public:
 
   double calculer_dt_stab() const override;
 
-  void associer_diffusivite(const Champ_base& diffu) override { diffusivite_ = diffu; }
+  void associer_diffusivite(const Champ_base& diffu) override
+  {
+    diffusivite_ = diffu;
+    is_var_ = sub_type(Champ_Uniforme, diffu) ? 0 : 1;
+    is_aniso_ = (diffu.nb_comp() > 1);
+  }
   void completer() override;
   const Champ_base& diffusivite() const override { return diffusivite_.valeur(); }
   void mettre_a_jour(double t) override
@@ -42,6 +48,7 @@ public:
   }
 
   void update_nu() const; //met a jour nu
+  inline double nu(int i, int compo) const { return nu_(is_var_ * i, compo); }
 
   DoubleTab& calculer(const DoubleTab&, DoubleTab&) const override;
   int impr(Sortie& os) const override;
@@ -54,6 +61,10 @@ protected:
   OBS_PTR(Champ_base) diffusivite_;
   mutable int nu_a_jour_ = 0; //si on doit mettre a jour nu
   mutable DoubleTab nu_;
+
+  bool is_var_; //if the diffusivity is Uniforme or heterogeneous
+  bool is_aniso_; //if the diffusivity is anisotropic
+
 };
 
 
