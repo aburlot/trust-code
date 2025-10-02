@@ -12,6 +12,13 @@ s='# Discard XDATA check for FT discontinu test cases since broken when syntax c
           echo "Test $i skipped (XDATA does not support FT discontinu syntax after V1.9.4, use trustify to check FTD syntax)"
           liste_skipped=$liste_skipped" $i"
           i=""
+       fi
+       # Discard XDATA check for cases with TRUSTIFY NOT tag.
+       if [ "`grep -i "TRUSTIFY NOT" $REP/* 2>/dev/null`" != "" ]
+       then
+          echo "Test $i skipped (TRUSTIFY NOT specifie)"
+          liste_skipped=$liste_skipped" $i"
+          i=""
        fi'
 $TRUST_Awk -v r="$s" '{gsub(/#BALISE_SKIP_XDATA_FT_DISC/,r)}1' $DIR/lance_test_modif > $DIR/lance_test_modif.tmp
 cat $DIR/lance_test_modif.tmp > $DIR/lance_test_modif ; rm $DIR/lance_test_modif.tmp

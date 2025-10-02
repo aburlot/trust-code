@@ -10,7 +10,8 @@ fi
 directory=""
 if [[ "${1}" != "" ]] && [[ -f "${1}" ]]; then
     #Le lancement prend desormais en compte un repertoire d'include pour gdb 6.x
-    MonoDir="${TRUST_ROOT}/MonoDir_mpi"
+    exec=`basename $1`
+    MonoDir=$TRUST_ROOT/MonoDir${exec#TRUST}
     if [[ -d "${MonoDir}/src" ]]; then
         directory="--directory=${MonoDir}/src --directory=${TRUST_ROOT}/include"
     fi
@@ -34,7 +35,7 @@ else
     echo "# To debug dynamically-linked executable, use: set auto-solib-add off"
     echo "Then load the library you want to debug: share name_of_library.so"
     echo "---------------------------------------------------------------------"
-    echo "Lancement de: /usr/bin/gdb ${directory} -x ${options} ${*}"
+    echo "Lancement de: /usr/bin/gdb ${directory} -x ${options} ${@}"
 
-    /usr/bin/gdb "${directory}" -x "${options}" "${@}"
+    /usr/bin/gdb ${directory} -x ${options} ${@}
 fi
