@@ -226,8 +226,10 @@ void DG_discretisation::discretiser_champ_fonc_don(const Motcle& directive, cons
   else
     assert(0);
 
-  // Si c'est un champ multiscalaire, uh !
-  nb_comp = default_nb_comp;
+  //TODO DG basis_function and champ_fonc_P1 have more dimension than the postprocess field but only for scalar field for now
+  //it s difficult to discriminate the field P0 and P1 before postreatment
+  // + how to do it for vector champ_inc like velocity ?
+  if (nature!=vectoriel) nb_comp = default_nb_comp;
   if (champ_fonc)
     creer_champ(*champ_fonc, z, type, noms[0], unites[0], nb_comp, nb_ddl, temps, directive, que_suis_je());
   else

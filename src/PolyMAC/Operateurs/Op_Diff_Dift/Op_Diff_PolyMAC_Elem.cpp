@@ -373,7 +373,7 @@ void Op_Diff_PolyMAC_Elem::contribuer_a_avec(const DoubleTab& inco, Matrice_Mors
             matrice(N * (ne_tot + f) + n, N * e + n) -= mfe(n);
 
           //Echange_impose_base
-          if (ch.fcl()(f, 0) > 0 && ch.fcl()(f, 0) < 2 && f < domaine.nb_faces())
+          if (ch.fcl()(f, 0) == 1 && f < domaine.nb_faces())
             for (n = 0; n < N; n++)
               matrice(N * (ne_tot + f) + n, N * (ch.fcl()(f, 0) == 1 ? ne_tot + f : e) + n) += fs(f) * ref_cast(Echange_impose_base, cls[ch.fcl()(f, 1)].valeur()).h_imp(ch.fcl()(f, 2), n);
           else if (ch.fcl()(f, 0) == 3 && f < domaine.nb_faces()) //paroi_contact gere en monolithique -> ajout du coeff a la face issu de l'autre cote
