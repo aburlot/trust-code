@@ -33,6 +33,7 @@
 #include <cmath>
 #include <Quadrature_base.h>
 #include <Champ_front_txyz.h>
+#include <Champ_front_softanalytique.h>
 
 Implemente_instanciable( Op_Diff_DG_Elem , "Op_Diff_DG_Elem" , Op_Diff_DG_base );
 
@@ -536,14 +537,77 @@ void Op_Diff_DG_Elem::contribuer_au_second_membre(DoubleTab& resu ) const
           const Dirichlet& dirichlet =
             ref_cast(Dirichlet,la_cl.valeur());
 
+          if (sub_type(Champ_front_softanalytique,dirichlet.champ_front()))
+            {
+              Cerr<<" Il faut utiliser Champ_front_fonc_txyz et non "<<dirichlet.champ_front().que_suis_je()<<finl;
+              exit();
+            }
+
           double xk=0.,yk=0.,zk=0.;
           double temps = equation().schema_temps().temps_courant();
 
-          if (sub_type(Champ_front_txyz,dirichlet.champ_front()))
+          bool avec_valeur_aux_points=false;
+          if (sub_type(Champ_front_var_instationnaire,dirichlet.champ_front()))
             {
-              const Champ_front_txyz& champ_front =
-                ref_cast(Champ_front_txyz,dirichlet.champ_front());
+              const Champ_front_var_instationnaire& ch_txyz=ref_cast(Champ_front_var_instationnaire,dirichlet.champ_front());
+              avec_valeur_aux_points=ch_txyz.valeur_au_temps_et_au_point_disponible();
+            }
+          if (avec_valeur_aux_points)
+            {
+              if (sub_type(Champ_front_var_instationnaire,dirichlet.champ_front()))
+                {
+                  const Champ_front_var_instationnaire& champ_front =
+                    ref_cast(Champ_front_var_instationnaire,dirichlet.champ_front());
 
+                  for (int ind_faceb=num1f; ind_faceb<num2f; ind_faceb++)
+                    {
+
+                      ind_face = le_bord.num_face(ind_faceb);
+
+                      int elem = face_voisins(ind_face, 0); // The cell that have one facet on the boundary
+
+                      ch.eval_bfunc_on_facets(quad, elem, ind_face, fbase);
+                      ch.eval_grad_bfunc_on_facets(quad, elem, ind_face, grad_fbase);
+
+                      double sur_f = domaine.face_surfaces(ind_face);
+
+                      double h_T = sqrt(domaine.carre_pas_maille(elem));
+                      double invh_T = 1./h_T; //TODO regarder penalisation remplacer h_T par h_F
+                      double nu_F=0.;
+                      if (is_aniso_)
+                        {
+                          for (int d=0; d<Objet_U::dimension; d++)
+                            nu_F += nu(elem,d)*face_normales(ind_face,d)*face_normales(ind_face,d);
+                          nu_F /= sur_f*sur_f;
+                        }
+                      else
+                        nu_F = nu(elem,0);
+
+                      for( int i=0; i< nb_bfunc; i++)
+                        {
+                          scalar_product = 0.;
+                          for (int k = 0; k < nb_pts_int_fac ; k++)
+                            {
+                              //Coordonnees des points d'integration
+                              xk=integ_points_facets(ind_face,k,0);
+                              yk=integ_points_facets(ind_face,k,1);
+                              if (dimension ==3) zk=integ_points_facets(ind_face,k,2);
+
+                              double u_bord_k= champ_front.valeur_au_temps_et_au_point(temps,0,xk,yk,zk,0);
+                              for (int d=0; d<Objet_U::dimension; d++)
+                                {
+                                  bool ori = is_aniso_ ? d : 0;
+                                  scalar_product(k) -= nu(elem,ori)*face_normales(ind_face,d)/sur_f * grad_fbase(i, k, d)*u_bord_k;
+                                }
+                              scalar_product(k) += nu_F*eta_F(ind_face)*invh_T * u_bord_k*fbase(i, k);    // \eta/H_F \int g \vvec_h
+                            }
+                          resu(elem,i)+=quad.compute_integral_on_facet(ind_face, scalar_product);
+                        }
+                    }
+                }
+            }
+          else
+            {
               for (int ind_faceb=num1f; ind_faceb<num2f; ind_faceb++)
                 {
 
@@ -568,23 +632,18 @@ void Op_Diff_DG_Elem::contribuer_au_second_membre(DoubleTab& resu ) const
                   else
                     nu_F = nu(elem,0);
 
+                  double u_bord= dirichlet.val_imp_au_temps(temps,ind_faceb);
                   for( int i=0; i< nb_bfunc; i++)
                     {
                       scalar_product = 0.;
                       for (int k = 0; k < nb_pts_int_fac ; k++)
                         {
-                          //Coordonnees des points d'integration
-                          xk=integ_points_facets(ind_face,k,0);
-                          yk=integ_points_facets(ind_face,k,1);
-                          if (dimension ==3) zk=integ_points_facets(ind_face,k,2);
-
-                          double u_bord_k= champ_front.valeur_au_temps_et_au_point(temps,0,xk,yk,zk,0);
                           for (int d=0; d<Objet_U::dimension; d++)
                             {
                               bool ori = is_aniso_ ? d : 0;
-                              scalar_product(k) -= nu(elem,ori)*face_normales(ind_face,d)/sur_f * grad_fbase(i, k, d)*u_bord_k;      //  \eta/H_F \int g \vvec_h
+                              scalar_product(k) -= nu(elem,ori)*face_normales(ind_face,d)/sur_f * grad_fbase(i, k, d)*u_bord;
                             }
-                          scalar_product(k) += nu_F*eta_F(ind_face)*invh_T * u_bord_k*fbase(i, k);                              // \eta/H_F \int g \vvec_h
+                          scalar_product(k) += nu_F*eta_F(ind_face)*invh_T * u_bord*fbase(i, k);    // \eta/H_F \int g \vvec_h
                         }
                       resu(elem,i)+=quad.compute_integral_on_facet(ind_face, scalar_product);
                     }
