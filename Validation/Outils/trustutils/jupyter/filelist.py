@@ -248,9 +248,8 @@ class FileAccumulator(object):
             return
         cls.Append(dir + "/" + case + ".data")
         cls.Append(dir + "/" + case + ".err")
-        # Commenting those 2 - they might be huge if many timesteps:
-        #  cls.Append(dir + "/" + case + ".out")
-        #  cls.Append(dir + "/" + case + ".dt_ev")
+        cls.Append(dir + "/" + case + ".out")
+        cls.Append(dir + "/" + case + ".dt_ev")
         cls.Append(dir + "/" + case + ".sons")  # mandatory to spot 'plane' probes
         cls.Append(dir + "/" + case + ".perf")
 
