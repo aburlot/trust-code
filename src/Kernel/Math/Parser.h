@@ -45,6 +45,7 @@ public :
   Parser();
   Parser(const Parser&);
   virtual ~Parser();
+  void set(const Parser&);
 
   /**
    * Construit un objet Parser avec une chaine specifiee et un nb max de variables a indiquer avec la methode addVar.

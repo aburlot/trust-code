@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -63,7 +63,7 @@ protected:
   OBS_PTR(Probleme_base) ref_pb;
   VECT(Parser_U) parser; /* vecteur de tous les parsers */
   Nom nom_champ_parametre_; /* nom du champ dont les fonctions ont parametres */
-  IntTab parser_idx; /* parser_idx(i, j) : parser a appeller pour calculer la composante j du champ a la maille i */
+  IntTab parser_idx_; /* parser_idx(i, j) : parser a appeller pour calculer la composante j du champ a la maille i */
   bool read_pb_instead_of_domain = false;
   void interprete_get_domaine(const Nom& nom);
 

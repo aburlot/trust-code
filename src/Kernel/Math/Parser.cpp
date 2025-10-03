@@ -35,7 +35,22 @@ Parser::Parser()
   setNbVar(1);
 }
 
-Parser::Parser(const Parser& p)
+Parser::Parser(const Parser& p) { set(p); }
+
+Parser::Parser(std::string& s, int n)
+{
+  init_parser();
+  state=0;
+  root=nullptr;
+  str= new std::string(s);
+  impuls_tn = -1.;
+  impuls_T = 1.;
+  impuls_t0 = 0.;
+  impuls_tempo = 0.;
+  setNbVar(n);
+}
+
+void Parser::set(const Parser& p)
 {
   init_parser();
   state=p.state;
@@ -53,19 +68,6 @@ Parser::Parser(const Parser& p)
       les_var_names[i] = p.les_var_names[i];
     }
   parseString();
-}
-
-Parser::Parser(std::string& s, int n)
-{
-  init_parser();
-  state=0;
-  root=nullptr;
-  str= new std::string(s);
-  impuls_tn = -1.;
-  impuls_T = 1.;
-  impuls_t0 = 0.;
-  impuls_tempo = 0.;
-  setNbVar(n);
 }
 
 void Parser::init_parser()

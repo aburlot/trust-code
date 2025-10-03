@@ -38,8 +38,10 @@ public:
   * Constructors (generally by copy of a ParserU)
    * See an example here: Champ_Generique_Transformation::get_champ()
   */
+  ParserView() {};
   ParserView(Parser_U& p) : Parser(p.getParser()) {}
   ParserView(std::string& expr, int nvar) : Parser(expr,nvar) {}
+  void set(Parser_U& p) { Parser::set(p.getParser()); }
   /**
   * Parse string
   */

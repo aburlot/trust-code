@@ -18,6 +18,7 @@
 
 #include <Sous_Domaine.h>
 #include <Champ_Generique_base.h>
+#include <ParserView.h>
 
 template<Champ_Morceaux_Type _TYPE_>
 Champ_base& TRUSTChamp_Morceaux_generique<_TYPE_>::affecter_(const Champ_base& ch)
@@ -177,47 +178,58 @@ void TRUSTChamp_Morceaux_generique<_TYPE_>::mettre_a_jour(double time)
     }
   else
     {
-
       OWN_PTR(Champ_base) espace_stockage;
       const Champ_base *ch = !ref_pb.non_nul() ? nullptr : ref_pb->has_champ(nom_champ_parametre_) ? &ref_pb->get_champ(nom_champ_parametre_) : &ref_pb->get_champ_post(nom_champ_parametre_).get_champ(espace_stockage);
-      ToDo_Kokkos("critical");
       const int nb_som_elem = mon_domaine->nb_som_elem();
-      bool pb = ref_pb.non_nul();
-      const DoubleTab& tab_ch = ch->valeurs();
-      const DoubleTab& coord = mon_domaine->les_sommets();
-      const IntTab& les_elems = mon_domaine->les_elems();
       int dim = dimension;
-      DoubleTab& tab = valeurs();
-      const int nb_comp = tab.dimension(1);
-      for (int i = 0; i < mon_domaine->nb_elem_tot(); i++)
+      bool pb = ref_pb.non_nul();
+      const int max_parser_size = 200;
+      if (parser.size()>max_parser_size)
         {
-          /* xs : coordonnees du poly par barycentre des sommets -> pas top */
-          double xs[3] = {0,};
-          int nb_som = 0, s, r;
-          for (int j = 0; j < nb_som_elem && (s = les_elems(i, j)) >= 0; j++)
-            {
-              for (r = 0, nb_som++; r < dim; r++)
-                {
-                  xs[r] += coord(s, r);
-                }
-            }
-          for (r = 0; r < dim; r++)
-            xs[r] /= nb_som;
-
-          /* calcul de chaque composante */
-          double val = ch ? tab_ch(i, 0) : 0;
-          for (int k = 0; k < nb_comp; k++)
-            {
-              Parser_U& psr = parser[parser_idx(i, k)];
-              psr.setVar("x", xs[0]);
-              psr.setVar("y", xs[1]);
-              psr.setVar("z", xs[2]);
-              psr.setVar("t", time);
-
-              if (pb) psr.setVar("val", val);
-              tab(i, k) = psr.eval();
-            }
+          Cerr << "Increase max_parser_size to " << parser.size() << " TRUSTChamp_Morceaux_generique<_TYPE_>::mettre_a_jour !" << finl;
+          Process::exit();
         }
+      Kokkos::Array<ParserView, max_parser_size> psr;
+      for (int i=0; i<parser.size(); i++)
+        {
+          psr[i].set(parser[i]);
+          psr[i].parseString();
+        }
+      bool has_champ = ch != nullptr;
+      CDoubleTabView tab_ch;
+      if (has_champ) tab_ch = ch->valeurs().view_ro();
+      CDoubleTabView coord = mon_domaine->les_sommets().view_ro();
+      CIntTabView les_elems = mon_domaine->les_elems().view_ro();
+      CIntTabView parser_idx = parser_idx_.view_ro();
+      DoubleTabView tab = valeurs().view_wo();
+      const int nb_comp = (int)tab.extent(1);
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), mon_domaine->nb_elem_tot(), KOKKOS_LAMBDA(const int i)
+      {
+        /* xs : coordonnees du poly par barycentre des sommets -> pas top */
+        double xs[3] = {0,0,0};
+        int nb_som = 0, s, r;
+        for (int j = 0; j < nb_som_elem && (s = les_elems(i, j)) >= 0; j++)
+          for (r = 0, nb_som++; r < dim; r++)
+            xs[r] += coord(s, r);
+        for (r = 0; r < dim; r++)
+          xs[r] /= nb_som;
+
+        /* calcul de chaque composante */
+        double val = has_champ ? tab_ch(i, 0) : 0;
+        for (int k = 0; k < nb_comp; k++)
+          {
+            int idx = parser_idx(i, k);
+            int threadId = psr[idx].acquire();
+            psr[idx].setVar(0, xs[0], threadId); // x
+            psr[idx].setVar(1, xs[1], threadId); // y
+            psr[idx].setVar(2, xs[2], threadId); // z
+            psr[idx].setVar(3, time, threadId);  // t
+            if (pb) psr[idx].setVar(4, val, threadId); // val
+            tab(i, k) = psr[idx].eval(threadId);
+            psr[idx].release(threadId);
+          }
+      });
+      end_gpu_timer(__KERNEL_NAME__);
     }
 }
 
@@ -243,8 +255,8 @@ template<Champ_Morceaux_Type _TYPE_>
 void TRUSTChamp_Morceaux_generique<_TYPE_>::creer_tabs(const int dim)
 {
   fixer_nb_comp(dim);
-  parser_idx.resize(0, dim);
-  mon_domaine->creer_tableau_elements(parser_idx);
+  parser_idx_.resize(0, dim);
+  mon_domaine->creer_tableau_elements(parser_idx_);
   valeurs_.resize(0, dim);
   mon_domaine->creer_tableau_elements(valeurs_);
 }
@@ -275,12 +287,12 @@ Entree& TRUSTChamp_Morceaux_generique<_TYPE_>::complete_readOn(const int dim, co
       is >> tmp;
       psr.setNbVar(5);
       psr.setString(tmp);
-      psr.addVar("t"), psr.addVar("x"), psr.addVar("y"), psr.addVar("z");
+      psr.addVar("x"), psr.addVar("y"), psr.addVar("z"), psr.addVar("t");
       if (ref_pb.non_nul()) psr.addVar("val");
       psr.parseString();
 
       for (poly = 0; poly < mon_domaine->nb_elem_tot(); poly++)
-        parser_idx(poly, k) = parser.size();
+        parser_idx_(poly, k) = parser.size();
 
       parser.add(psr);
     }
@@ -297,12 +309,12 @@ Entree& TRUSTChamp_Morceaux_generique<_TYPE_>::complete_readOn(const int dim, co
           is >> tmp;
           psr.setNbVar(5);
           psr.setString(tmp);
-          psr.addVar("t"), psr.addVar("x"), psr.addVar("y"), psr.addVar("z");
+          psr.addVar("x"), psr.addVar("y"), psr.addVar("z"), psr.addVar("t");
           if (ref_pb.non_nul()) psr.addVar("val");
           psr.parseString();
 
           for (poly = 0; poly < ssz.nb_elem_tot(); poly++)
-            parser_idx(ssz(poly), k) = parser.size();
+            parser_idx_(ssz(poly), k) = parser.size();
 
           parser.add(psr);
         }
