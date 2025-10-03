@@ -55,6 +55,11 @@ done
 
 echo "#error File cppunit.h has been removed in TRUST 1.9.6" > backward/cppunit.h
 
+Deprecated_includes_v197="stat_counters Statistiques"
+for file in $Deprecated_includes_v197
+do
+  echo "#error File $file.h deprecated in TRUST 1.9.7. You SHOULD change the include to Perf_counters.h. see TRUST_ROOT/DEVELOPER_NOTES for more information" > backward/$file.h
+done
 
 # EOS includes in EOS if 
 if [ "$TRUST_EOS_HOME_DIR" != "" ]
