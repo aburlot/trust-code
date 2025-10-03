@@ -12,11 +12,12 @@ rep_init=`pwd`
 if [ ! -f $list_methodes ]
 then
    # Deux cas possibles Baltik ou Trust
-   if [ ${exec#$project_directory} != $exec ]
+   if [ ${exec#$project_directory} != $exec ] && [ -d $project_directory/doc/Coverage ]
    then
       if [ ! -d $project_directory/doc/Coverage ]
       then
          echo "No Coverage for this Baltik. Contact the project leader of this Baltik to add test coverage."
+         exit -1
       else
          cd $project_directory/doc/Coverage
          for gz in `ls *.gz 2>/dev/null`
