@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+03/10/25 (TRUST) Fix          : Correction to homogenize the sizes of discretization tables in parallel in the case of hybrid meshing
 17/09/25 (TRUST) Tools        : Upgrade MEDCoupling to 9.15.0 and MED to 4.2.0
 16/09/25 (TRUST) Fix          : When reading a mesh from med file in bidim_axi, area of domain boundaries were not correctly computed.
 12/09/25 (TRUST) Fix          : In 3D VDF, if the boundary with normal vector in x-direction is moving in y-direction, wall velocity norm was not correctly computed
