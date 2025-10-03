@@ -999,7 +999,8 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
   int solver_calls=  Process::mp_max(c_system_solver.count_);
   nb_ts = Process::mp_max(nb_ts);
   double cpu_time=0.;
-  double nb_it_per_solver_calls= solver_calls>0 ? static_cast<double>(Process::mp_max(c_system_solver.quantity_)) /solver_calls : static_cast<double>(Process::mp_max(c_system_solver.quantity_)) ;
+  const double nb_it_per_solver_calls= solver_calls>0 ? static_cast<double>(Process::mp_max(static_cast<double>(c_system_solver.quantity_))) /solver_calls :
+                                       static_cast<double>(Process::mp_max(static_cast<double>(c_system_solver.quantity_))) ;
   if (max_nb_backup>0)
     {
       total_nb_backup_ += c_backup.count_;
@@ -1136,9 +1137,9 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
   double com_time_seq = Process::mp_max(c_io_seq.total_time_.count());
   double com_time_par = Process::mp_max(c_io_par.total_time_.count());
   if (com_time_seq>0)
-    debit_seq = static_cast<int>(std::floor(static_cast<double>(Process::mp_sum(c_io_seq.quantity_)) / (1024 * 1024) /com_time_seq));
+    debit_seq = static_cast<int>(std::floor(static_cast<double>(Process::mp_sum(static_cast<double>(c_io_seq.quantity_))) / (1024 * 1024) /com_time_seq));
   if (com_time_par>0)
-    debit_par = static_cast<int>(std::floor(static_cast<double>(Process::mp_sum(c_io_par.quantity_)) / (1024 * 1024) /com_time_par));
+    debit_par = static_cast<int>(std::floor(static_cast<double>(Process::mp_sum(static_cast<double>(c_io_par.quantity_))) / (1024 * 1024) /com_time_par));
   if(Process::is_parallel())
     {
       min_max_avg_sd_t_q_c_allreduce_comm = compute_min_max_avg_sd(comm_allreduce_t,comm_allreduce_q,comm_allreduce_c);
