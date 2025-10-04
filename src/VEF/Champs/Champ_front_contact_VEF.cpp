@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -13,27 +13,27 @@
 *
 *****************************************************************************/
 
-#include <Champ_front_contact_VEF.h>
-#include <Probleme_base.h>
-#include <Modele_turbulence_hyd_base.h>
+#include <Convection_Diffusion_Concentration.h>
+#include <Champ_front_contact_fictif_VEF.h>
 #include <Modele_turbulence_scal_base.h>
+#include <Op_Diff_VEF_Anisotrope_Face.h>
+#include <Modele_turbulence_hyd_base.h>
 #include <Raccord_distant_homogene.h>
-#include <Champ_Uniforme.h>
-#include <distances_VEF.h>
-#include <Interprete.h>
-#include <Pb_Conduction.h>
-#include <Domaine_Cl_VEF.h>
-#include <Domaine.h>
+#include <Champ_front_contact_VEF.h>
 #include <Champ_Fonc_P0_VEF.h>
 #include <Format_Post_Med.h>
-#include <Champ_front_contact_fictif_VEF.h>
+#include <Domaine_Cl_VEF.h>
+#include <Champ_Uniforme.h>
+#include <distances_VEF.h>
+#include <Probleme_base.h>
+#include <Pb_Conduction.h>
 #include <Schema_Comm.h>
+#include <Constituant.h>
+#include <Interprete.h>
+#include <TRUST_Ref.h>
 #include <ArrOfBit.h>
 #include <SFichier.h>
-#include <TRUST_Ref.h>
-#include <Constituant.h>
-#include <Convection_Diffusion_Concentration.h>
-
+#include <Domaine.h>
 
 // WEC : Attention. D'autres tableaux que le champ_front meriteraient davoir plusieurs valeurs temporelles !
 // En particulier les gradients...
@@ -225,10 +225,21 @@ void Champ_front_contact_VEF::calcul_grads_locaux(double temps)
   DoubleVect d_equiv;
   //DoubleTab positions_Pf;
 
+  // XXX Elie Saikali : faut faire qlq chose si l'op de diff est aniso ...
+  Op_Diff_VEF_base * op_diff = nullptr;
+  if(sub_type(Op_Diff_VEF_Anisotrope_Face, l_inconnue->equation().operateur(0).l_op_base()))
+    op_diff = &ref_cast(Op_Diff_VEF_Anisotrope_Face, l_inconnue->equation().operateur(0).l_op_base());
+
   if (!sub_type(Convection_Diffusion_Concentration,inco.equation()))
-    coeff_lam = le_milieu.conductivite().valeurs();
+    {
+      if (op_diff)
+        op_diff->remplir_nu(coeff_lam);
+      else
+        coeff_lam = le_milieu.conductivite().valeurs();
+    }
   else
     coeff_lam = ref_cast(Constituant,le_milieu).diffusivite_constituant().valeurs();
+
   int dim = coeff_lam.nb_dim();
 
   const RefObjU& mod = inco.equation().get_modele(TURBULENCE);
@@ -262,27 +273,41 @@ void Champ_front_contact_VEF::calcul_grads_locaux(double temps)
 
     }
 
-  int i, j, num, fac_glob ;
-  int fac_front, fac_loc;
-  double coeff;
   int signe;
-  double surface_pond, surface_face;
-  int nb_faces_elem = le_dom_dis.domaine().nb_faces_elem();
+  double surface_pond, surface_face, coeff;
+  const int nb_faces_elem = le_dom_dis.domaine().nb_faces_elem();
   const DoubleTab& face_normale = le_dom_dis.face_normales();
 
   // calcul de grad_num_local et grad_fro_local
-  int nb_faces = la_front_vf.nb_faces();
-  for ( fac_front = 0 ; fac_front<nb_faces ; fac_front++)
+  const int nb_faces = la_front_vf.nb_faces();
+  for (int fac_front = 0 ; fac_front<nb_faces ; fac_front++)
     {
       gradient_num_local(fac_front) = 0.;
       gradient_fro_local(fac_front) = 0.;
 
-      fac_glob = fac_front +  ndeb ;
-      num = face_voisins(fac_glob,0);
+      const int fac_glob = fac_front +  ndeb ;
+      int num = face_voisins(fac_glob,0);
       if (num < 0 ) num = face_voisins(fac_glob,1);
 
-      if(dim!=1) coeff = coeff_lam(0,0) ;
-      else       coeff = coeff_lam(num) ;
+      if (dim == 1)
+        coeff = coeff_lam(num);
+      else
+        {
+          if (op_diff)
+            {
+              coeff = 0.;
+              for (int i = 0; i < nb_faces_elem; i++)
+                {
+                  const int j = elem_faces(num, i);
+                  if (j != fac_glob)
+                    coeff += op_diff->viscA(fac_glob, j, num, coeff_lam);
+                }
+
+              coeff *= vol(num); // XXX Elie Saikali : op_diff->viscA divise par vol ...
+            }
+          else
+            coeff = coeff_lam(0, 0); // on laisse comme avant TODO FIXME
+        }
 
       //GF PQ
       // ajout de lambda_t cote fluide egalite des flux entre lambda_s *DT_s/dy =(lambda+lambda_t)_f *DT_f/dy
@@ -292,17 +317,18 @@ void Champ_front_contact_VEF::calcul_grads_locaux(double temps)
 
       Scal_moy(fac_front) = 0. ;
       double ratio = 0. ;
-      for (i=0; i<dimension; i++) ratio += (face_normales(fac_glob,i) * face_normales(fac_glob,i));
+      for (int i=0; i<dimension; i++)
+        ratio += (face_normales(fac_glob,i) * face_normales(fac_glob,i));
       ratio = sqrt(ratio) ;
-      int fac;
       surface_face=le_dom_dis.face_surfaces(fac_glob);
 
       //Calcul de la temperature moyenne dans la maille
-      for (i=0; i<nb_faces_elem; i++)
+      for (int i=0; i<nb_faces_elem; i++)
         {
           // On ne tient pas compte de la temperature de paroi
           // pour calculer la temperature moyenne dans la maille.
-          if ( (j= elem_faces(num,i)) != fac_glob )
+          const int j = elem_faces(num,i);
+          if ( j != fac_glob )
             {
               //On pondere la moyenne par la surface
               surface_pond = 0.;
@@ -314,15 +340,16 @@ void Champ_front_contact_VEF::calcul_grads_locaux(double temps)
         }
 
 
-      for (fac=0; fac<dimension+1; fac++)
-        for (i=0; i<dimension; i++)
+      for (int fac = 0; fac < dimension + 1; fac++)
+        for (int i = 0; i < dimension; i++)
           {
-            fac_loc = elem_faces(num,fac) ;
+            const int fac_loc = elem_faces(num, fac);
             signe = le_dom_dis.oriente_normale(fac_loc, num);
-            if (fac_loc != fac_glob) gradient_num_local(fac_front) += (signe * face_normales(fac_glob,i) / ratio *
-                                                                         face_normales(fac_loc,i)*inco_valeurs(fac_loc)) ;
-            else                 gradient_fro_local(fac_front) += (signe * face_normales(fac_loc,i) / ratio *
-                                                                     face_normales(fac_loc,i)) ;
+            if (fac_loc != fac_glob)
+              gradient_num_local(fac_front) += (signe * face_normales(fac_glob, i) /
+                                                ratio * face_normales(fac_loc, i) * inco_valeurs(fac_loc));
+            else
+              gradient_fro_local(fac_front) += (signe * face_normales(fac_loc, i) / ratio * face_normales(fac_loc, i));
           }
 
       gradient_num_local(fac_front) *= (coeff / vol(num));
