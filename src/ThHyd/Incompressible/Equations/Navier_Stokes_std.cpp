@@ -1103,8 +1103,9 @@ bool Navier_Stokes_std::initTimeStep(double dt)
 {
   P_n=pression().valeurs();
 
-  // needed by ALE method and we don't want domaine_ale object in TRUST
-  update_pressure_matrix( );
+
+  // Verification que dt_max est correctement fixe pour un champ
+  // de vitesse nul et diffusion_implicite active <=> dt_conv=INF
   const Schema_Temps_base& sch_tps = le_schema_en_temps.valeur();
   bool ddt = Equation_base::initTimeStep(dt);
 
@@ -1949,10 +1950,6 @@ void Navier_Stokes_std::div_ale_derivative( DoubleTrav& deriveeALE, double times
   // nothing to do
 }
 
-void Navier_Stokes_std::update_pressure_matrix()
-{
-  // nothing to do
-}
 
 void Navier_Stokes_std::update_y_plus(const DoubleTab& tab)
 {

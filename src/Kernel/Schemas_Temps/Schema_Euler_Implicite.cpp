@@ -267,7 +267,7 @@ int Schema_Euler_Implicite::Iterer_Pb(Probleme_base& pb,int compteur, int& ok)
 
       // imposer_cond_lim   sert pour la pression et pour les echanges entre pbs
       eqn.domaine_Cl_dis().imposer_cond_lim(eqn.inconnue(),temps_courant()+pas_de_temps());
-      Cout<<"Solving " << eqn.que_suis_je() << " equation :" << finl;
+      Cout <<"Solving equation: " << eqn.que_suis_je() << finl;
       const DoubleTab& inut=futur;
       convergence_eqn=le_solveur->iterer_eqn(eqn, inut, present, dt_, compteur, ok);
       if (!ok) return false; //echec total -> on sort sans traiter les equations suivantes
@@ -315,6 +315,18 @@ void recommencer_pb(Probleme_base& pb)
     }
 }
 
+void recommencer_pb(Probleme_base& pb, const double temps)
+{
+  Cerr << "ICoCo coupling: reset problem " << pb.que_suis_je() << " to time " << temps << " at the beginning of external implicit sub-iteration" << finl ;
+  for(int i=0; i<pb.nombre_d_equations(); i++)
+    {
+      DoubleTab& passe = pb.equation(i).inconnue().passe();
+      DoubleTab& present = pb.equation(i).inconnue().valeurs();
+      present=passe;
+
+      pb.equation(i).inconnue().Champ_base::changer_temps(temps);
+    }
+}
 
 bool Schema_Euler_Implicite::iterateTimeStep(bool& converged)
 {
@@ -322,6 +334,15 @@ bool Schema_Euler_Implicite::iterateTimeStep(bool& converged)
 
   converged = false;
   Initialiser_Champs(prob);
+
+  // ICoCo coupling: reset i) present to passe and ii) time to present time for problem equations during implicit sub-iterations
+  int iCoCoImplicitIteration=0 ; // This is the default
+  if (prob.checkOutputIntEntry("iCoCoImplicitIteration"))
+    {
+      iCoCoImplicitIteration=prob.getOutputIntValue("iCoCoImplicitIteration");
+      //Cerr << "iCoCoImplicitIteration: " << iCoCoImplicitIteration << finl ;
+    }
+  if (iCoCoImplicitIteration > 0) recommencer_pb(prob, temps_courant());
 
   int ok=1;
   int compteur;
