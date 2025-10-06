@@ -42,7 +42,7 @@ change_droits()
   then
      #if [ "`getfacl $TRUST_ROOT | grep default:group:dm2s-user-cat-a:r-x`" = "" ]
      #then
-        sh ~/scripts_ACL/Update_ACL.sh $TRUST_ROOT
+        sh ~/scripts_ACL/Update_ACL.sh $TRUST_ROOT  2>/dev/null
      #else
      #   echo "On Titania, rights should be OK"
      #   [ -d $TRUST_ROOT/lib/src ] && getfacl $TRUST_ROOT/lib/src

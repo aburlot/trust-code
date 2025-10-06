@@ -1,5 +1,8 @@
 #!/bin/bash
 project=$1
+
+git_branch_baltik=$(git branch --show-current) && [ "$git_branch_baltik" = "Livraison" ] && git_branch_baltik="next"
+git_commit="(branch $git_branch_baltik commit $(git rev-parse --short HEAD))"
 verbose=0
 [ "$2" = "-v" ] && verbose=1
 list_machine=`ls ${project}_%_*_%_time.log |sed "s/_%_time.log//; s/${project}_%_//"`
@@ -29,7 +32,7 @@ echo '<HTML>
 <TITLE>'$project' Results compilation</TITLE>
 </HEAD>
 <BODY>
-<CENTER><B><FONT SIZE=+1>Compilation de '$project le `date `'</FONT></B></CENTER>
+<CENTER><B><FONT SIZE=+1>Compilation de '$project $git_commit le `date `'</FONT></B></CENTER>
 <TABLE BORDER WIDTH=100% NOSAVE > 
 <TR>
 <TD>Machine</TD>' > nuit_${project}.html
