@@ -18,6 +18,7 @@ class LireMEDConverter(TRUSTParser):
           file toto.med
           mesh the_mesh_in_file  // optional - if not there, first mesh taken.
           [convertAllToPoly]
+          [exclure_groupes N GRP1 GRP2 ... GRPN ] // groups to exclude if any
        }
     """
     LIST_PARAMS = [("convertalltopoly", bool),
@@ -45,6 +46,39 @@ class LireMEDConverter(TRUSTParser):
             lm += ["   mesh", mesh, "\n"]
         if catp:
             lm += ["   convertAllToPoly\n"]
+        import os
+        if not os.path.exists(file) :
+            import warnings
+            print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            warnings.warn(f"WARNING : {file} not found, exlude_groups in the new syntax of Read_MED block will be missing!!!!!")
+            print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+        else :
+            from trustutils import run
+            run.useMEDCoupling()
+            import medcoupling as mc
+            a=mc.MEDFileData(file)
+            m=a.getMeshes()[0]
+            boundaries_from_grps = []
+
+            for i in m.getFamiliesNames()[:] :
+                nb_faces = m.getFamilyArr(-1,i,False).getNbOfElems()
+                if nb_faces > 0 :
+                    family_id = m.getFamilyId(i)
+                    groups = m.getGroupsOnFamily(i)
+                    if len(groups) == 1:
+                        boundaries_from_grps.append(groups[0])
+                    else:
+                        for k in range(len(groups)):
+                            nb_families = len(m.getFamiliesIdsOnGroup(groups[k]))
+                            if nb_families == 1 :
+                                boundaries_from_grps.append(groups[k])
+            grpnames = m.getGroupsNames()
+            grps_to_exclude = list(set(grpnames) - set(boundaries_from_grps))
+            size = len(grps_to_exclude)
+            grps_to_exclude=" ".join(grps_to_exclude)
+            if size:
+                lm += [f"   exclude_groups {size} {grps_to_exclude} \n"]
+
         lm += ["}\n"]
         return lm
 

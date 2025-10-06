@@ -27,12 +27,16 @@ PB_LIST = ["pb_conduction",
            "pb_thermohydraulique_turbulent_qc",
            "pb_thermohydraulique_turbulent_wc",
            "probleme_diphasique_4eqs",
-           "pb_conduction_combustible1d"] # exclude pb_couple, pb_multiphase, pb_med
+           "pb_conduction_combustible1d",
+           "probleme_primaire",
+           "pb_melange"] # exclude pb_couple, pb_multiphase, pb_med
 MIL_LIST = ["solide", 
             "fluide_incompressible", 
             "fluide_quasi_compressible", 
             "fluide_weakly_compressible",
-            "milieu_diphasique_1"]
+            "milieu_diphasique_1",
+            "fluide_primaire",
+            "fluide_melange"]
 GRAVITE = ["gravite", "gravity"] # Strong assumption, gravity field is always called gravite/gravity
 
 #
