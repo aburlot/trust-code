@@ -29,7 +29,14 @@ export RUNNING_IN_SALLOC=$$
 python3 $DIR/lib/client.py srun $NB $$ $PERE "$@"
 status=$?
 [ $status -ne 0 ] && echo ERROR: problem with Sserver or job killed!!! Exiting. && exit -1
-eval timeout -k 1 $TIMEOUT $@
+
+# Elie Saikali : macOS n'a pas la commande timeout ...
+if [ `uname -s` = Darwin ]; then
+  eval $@
+else
+  eval timeout -k 1 $TIMEOUT $@
+fi
+
 status=$?
 python3 $DIR/lib/client.py finish $$
 exit $status
