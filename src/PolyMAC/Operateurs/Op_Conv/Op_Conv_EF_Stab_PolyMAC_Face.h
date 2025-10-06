@@ -26,6 +26,7 @@ class Op_Conv_EF_Stab_PolyMAC_Face : public Op_Conv_PolyMAC_base
 public :
   void completer() override;
 
+  double calculer_dt_stab() const override;
   DoubleTab& ajouter(const DoubleTab& inco, DoubleTab& resu) const override;
   void contribuer_a_avec(const DoubleTab&, Matrice_Morse&) const override;
 

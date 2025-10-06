@@ -59,6 +59,45 @@ Entree& Op_Conv_Centre_PolyMAC_Face::readOn(Entree& is)
   return Op_Conv_PolyMAC_base::readOn(is);
 }
 
+double Op_Conv_EF_Stab_PolyMAC_Face::calculer_dt_stab() const
+{
+  double dt = 1e10;
+  const Domaine_Poly_base& domaine = le_dom_poly_.valeur();
+  const DoubleVect& fs = domaine.face_surfaces(), &pf = equation().milieu().porosite_face(), &ve = domaine.volumes(), &pe = equation().milieu().porosite_elem();
+  const DoubleTab& vit = vitesse_->valeurs();
+  const IntTab& e_f = domaine.elem_faces(), &f_e = domaine.face_voisins();
+  const int N = vit.line_size();
+  DoubleTrav flux(N); //somme des flux pf * |f| * vf, volume minimal des mailles d'elements/faces affectes par ce flux
+
+  for (int e = 0; e < domaine.nb_elem(); e++)
+    {
+      // Calcul du volume effectif de l'element
+      const double vol = pe(e) * ve(e);
+      flux = 0.;
+
+      // Parcourt des faces associees a l'element
+      for (int i = 0; i < e_f.dimension(1); i++)
+        {
+          int f = e_f(e, i);
+          if (f < 0) continue; // face in-existante
+
+          for (int n = 0; n < N; n++)
+            {
+              // Ajout du flux entrant pour la composante n : Seuls les flux entrants comptent
+              double flux_f = pf(f) * fs(f) * std::max((e == f_e(f, 1) ? 1 : -1) * vit(f, n), 0.);
+              flux(n) += flux_f;
+            }
+        }
+
+      // Calcul du pas de temps pour chaque composante n
+      for (int n = 0; n < N; n++)
+        if (std::abs(flux(n)) > 1e-12)
+          dt = std::min(dt, vol / flux(n));
+    }
+
+  return Process::mp_min(dt);
+}
+
 void Op_Conv_EF_Stab_PolyMAC_Face::completer()
 {
   Op_Conv_PolyMAC_base::completer();
