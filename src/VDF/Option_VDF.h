@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2023, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -29,6 +29,7 @@ public:
   int test_mot(const Motcle& mot_cle, const Motcle& mot_lu) const;
   static int traitement_coins, traitement_gradients;
   static double coeff_P_neumann;
+  static bool DEACTIVATE_ARETE_MIXTE;
 
 private:
   bool all_options_ = false;

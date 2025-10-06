@@ -20,6 +20,7 @@
 #include <communications.h>
 #include <Pb_Multiphase.h>
 #include <TRUSTSingle.h>
+#include <Option_VDF.h>
 
 template<class _TYPE_>
 void Iterateur_VDF_Face<_TYPE_>::ajouter_blocs(matrices_t mats, DoubleTab& secmem, const tabs_t& semi_impl) const
@@ -393,7 +394,7 @@ void Iterateur_VDF_Face<_TYPE_>::ajouter_blocs_aretes_internes(const int ncomp, 
 template<class _TYPE_> template <typename Type_Double>
 void Iterateur_VDF_Face<_TYPE_>::ajouter_blocs_aretes_mixtes(const int ncomp, matrices_t mats, DoubleTab& secmem, const tabs_t& semi_impl) const
 {
-  if(!_TYPE_::CALC_ARR_MIXTE) return; /* do nothing */
+  if(!_TYPE_::CALC_ARR_MIXTE || Option_VDF::DEACTIVATE_ARETE_MIXTE) return; /* do nothing */
 
   ajouter_blocs_aretes_generique_<true, Type_Flux_Arete::MIXTE, Type_Double>(premiere_arete_mixte, derniere_arete_mixte, ncomp, mats, secmem, semi_impl);
 }

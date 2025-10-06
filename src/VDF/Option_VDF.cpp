@@ -23,6 +23,7 @@ Implemente_instanciable(Option_VDF, "Option_VDF", Interprete);
 double Option_VDF::coeff_P_neumann = 1.;
 int Option_VDF::traitement_coins = 0;
 int Option_VDF::traitement_gradients = 0;
+bool Option_VDF::DEACTIVATE_ARETE_MIXTE = false;
 
 Sortie& Option_VDF::printOn(Sortie& os) const { return Interprete::printOn(os); }
 Entree& Option_VDF::readOn(Entree& is) { return Interprete::readOn(is); }
@@ -33,6 +34,7 @@ Entree& Option_VDF::interpreter(Entree& is)
   param.ajouter_non_std("traitement_coins", (this)); // XD_ADD_P chaine(into=["oui","non"]) Treatment of corners (yes or no). This option modifies slightly the calculations at the outlet of the plane channel. It supposes that the boundary continues after channel outlet (i.e. velocity vector remains parallel to the boundary).
   param.ajouter_non_std("traitement_gradients", (this)); // XD_ADD_P chaine(into=["oui","non"]) Treatment of gradient calculations (yes or no). This option modifies slightly the gradient calculation at the corners and activates also the corner treatment option.
   param.ajouter_non_std("P_imposee_aux_faces", (this)); // XD_ADD_P chaine(into=["oui","non"]) Pressure imposed at the faces (yes or no).
+  param.ajouter_non_std("DEACTIVATE_ARETE_MIXTE", (this)); // XD_ADD_P rien Deactivate the arete_mixte contribution in the conv op of the momentum equation.
   param.ajouter_non_std("all_options|toutes_les_options", (this)); // XD_ADD_P rien Activates all Option_VDF options. If used, must be used alone without specifying the other options, nor combinations.
   param.lire_avec_accolades_depuis(is);
   return is;
@@ -93,9 +95,11 @@ int Option_VDF::lire_motcle_non_standard(const Motcle& mot_cle, Entree& is)
           coeff_P_neumann = 2.;
         }
     }
+  else if (mot_cle == "DEACTIVATE_ARETE_MIXTE")
+    DEACTIVATE_ARETE_MIXTE = true;
   else if (mot_cle == "all_options" || mot_cle == "toutes_les_options") /* for experts only ;) */
     {
-      if (traitement_coins == 1 || traitement_coins == 1 ) //|| coeff_P_neumann == 2.)
+      if (traitement_coins == 1 || traitement_gradients == 1) //|| coeff_P_neumann == 2.)
         {
           Cerr << "Error in Option_VDF::" << __func__ << " !!!!!!!!!!!!" << finl;
           Cerr << "You are using the keyword all_options|toutes_les_options to activate all options, but your are explicitly specifing other options ..." << finl;
