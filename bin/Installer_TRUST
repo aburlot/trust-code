@@ -13,7 +13,7 @@ then
     mkdir -p $TRUST_ROOT/exec/utils
     cd $TRUST_ROOT/exec/utils/
     mkdir -p bin 2>/dev/null
-    (cd bin;tar xfz $TRUST_ROOT/bin/linux_install_tools_`uname -m`.tgz)
+    (cd bin;tar xfz $TRUST_ROOT/bin/linux_install_tools_`uname -m`.tgz  --no-same-owner)
     touch makefile
     for command in `cd bin;\ls`
     do
@@ -59,7 +59,7 @@ do
         cd $dest2
         archive="$TRUST_ROOT/externalpackages/utils/$q*.tar.*"
         arch=`basename $archive`
-        tar zxf $TRUST_ROOT/externalpackages/utils/$arch
+        tar zxf $TRUST_ROOT/externalpackages/utils/$arch --no-same-owner
         cd *$q*
         ./configure --prefix=$TRUST_ROOT/exec/utils >config.log 2>&1  && make >make.log 2>&1  && make install > install.log 2>&1
         [ $? -eq 0 ] && echo "lzip install completed"
@@ -85,13 +85,13 @@ do
     arch=`basename $archive`
     if [ ${arch##*.} == 'gz' ] 
     then
-        tar zxf $TRUST_ROOT/externalpackages/utils/$arch
+        tar zxf $TRUST_ROOT/externalpackages/utils/$arch --no-same-owner
     elif [ ${arch##*.} == 'lz' ] 
     then
-        tar --lzip -xf $TRUST_ROOT/externalpackages/utils/$arch
+        tar --lzip -xf $TRUST_ROOT/externalpackages/utils/$arch --no-same-owner
     elif [ ${arch##*.} == 'xz' ] 
     then
-        tar Jxf $TRUST_ROOT/externalpackages/utils/$arch
+        tar Jxf $TRUST_ROOT/externalpackages/utils/$arch --no-same-owner
     else
         echo "Error about extension of the archive $archive"
     fi
@@ -299,7 +299,7 @@ do
       echo "Applying the patch:" | tee -a $LOG
       patch=`pwd`/$patch
       cd $TRUST_ROOT
-      tar tvf $patch && tar xvfz $patch | xargs chmod +w
+      tar tvf $patch && tar xvfz $patch --no-same-owner | xargs chmod +w
       ./configure && source env_TRUST.sh 1>/dev/null && make
       change_droits
       cd `dirname $TRUST_ROOT`
@@ -321,7 +321,7 @@ done
 if [ "`uname -s`" = Linux ] && [ -f linux_install_tools_`uname -m`.tgz ]
 then
    mkdir -p bin 2>/dev/null
-   (cd bin;tar xfz ../linux_install_tools_`uname -m`.tgz)
+   (cd bin;tar xfz ../linux_install_tools_`uname -m`.tgz --no-same-owner)
    touch makefile
    for command in `cd bin;\ls`
    do
@@ -403,7 +403,7 @@ then
          rep=${rep%.tar.gz}
          echo $ECHO_OPTS "Installation of $rep ...\c" | tee -a $LOG
          gunzip_ $rep.tar.gz
-         tar xf $rep.tar 1>>$LOG 2>&1
+         tar xf $rep.tar --no-same-owner 1>>$LOG 2>&1
          OK $? | tee -a $LOG
          rm -f $rep.tar
    done
@@ -419,7 +419,7 @@ then
    # On met en ecriture tous les fichiers avant d'appliquer le patch:
    chmod -R u+w . 1>/dev/null 2>&1
    echo "Patch detected and applied..." | tee -a $LOG
-   tar xvf ../patch
+   tar xvf ../patch --no-same-owner
 fi
 change_droits
 
@@ -494,7 +494,7 @@ do
          rep=${rep%.tar.gz}
          echo $ECHO_OPTS "Installation of $rep ...\c" | tee -a $LOG
          gunzip_ $rep.tar.gz
-         tar xf $rep.tar 1>>$LOG 2>&1
+         tar xf $rep.tar --no-same-owner 1>>$LOG 2>&1
          OK $? | tee -a $LOG
          echo | tee -a $LOG
          rm -f $rep.tar
