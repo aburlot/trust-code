@@ -44,7 +44,7 @@ analyse()
 {
    if [ -f $1 ]
    then
-      $TRUST_Awk '/Secondes \/ pas de temps/ {print $NF;exit} ' $1
+      $TRUST_Awk '/Average time per time step/ {print $NF;exit} ' $1
    else
       echo 1
    fi
