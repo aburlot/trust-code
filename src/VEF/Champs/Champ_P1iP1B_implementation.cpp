@@ -473,7 +473,7 @@ DoubleTab& Champ_P1iP1B_implementation::filtrage(const Domaine_VEF& zvef, const 
       // the variable "champ_filtre_" during sub-iterations.
       // Sub-iterations can be performed within a time step in the case of an implicit
       // coupling with another code, for example with a structural solver
-      // in fluid–structure interaction applications
+      // in fluid-structure interaction applications
       if ((un_champ.valeurs().addr()==adresse_champ_filtre_ && un_champ.temps()==temps_filtrage_ ) && (!implicitCoupling) )
         return champ_filtre_;
 

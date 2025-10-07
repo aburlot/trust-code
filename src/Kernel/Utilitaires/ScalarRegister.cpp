@@ -60,9 +60,7 @@ bool ScalarRegister::checkOutputIntEntry(const Nom& name) const
   if (int_reg.find(nom)!= int_reg.end())
     return true;
   else
-    {
       return false;
-    }
 }
 
 bool ScalarRegister::checkOutputDoubleEntry(const Nom& name) const
@@ -71,8 +69,7 @@ bool ScalarRegister::checkOutputDoubleEntry(const Nom& name) const
   if (double_reg.find(nom)!= double_reg.end())
     return true;
   else
-    {
-      return false;
-    }
+     return false;
+
 }
 
