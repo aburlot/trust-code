@@ -1507,7 +1507,7 @@ then
                       # Analyse du temps CPU :
                       if [ -f $NOM2.TU ]
                       then
-                         TPS=`$TRUST_Awk '/Temps total/ {cpu+=$NF} END {printf("%5.1f",cpu)}' $NOM2.TU`
+                         TPS=`$TRUST_Awk '/Total time for the whole computation/ {cpu+=$NF} END {printf("%5.1f",cpu)}' $NOM2.TU`
                       else
                          TPS=`echo $ECHO_OPTS $DEB:$FIN | $TRUST_Awk '{split($0,a,":");tps=3600*(a[4]-a[1])+60*(a[5]-a[2])+a[6]-a[3];if (tps<0) {tps+=86400};printf("%5.1f",tps)}'`
                       fi

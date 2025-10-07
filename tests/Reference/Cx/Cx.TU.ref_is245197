@@ -1,43 +1,60 @@
-Statistiques d'initialisation du calcul
+                                             # Global performance file #
 
-Temps total                       1.40124
+This is the global file for tracking performance in TRUST. It stores aggregated quantities.
+More detailed statistics can be found in the Cx_csv.TU file
+A jupyter notebook giving detailed information about performance measurement can be found in:
+ $TRUST_ROOT/Validation/Rapports_automatiques/Verification/HowTo/
+For time loop, only level 1 counters statistics are printed in this file by default
+Time is given in seconds
 
-Statistiques de resolution du probleme
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                              Context of the computation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Date:     07-10-2025 -- 08:58:33
+OS:       is245197.intra.cea.fr__Linux__x86_64__5.6.6-300.fc32.x86_64__#1 SMP Tue Apr 21 13:44:19 UTC 2020
+CPU:      Model name:  Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz ; Thread(s) per core:  2
+GPU:      No GPU was used for the computation
+Nb procs: 1
 
-Temps total                       1.24259
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                           Computation start-up statistics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Total time of the start-up:                                                1.3759         
+Percent of untracked time during computation start-up:                     2.39116e-07    
+
+Number of calls to the linear solver per time step:                        2              
+Average time of the resolution of the linear problem per call:             0.395404       
+Average number of iteration of the linear solver per call:                 2              
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                 Time loop statistics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Total time:                                                                1.18328        
+Number of time steps:                                                      10             
+Average time per time step:                                                0.118328       
+Standard deviation between time steps:                                     0.974586       
+Time elapsed in the skipped time steps:                                    0              
 
 
-Timesteps                         10
-Secondes / pas de temps           0.124249
-Dont solveurs Ax=B                0.027190 21% (1 appel/pas de temps)
-Dont mettre_a_jour                0.003448  2% (1 appel/pas de temps)
-Dont operateurs convection        0.039243 31% (2 appels/pas de temps)
-Dont operateurs diffusion         0.011129  8% (2 appels/pas de temps)
-Dont operateurs gradient          0.011015  8% (2 appels/pas de temps)
-Dont operateurs divergence        0.004001  3% (2 appels/pas de temps)
-Dont operations postraitement     0.013455 10% (1 appel/pas de temps)
-Dont calcul dt                    0.008508  6% (4 appels/pas de temps)
-Dont calcul divers                0.006258  5% (0 appels/pas de temps)
-Nb solveur / pas de temps         1
-Secondes / solveur                0.0271898
-Iterations / solveur              2
-I/O:
+Standard counter description             | Time/step       | % loop time | Call(s)/step   
+------------------------------------------------------------------------------------------
+Linear solver resolutions Ax=B           | 0.0261348       | 22.1        | 1              
+Convection operator                      | 0.03615179      | 30.6        | 2              
+Diffusion operator                       | 0.01119523      | 9.46        | 2              
+Gradient operator                        | 0.01061974      | 8.97        | 2              
+Divergence operator                      | 0.003819669     | 3.23        | 2              
+Update ::mettre_a_jour                   | 0.003315353     | 2.8         | 1              
+Computation of the time step dt          | 0.00796786      | 6.73        | 4              
 
-Timesteps = number of time steps
-Nb solveur = number of linear system resolutions
-Nb assemblage implicite = number of matrix assemblies for the implicit scheme
-Iterations = average number of iterations of the solver
-Communications = fraction of the time spent
-                 in communications between processors (excluding io files)
-Network latency = time of one mpsum measured by an internal bench over 0.1s
-Network bandwidth = maximum on all processors
-                    of the average bandwidth of send_recv operations
-Waiting time = estimation of the waiting time of the different processors
+Untracked time                           | 8.1997e-05      | 0.00693     | 
 
-Max_waiting_time big    => probably due to a bad partitioning
-Communications > 30%    => too many processors or network too slow
 
-Statistiques de post resolution
+Average number of iteration of the linear solver per call:                 2              
 
-Temps total                       0.021473
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                              Post-resolution statistics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Time of the post-resolution:                                               0.0177129      
+
+Total time for the whole computation                                       2.57689        
 

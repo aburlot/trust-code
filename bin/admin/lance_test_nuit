@@ -3469,6 +3469,11 @@ do
       then
          echo "Analysis of "$Composant_log" file" | tee -a tmp.log
          grep "because no $old version on this host" $Composant_log
+         git_commit_baltik=$(git -C $PROJECT_ROOT rev-parse --short HEAD)
+         git_branch_baltik=$(git -C $PROJECT_ROOT branch --show-current)
+         [ "$git_branch_baltik" = "Livraison" ] && git_branch_baltik="next"
+         [ "$git_commit_baltik" != "" ] && echo "Tested branch / commit: $git_branch_baltik / $git_commit_baltik" | tee -a tmp.log
+
          #grep "$Composant OK" $Composant_log | sed 1d | tee -a tmp.log # check only component without portability
          grep "$Composant OK" $Composant_log #| tee -a tmp.log
          (grep " KO" $Composant_log;grep KO $Composant_log | grep $Composant;grep " connect to host " $Composant_log | cut -d: -f2) | tee -a tmp.log
@@ -3498,10 +3503,6 @@ do
    if [ -f $nuit_log ]
    then
       echo "Analysis of "$nuit_log" file" | tee -a tmp.log
-      git_commit_baltik=$(git -C $PROJECT_ROOT rev-parse --short HEAD)
-      git_branch_baltik=$(git -C $PROJECT_ROOT branch --show-current)
-      [ "$git_branch_baltik" = "Livraison" ] && git_branch_baltik="next"
-      [ "$git_commit_baltik" != "" ] && echo "Tested branch / commit: / git_branch_baltik $git_commit_baltik" | tee -a tmp.log
       grep "_OK" $nuit_log | tee -a tmp.log
       nb_cible=`$TRUST_Awk '/cible_OK/ {print $2}' $nuit_log`
       tot_cible=`$TRUST_Awk '/cible_OK/ {print $4}' $nuit_log`
