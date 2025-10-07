@@ -104,6 +104,6 @@ Read pb
     }
     Postraitement { format lml Champs dt_post 1e9 { temperature elem } }
 }
-EcritureLectureSpecial 0
+
 Solve pb
 End

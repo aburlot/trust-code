@@ -90,6 +90,6 @@ Read pb
         # Sources { Forchheimer { porosite 0.4 Cf 1. modele_K ErgunForchheimer { diametre 1.5e-3 } } } #
     }
 }
-EcritureLectureSpecial 0
+
 Solve pb
 End

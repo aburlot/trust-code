@@ -107,6 +107,6 @@ Read pb
     }
 }
 # Plantage sur tantale a 4M de mailles sur 1,2,4 procs si .xyz ecrit donc on desactive: #
-EcritureLectureSpecial 0
+
 Solve pb
 End

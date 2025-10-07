@@ -142,7 +142,7 @@ Read pb
     }
     Sauvegarde_simple binaire pb.sauv
 }
-EcritureLectureSpecial 0
+
 
 Solve pb
 End

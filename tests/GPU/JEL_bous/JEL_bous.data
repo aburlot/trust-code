@@ -115,6 +115,6 @@ Lire pb1
     Postraitement { format lml Champs dt_post 1e6 { temperature som } }
 }
 
-ecriturelecturespecial 0
+
 Resoudre pb1
 Fin

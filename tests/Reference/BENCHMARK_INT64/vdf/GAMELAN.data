@@ -136,7 +136,7 @@ Lire pb1
     }
     sauvegarde single_hdf GAMELAN.sauv
 }
-EcritureLectureSpecial 0
+
 Resoudre pb1
 Fin
 

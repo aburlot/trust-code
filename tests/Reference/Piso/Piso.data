@@ -122,10 +122,7 @@ Read pb
         }
     }
 }
-
+EcritureLectureSpecial 1 # .xyz write #
 Solve pb
-End
-End
-reprise formatte test-PD-vef-simpler_pb.sauv_1
 
 

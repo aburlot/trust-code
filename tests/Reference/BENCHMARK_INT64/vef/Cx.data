@@ -97,5 +97,5 @@ Read pb
         initial_conditions { Temperature Champ_Uniforme 1 20. }
     }
 }
-EcritureLectureSpecial 0
+
 Solve pb

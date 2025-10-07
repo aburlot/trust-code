@@ -145,7 +145,7 @@ Read pb
 
     sauvegarde_simple formatte test_sauvegarde_simple.sauv
 }
-
+EcritureLectureSpecial 1
 Solve pb
 End
 

@@ -3,7 +3,7 @@
 dimension 2
 Pb_hydraulique pb
 Domaine dom
-EcritureLectureSpecial 0
+
 # BEGIN MESH #
 Mailler dom
 {

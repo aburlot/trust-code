@@ -1,7 +1,7 @@
 # Conduction 2D : Diverses conditions limites thermiques #
 # PARALLEL OK 8 #
 dimension 2
-EcritureLectureSpecial 0
+
 Pb_conduction pb
 Domaine dom
 # BEGIN MESH #

@@ -314,7 +314,7 @@ Read pb_dom
     # Resume_last_time pdi DomainFlowLES_pb_dom.sauv #
 }
 
-EcritureLectureSpecial 0
+
 # Solve the problem #
 Solve pb
 

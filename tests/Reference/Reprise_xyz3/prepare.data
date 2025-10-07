@@ -84,5 +84,6 @@ Read pb
         }
     }
 }
+EcritureLectureSpecial 1 # Write .xyz file #
 Solve pb
 End

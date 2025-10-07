@@ -797,8 +797,13 @@ void Save_Restart::finir()
     }
   // Si la sauvegarde est classique et que l'utilisateur n'a pas desactive la sauvegarde finale xyz
   // alors on effectue la sauvegarde finale xyz
-  if (Motcle(checkpoint_format_) != "xyz" && (EcritureLectureSpecial::Active))
-    sauver_xyz(1);
+  if (Motcle(checkpoint_format_) != "xyz")
+    {
+      if (EcritureLectureSpecial::Active)
+        sauver_xyz(1);
+      else
+        Cerr << "As saving .xyz file disabled since 1.9.7, add into your datafile \"EcritureLectureFichier 1\" to enable it again if wanted." << finl;
+    }
 
   for(int i=0; i<pb_base_->nombre_d_equations(); i++)
     pb_base_->equation(i).close_save_file();

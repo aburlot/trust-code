@@ -92,6 +92,6 @@ Read pb
     }
     Postraitement { format lml champs dt_post 10000 { pression elem } }
 }
-EcritureLectureSpecial 0
+
 Solve pb
 End

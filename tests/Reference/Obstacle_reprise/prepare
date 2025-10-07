@@ -1,6 +1,6 @@
 cp -f $TRUST_TESTS/Reference/Obstacle/Obstacle.geo .
 cp -f $TRUST_TESTS/Reference/Obstacle/Obstacle.data .
-
+sed -i "1,$ s?Solve?EcritureLectureSpecial 1 Solve?g" Obstacle.data
 if [ "$TRUST_DISABLE_MPI" != 1 ]
 then
    trust Obstacle || exit -1

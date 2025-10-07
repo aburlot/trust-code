@@ -115,7 +115,7 @@ lire pb
     sauvegarde pdi Cas.sauv
 }
 
-ecritureLectureSpecial 0
+
 
 resoudre pb
 

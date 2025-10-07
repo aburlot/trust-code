@@ -448,6 +448,6 @@ Lire pb
     Sauvegarde pdi DNS_Stationnaire.sauv
 } # fin lire #
 
-EcritureLectureSpecial 0
+
 Solve pb
 End

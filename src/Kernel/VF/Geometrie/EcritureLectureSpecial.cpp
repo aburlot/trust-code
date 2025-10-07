@@ -27,7 +27,7 @@
 
 int EcritureLectureSpecial::mode_ecr=-1;
 int EcritureLectureSpecial::mode_lec=0;
-int EcritureLectureSpecial::Active=1;
+int EcritureLectureSpecial::Active=0;
 
 #ifdef MPI_
 Nom EcritureLectureSpecial::Input="LecFicDiffuseBin";    // "EFichierBin" was the past (<=1.6.9) and "LecFicPartageMPIIO" is may be the future

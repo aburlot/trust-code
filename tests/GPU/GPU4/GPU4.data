@@ -89,6 +89,6 @@ Read pb
     }
     Postraitement { format lml Champs dt_post 1e9 { pression elem critere_q som } }
 }
-EcritureLectureSpecial 0
+
 Solve pb
 End
