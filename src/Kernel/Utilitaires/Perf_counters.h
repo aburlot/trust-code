@@ -97,13 +97,6 @@ public:
 
   double compute_time(time_point start); ///< return time since start in seconds
 
-  /*
-    static Perf_counters& getInstance()
-    {
-      static Perf_counters counters_stat_ ;
-      return counters_stat_;
-    }
-  */
   /*! @brief The class Perf_counters is based on a phoenix singleton pattern. To access to the unique object inside the code, use the getInstance() function
    *
    * @return the unique Perf_counters object
@@ -147,12 +140,13 @@ public:
   }
   /*! @brief Create a new counter and add it to the map of custom counters
    *
-   * @param to_print_in_global_TU : if true, then the statistics associated with the counter will appear in the global_TU file
    * @param counter_level
    * @param counter_description
    * @param counter_family
    * @param is_comm
    * @return create a new counter
+   *
+   * @note If the counter description already exists, it will not create a new counter.
    */
   void create_custom_counter(std::string counter_description , int counter_level,  std::string counter_family = "None", bool is_comm=false, bool is_gpu=false);
 
@@ -203,6 +197,8 @@ public:
 
   /*! @brief Function that encapsulate the two functions that writes the TU files
    *
+   * @param messsage can only take three values: "Computation start-up statistics", "Time loop statistics" or "Post-resolution statistics"
+   * @note It also resets the counters
    */
   void print_TU_files(const std::string& message);
 

@@ -1224,7 +1224,7 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
           perfs_TU<<std::endl;
           perfs_TU << std::left <<std::setw(counter_description_width) << "Standard counter description" << separator << std::setw(time_per_step_width) << "Time/step" << separator << std::setw(percent_loop_time_width) << "% loop time" << separator << std::setw(count_per_ts_width) << "Call(s)/step"<<std::endl;
           perfs_TU << line_sep_tabular << std::endl;
-          for (int i = static_cast<int>(STD_COUNTERS::system_solver); i< static_cast<int>(STD_COUNTERS::postreatment); i++)
+          for (int i = static_cast<int>(STD_COUNTERS::system_solver); i< static_cast<int>(STD_COUNTERS::petsc_solver); i++)
             {
               Counter& c_to_print = *std_counters_[i];
               write_globalTU_line(c_to_print,perfs_TU);
