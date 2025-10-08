@@ -315,18 +315,6 @@ void recommencer_pb(Probleme_base& pb)
     }
 }
 
-void recommencer_pb(Probleme_base& pb, const double temps)
-{
-  Cerr << "ICoCo coupling: reset problem " << pb.que_suis_je() << " to time " << temps << " at the beginning of external implicit sub-iteration" << finl ;
-  for(int i=0; i<pb.nombre_d_equations(); i++)
-    {
-      DoubleTab& passe = pb.equation(i).inconnue().passe();
-      DoubleTab& present = pb.equation(i).inconnue().valeurs();
-      present=passe;
-
-      pb.equation(i).inconnue().Champ_base::changer_temps(temps);
-    }
-}
 
 bool Schema_Euler_Implicite::iterateTimeStep(bool& converged)
 {
@@ -334,16 +322,6 @@ bool Schema_Euler_Implicite::iterateTimeStep(bool& converged)
 
   converged = false;
   Initialiser_Champs(prob);
-
-  // ICoCo coupling: reset i) present to passe and ii) time to present time for problem equations during implicit sub-iterations
-  int iCoCoImplicitIteration=0 ; // This is the default
-  if (prob.checkOutputIntEntry("iCoCoImplicitIteration"))
-    {
-      iCoCoImplicitIteration=prob.getOutputIntValue("iCoCoImplicitIteration");
-      //Cerr << "iCoCoImplicitIteration: " << iCoCoImplicitIteration << finl ;
-    }
-  if (iCoCoImplicitIteration > 0) recommencer_pb(prob, temps_courant());
-
   int ok=1;
   int compteur;
   while (!converged)

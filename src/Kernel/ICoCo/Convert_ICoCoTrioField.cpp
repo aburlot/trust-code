@@ -22,7 +22,6 @@
 #include <PE_Groups.h>
 #include <Comm_Group.h>
 #include <Polyedre.h>
-#include <Probleme_base.h>
 
 void affecte_double_avec_doubletab(double** p, const ArrOfDouble& trio)
 {
@@ -39,15 +38,7 @@ void affecte_int_avec_inttab(int** p, const ArrOfInt& trio)
 
 void build_triofield(const Champ_Generique_base& ch, ICoCo::TrioField& afield)
 {
-  //DEV ANTONIN LEPREVOST FOR COUPLING TRIO WITH EUROPLEXUX
-  if(ch.get_nom_post() == "FLUID_FORCE_INT_LIN" and ch.get_dimension() == 3)
-    {
-      Cerr << "TRUST::Interpolation P0 -> P1 lineaire" << endl;
-      build_triomesh(ch.get_ref_domaine_dis_base(), afield, 1, ch.get_localisation() == Entity::FACE);
-    }
-  /////////////////////////////////////////////////////////
-  else
-    build_triomesh(ch.get_ref_domaine_dis_base(), afield, ch.get_localisation() == Entity::NODE, ch.get_localisation() == Entity::FACE);
+  build_triomesh(ch.get_ref_domaine_dis_base(), afield, ch.get_localisation() == Entity::NODE, ch.get_localisation() == Entity::FACE);
 
   afield.setName(ch.le_nom().getString());
   afield._time1 = afield._time2 = ch.get_time(), afield._itnumber = 0;
@@ -59,66 +50,6 @@ void build_triofield(const Champ_Generique_base& ch, ICoCo::TrioField& afield)
   const DoubleTab& vals = champ_ecriture.valeurs();
   afield._nb_field_components = vals.nb_dim() > 1 ? vals.dimension(1) : 1;
   affecte_double_avec_doubletab(&afield._field, vals);
-
-  if(ch.get_dimension() == 3)
-    afield._mesh_dim = 2; //Pourquoi mesh dim vaut 1 en 3D ? Pbm avec le champ extraction, si on modifie pas erreur dans le couplage -> PBM TRUST
-
-  if(ch.get_nom_post() == "FLUID_FORCE_INT_LIN" and ch.get_dimension() == 3) //methode interpolation linaire, non parallelise
-    {
-      //const Domaine_VF& dom_vf = ref_cast(Domaine_VF, ch.get_ref_domaine_dis_base()); //On aimerai recuperer la surface des faces et d autres info geo par Domaine_VF mais ce n est pas bien defini quand on tire le domaine dis d un champ par extraction -> PBM TRUST
-      const Probleme_base& pb_base = ch.get_ref_pb_base();
-      const Domaine& dom_main = pb_base.domaine();
-      const Frontiere& frontiere_IFS = dom_main.frontiere(3);//Attention pas generique
-      const Faces& faces_IFS = frontiere_IFS.faces();
-
-      int nb_som = afield._nbnodes;
-      int space_dim = afield._space_dim;
-      int nb_face = faces_IFS.nb_faces();
-      int nb_som_face = afield._nodes_per_elem;
-
-      DoubleTab vals_som(nb_som, space_dim);
-      vals_som = 0.;
-
-      DoubleVect surface_nodes(nb_som);
-      DoubleVect surface_faces(nb_face);
-      faces_IFS.calculer_surfaces(surface_faces);
-
-      DoubleVect force_tot_som(space_dim);
-      DoubleVect force_tot_elem(space_dim);
-
-      for(int face = 0; face < nb_face; face++)
-        {
-          for(int som_loc = 0; som_loc < nb_som_face; som_loc++)
-            {
-              int som = faces_IFS.sommet(face, som_loc);
-              surface_nodes[som] += (1.0/3.0) * surface_faces(face);
-
-              for(int k = 0; k < space_dim; k++)
-                vals_som(som, k) +=  (1.0/3.0) * vals(face, k) * surface_faces(face);
-            }
-
-          //if(file_force_P0)
-          //file_force_P0 << afield._time1 << " " << vals(face, 0) << " " << vals(face, 1) << " " << vals(face,2) << endl;
-        }
-
-      for(int som = 0; som < nb_som; som++)
-        {
-          for(int k = 0; k < space_dim; k++)
-            {
-              force_tot_som(k) += vals_som(som, k);
-              vals_som(som, k) /= surface_nodes[som];
-            }
-        }
-      afield._nb_field_components = vals_som.nb_dim() > 1 ? vals_som.dimension(1) : 1;
-      affecte_double_avec_doubletab(&afield._field, vals_som);
-
-    }
-
-  else
-    {
-      afield._nb_field_components = vals.nb_dim() > 1 ? vals.dimension(1) : 1;
-      affecte_double_avec_doubletab(&afield._field, vals);
-    }
 }
 
 void build_triofield(const Champ_base& ch, const Domaine_dis_base& dom_dis, ICoCo::TrioField& afield)
