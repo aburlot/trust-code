@@ -267,7 +267,7 @@ int Schema_Euler_Implicite::Iterer_Pb(Probleme_base& pb,int compteur, int& ok)
 
       // imposer_cond_lim   sert pour la pression et pour les echanges entre pbs
       eqn.domaine_Cl_dis().imposer_cond_lim(eqn.inconnue(),temps_courant()+pas_de_temps());
-      Cout <<"Solving equation: " << eqn.que_suis_je() << finl;
+      Cout<<"Solving " << eqn.que_suis_je() << " equation :" << finl;
       const DoubleTab& inut=futur;
       convergence_eqn=le_solveur->iterer_eqn(eqn, inut, present, dt_, compteur, ok);
       if (!ok) return false; //echec total -> on sort sans traiter les equations suivantes
@@ -322,6 +322,7 @@ bool Schema_Euler_Implicite::iterateTimeStep(bool& converged)
 
   converged = false;
   Initialiser_Champs(prob);
+
   int ok=1;
   int compteur;
   while (!converged)
