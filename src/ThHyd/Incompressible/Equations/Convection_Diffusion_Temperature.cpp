@@ -629,7 +629,7 @@ void Convection_Diffusion_Temperature::mise_en_place_domaine_fantome(DoubleTab& 
   if (schema_temps().facteur_securite_pas() > 1.0)
     {
       Cerr << "Convection_Diffusion_Temperature::mise_en_place_domaine_fantome Facteur securite doit etre <= 1"<<finl;
-      exit();
+      Process::exit();
     }
 
   // fonction characteristique globale ibc penalisees actuelle
@@ -808,7 +808,7 @@ void Convection_Diffusion_Temperature::calcul_indic_pena_global(IntTab& indicatr
   for ( int w = 0 ; w<ref_penalisation_L2_FTD.size() ; ++w)
     {
       Transport_Interfaces_base& nom_eq = ref_cast(Transport_Interfaces_base,ref_penalisation_L2_FTD[w].valeur());
-      nom_eq.update_indicatrice();
+      // nom_eq.update_indicatrice();
       const DoubleTab& indicatrice = nom_eq.get_indicatrice().valeurs();
       // fonction characteristique (0 ou 1) pour l'ensemble des ibc
       for (int k_elem =0 ; k_elem <nb_elem; ++k_elem)
@@ -936,7 +936,7 @@ DoubleTab& Convection_Diffusion_Temperature::penalisation_L2(DoubleTab& u)
           Cerr << " Nombre d'elements stockes au dans l'iconnue " <<inc.size() <<finl;
           Process::exit();
         }
-      nom_eq.update_indicatrice();
+      // nom_eq.update_indicatrice();
       const DoubleTab& indicatrice = nom_eq.get_indicatrice().valeurs();
 
       DoubleTrav pena_loc(indicatrice);
