@@ -268,9 +268,11 @@ echo "****************************************"
 
 with_gpu=""
 
-# Toujours un pb de link en debug avec kokkos-kernels (we enable on cluster only so)
-# Et les performances de kokkos-kernels est moindre (x4 slowdonw on A6000) par rapport aux kernels PETSc CUDA
-ENABLE_KOKKOS=0 #&& [ "$TRUST_WITHOUT_HOST" = 0 ] && ENABLE_KOKKOS=1
+# Toujours un pb de link en debug avec kokkos-kernels
+# Et les performances de kokkos-kernels est moindre (x4 slowdown on A6000) par rapport aux kernels PETSc CUDA
+# Mais utilise avec GAMG de PETSc cela permet d'avoir une alternative a AmgX (int64?) et Hypre
+# Build error on HIP also and orcus: on active ponctuellement
+ENABLE_KOKKOS=0 && [ "$HOST" = topaze ] && ENABLE_KOKKOS=1
 if [ "$TRUST_USE_GPU" = 1 ] && [ "$ENABLE_KOKKOS" = 1 ]
 then
    # Kokkos #

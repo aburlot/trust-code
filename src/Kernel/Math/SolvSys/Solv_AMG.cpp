@@ -100,6 +100,7 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
 -pc_fieldsplit_type additive";
   // Gamg is using MPI GPU-Aware but less robust than Boomeramg
   // Il faut -pc_gamg_agg_nsmooths 0 (defaut 1) si crash mais plus lent
+  // Ajouter sur Nvidia -mat aijkokkos
   if (precond=="gamg")
     {
       Cerr << "If Gamg setup crashes during MatProductSymbolic_SeqAIJCUSPARSE_SeqAIJCUSPARSE, it is related to not enough RAM device." << finl;
@@ -120,6 +121,11 @@ void Solv_AMG::create_block_amg(int n, Nom precond)
 -fieldsplit_Pa_pc_gamg_threshold 0.01 \
 -fieldsplit_Pa_pc_gamg_square_graph 1";
         }
+      // Use Kokkos backend (slower though) to avoid memory issue on Nvidia:
+      // src/mat/impls/aij/seq/seqcusparse/aijcusparse.cu:3269 cuda error 2 (cudaErrorMemoryAllocation) : out of memory
+#ifdef TRUST_USE_CUDA
+      chaine_lue_+=" -mat_type aijkokkos -vec_type kokkos";
+#endif
     }
   // Boomeramg do not exploit MPI GPU-Aware (issue reported to Hypre: https://github.com/hypre-space/hypre/issues/1354)
   else if (precond=="boomeramg")

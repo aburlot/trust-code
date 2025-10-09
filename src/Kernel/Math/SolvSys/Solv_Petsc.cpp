@@ -2314,11 +2314,15 @@ void Solv_Petsc::Update_vectors(const DoubleVect& secmem, DoubleVect& solution)
     {
       // We update PETSc vectors with the arrays on device:
       Update_lhs_rhs<Kokkos::DefaultExecutionSpace>(secmem, solution);
-      if (getenv("PETSC_USE_KOKKOS")!=nullptr)
+      VecType vec_type;
+      VecGetType(SecondMembrePetsc_, &vec_type);
+      if (std::string(vec_type) == VECKOKKOS)
         {
 #ifdef PETSC_HAVE_KOKKOS
           VecKokkosPlaceArray(SecondMembrePetsc_, addrOnDevice(rhs_));
           VecKokkosPlaceArray(SolutionPetsc_, addrOnDevice(lhs_));
+#else
+          Process::exit("PETSc not built with Kokkos-kernels!");
 #endif
         }
       else
@@ -2380,11 +2384,15 @@ void Solv_Petsc::Update_solution(DoubleVect& solution)
   if (gpu_ && DataOnDevice && !isViennaCLVector()) // solution is on the device to SolutionPetsc_ -> solution update without copy
     {
       Solv_Externe::Update_solution<Kokkos::DefaultExecutionSpace>(solution);
-      if (getenv("PETSC_USE_KOKKOS")!=nullptr)
+      VecType vec_type;
+      VecGetType(SecondMembrePetsc_, &vec_type);
+      if (std::string(vec_type) == VECKOKKOS)
         {
 #ifdef PETSC_HAVE_KOKKOS
           VecKokkosResetArray(SecondMembrePetsc_);
           VecKokkosResetArray(SolutionPetsc_);
+#else
+          Process::exit("PETSc not built with Kokkos-kernels!");
 #endif
         }
       else
