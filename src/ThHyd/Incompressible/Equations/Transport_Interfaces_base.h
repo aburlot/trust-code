@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -50,6 +50,7 @@ public:
   // TODO : Why virtual here? Why not getting the daughter version from Transport_Interfaces_FT_Disc directly here?
   virtual const Champ_base& get_indicatrice() =0;
   virtual void update_indicatrice() =0;
+  virtual void check_indicatrice_is_up_to_date() =0;
 
 
   //Effectue l integration de trajectoire de particules ponctuelles
