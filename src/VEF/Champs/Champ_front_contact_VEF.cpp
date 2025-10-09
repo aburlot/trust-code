@@ -203,167 +203,176 @@ void Champ_front_contact_VEF::calcul_grads_transf(double temps)
 void Champ_front_contact_VEF::calcul_grads_locaux(double temps)
 {
   // collection information problem local
-  nom_bord = nom_bord1 ;
-  associer_ch_inc_base(l_inconnue1.valeur()) ;
+  nom_bord = nom_bord1;
+  associer_ch_inc_base(l_inconnue1.valeur());
   const Champ_Inc_base& inco = l_inconnue.valeur();
   const DoubleTab& inco_valeurs = l_inconnue->valeurs(temps);
-  //const Equation_base& eq=l_inconnue->equation();
-  assert (nom_bord != "??") ;
-  const Domaine_VEF& le_dom_dis=ref_cast(Domaine_VEF, domaine_dis());
-  const Front_VF& la_front_vf=ref_cast(Front_VF, front_dis());
+  assert (nom_bord != "??");
+
+  const Domaine_VEF& le_dom_dis = ref_cast(Domaine_VEF, domaine_dis());
+  const Front_VF& la_front_vf = ref_cast(Front_VF, front_dis());
   const DoubleVect& vol = le_dom_dis.volumes();
   const IntTab& face_voisins = le_dom_dis.face_voisins();
   const IntTab& elem_faces = le_dom_dis.elem_faces();
   const DoubleTab& face_normales = le_dom_dis.face_normales();
-  int ndeb = la_front_vf.num_premiere_face();
   const Milieu_base& le_milieu = milieu();
+
+  const int nb_faces_elem = le_dom_dis.domaine().nb_faces_elem();
+  const int nb_faces = la_front_vf.nb_faces();
+  const int ndeb = la_front_vf.num_premiere_face();
+
   DoubleTab coeff_lam, coeff_turb;
 
-  // On test si le probleme local est un probleme thermohydraulique turbulent
-  // Et si le modele de turbulence utilise necessite l'utilisation d'une loi de paroi
-  int ind_loi_paroi=0;
-  DoubleVect d_equiv;
-  //DoubleTab positions_Pf;
-
-  // XXX Elie Saikali : faut faire qlq chose si l'op de diff est aniso ...
-  Op_Diff_VEF_base * op_diff = nullptr;
-  if(sub_type(Op_Diff_VEF_Anisotrope_Face, l_inconnue->equation().operateur(0).l_op_base()))
-    op_diff = &ref_cast(Op_Diff_VEF_Anisotrope_Face, l_inconnue->equation().operateur(0).l_op_base());
-
-  if (!sub_type(Convection_Diffusion_Concentration,inco.equation()))
-    {
-      if (op_diff)
-        op_diff->remplir_nu(coeff_lam);
-      else
-        coeff_lam = le_milieu.conductivite().valeurs();
-    }
+  // diffusivite laminaire (lambda ou D)
+  if (!sub_type(Convection_Diffusion_Concentration, inco.equation()))
+    coeff_lam = le_milieu.conductivite().valeurs();
   else
     coeff_lam = ref_cast(Constituant,le_milieu).diffusivite_constituant().valeurs();
 
-  int dim = coeff_lam.nb_dim();
-
+  // turbulence
+  int ind_loi_paroi = 0;
+  DoubleVect d_equiv;
   const RefObjU& mod = inco.equation().get_modele(TURBULENCE);
   if (mod.non_nul())
     {
-      const Modele_turbulence_scal_base& mod_turb_scal = ref_cast(Modele_turbulence_scal_base,mod.valeur());
+      const Modele_turbulence_scal_base& mod_turb_scal = ref_cast(Modele_turbulence_scal_base, mod.valeur());
       coeff_turb = mod_turb_scal.conductivite_turbulente().valeurs();
-
       const Turbulence_paroi_scal_base& loipar = mod_turb_scal.loi_paroi();
 
-      if (mod_turb_scal.loi_paroi_non_nulle())
+      if (mod_turb_scal.loi_paroi_non_nulle() && loipar.use_equivalent_distance())
         {
-          if( loipar.use_equivalent_distance() )
-            {
-              ind_loi_paroi=1;
-              // const Paroi_scal_hyd_base_VEF& paroi_vef = ref_cast(Paroi_scal_hyd_base_VEF,loipar.valeur());
-              int nb_faces = la_front_vf.nb_faces();
-              d_equiv.resize(nb_faces);
-              // Recherche du bord correspondant
-              int i_bord=-1;
-              for (int n_bord=0; n_bord<le_dom_dis.domaine().nb_front_Cl(); n_bord++)
-                if (le_dom_dis.front_VF(n_bord).le_nom() == la_front_vf.le_nom()) i_bord=n_bord;
-              // Copie des donnees d'un bord dans les tableaux locaux temporaires positions_Pf et d_equiv
-              for (int ind_face=0; ind_face<nb_faces; ind_face++)
-                {
-                  // d_equiv(ind_face) = paroi_vef.equivalent_distance(i_bord,ind_face);
-                  d_equiv(ind_face) = loipar.equivalent_distance(i_bord,ind_face);
-                }
-            }
-        }
+          ind_loi_paroi = 1;
+          d_equiv.resize(nb_faces);
 
+          // Recherche du bord correspondant
+          int i_bord = -1;
+          for (int n_bord = 0; n_bord < le_dom_dis.domaine().nb_front_Cl(); n_bord++)
+            if (le_dom_dis.front_VF(n_bord).le_nom() == la_front_vf.le_nom())
+              i_bord = n_bord;
+          // Copie des donnees d'un bord dans les tableaux locaux temporaires positions_Pf et d_equiv
+          for (int ind_face = 0; ind_face < nb_faces; ind_face++)
+            d_equiv(ind_face) = loipar.equivalent_distance(i_bord, ind_face);
+        }
     }
 
   int signe;
-  double surface_pond, surface_face, coeff;
-  const int nb_faces_elem = le_dom_dis.domaine().nb_faces_elem();
-  const DoubleTab& face_normale = le_dom_dis.face_normales();
+  double surface_pond, surface_face;
 
-  // calcul de grad_num_local et grad_fro_local
-  const int nb_faces = la_front_vf.nb_faces();
-  for (int fac_front = 0 ; fac_front<nb_faces ; fac_front++)
+  const int nd = coeff_lam.nb_dim();
+  const bool is_uniforme = coeff_lam.dimension(0) == 1;
+
+  for (int fac_front = 0; fac_front < nb_faces; fac_front++)
     {
       gradient_num_local(fac_front) = 0.;
       gradient_fro_local(fac_front) = 0.;
+      Scal_moy(fac_front) = 0.;
 
-      const int fac_glob = fac_front +  ndeb ;
-      int num = face_voisins(fac_glob,0);
-      if (num < 0 ) num = face_voisins(fac_glob,1);
+      const int fac_glob = fac_front + ndeb;
+      int num = face_voisins(fac_glob, 0);
+      if (num < 0)
+        num = face_voisins(fac_glob, 1);
 
-      if (dim == 1)
-        coeff = coeff_lam(num);
-      else
+      // normale unitaire a la face
+      double ratio = 0.;
+      for (int i = 0; i < dimension; i++)
+        ratio += (face_normales(fac_glob, i) * face_normales(fac_glob, i));
+      ratio = sqrt(ratio);
+
+
+      // conductivite/diffusivite effective k_eff = n^T K n
+      double k_eff = 0.;
+
+      int e_idx = 0; // index d’elem
+      if (nd >= 1)
+        e_idx = is_uniforme ? 0 : num;
+
+      if (nd == 1) // scalaire par maille OU champ_uniforme
+        k_eff = coeff_lam(e_idx);
+      else if (nd == 2)
         {
-          if (op_diff)
-            {
-              coeff = 0.;
-              for (int i = 0; i < nb_faces_elem; i++)
-                {
-                  const int j = elem_faces(num, i);
-                  if (j != fac_glob)
-                    coeff += op_diff->viscA(fac_glob, j, num, coeff_lam);
-                }
+          // XXX Elie Saikali : faut faire qlq chose si l'op de diff est aniso ...
+          DoubleTrav n(dimension);
+          for (int i = 0; i < dimension; i++)
+            n[i] = face_normales(fac_glob, i) / ratio;
 
-              coeff *= vol(num); // XXX Elie Saikali : op_diff->viscA divise par vol ...
+          const int s1 = coeff_lam.dimension(1);
+          if (s1 == 1)
+            k_eff = coeff_lam(e_idx, 0);
+          else if (s1 == dimension)
+            {
+              for (int i = 0; i < dimension; i++)
+                k_eff += n[i] * n[i] * coeff_lam(e_idx, i);
+            }
+          else if (s1 == dimension * dimension)
+            {
+
+              for (int i = 0; i < dimension; i++)
+                for (int j = 0; j < dimension; j++)
+                  {
+                    const double Kij = 0.5 * (coeff_lam(e_idx, i * dimension + j) + coeff_lam(e_idx, j * dimension + i));
+                    k_eff += n[i] * n[j] * Kij;
+                  }
             }
           else
-            coeff = coeff_lam(0, 0); // on laisse comme avant TODO FIXME
+            k_eff = coeff_lam(e_idx, 0); // XXX comme avant lol
         }
+      else if (nd == 3)
+        {
+          DoubleTrav n(dimension);
+          for (int i = 0; i < dimension; i++)
+            n[i] = face_normales(fac_glob, i) / ratio;
 
-      //GF PQ
-      // ajout de lambda_t cote fluide egalite des flux entre lambda_s *DT_s/dy =(lambda+lambda_t)_f *DT_f/dy
+          for (int i = 0; i < dimension; i++)
+            for (int j = 0; j < dimension; j++)
+              k_eff += n[i] * coeff_lam(e_idx, i, j) * n[j];
+        }
+      else
+        throw;
 
+      // turbulence
       if (mod.non_nul())
-        coeff += coeff_turb(num);
-
-      Scal_moy(fac_front) = 0. ;
-      double ratio = 0. ;
-      for (int i=0; i<dimension; i++)
-        ratio += (face_normales(fac_glob,i) * face_normales(fac_glob,i));
-      ratio = sqrt(ratio) ;
-      surface_face=le_dom_dis.face_surfaces(fac_glob);
+        k_eff += coeff_turb(num);
 
       //Calcul de la temperature moyenne dans la maille
-      for (int i=0; i<nb_faces_elem; i++)
+      surface_face = le_dom_dis.face_surfaces(fac_glob);
+      for (int i = 0; i < nb_faces_elem; i++)
         {
           // On ne tient pas compte de la temperature de paroi
           // pour calculer la temperature moyenne dans la maille.
-          const int j = elem_faces(num,i);
-          if ( j != fac_glob )
+          const int j = elem_faces(num, i);
+          if (j != fac_glob)
             {
-              //On pondere la moyenne par la surface
               surface_pond = 0.;
-              for (int kk=0; kk<dimension; kk++)
-                surface_pond -= (face_normale(j,kk)*le_dom_dis.oriente_normale(j,num)*face_normale(fac_glob,kk)*
-                                 le_dom_dis.oriente_normale(fac_glob,num))/(surface_face*surface_face);
-              Scal_moy(fac_front) += inco_valeurs(j)*surface_pond;
+              for (int kk = 0; kk < dimension; kk++)
+                surface_pond -= (face_normales(j, kk) * le_dom_dis.oriente_normale(j, num) * face_normales(fac_glob, kk) * le_dom_dis.oriente_normale(fac_glob, num)) / (surface_face * surface_face);
+              Scal_moy(fac_front) += inco_valeurs(j) * surface_pond;
             }
         }
 
-
+      // contributions num/fro
       for (int fac = 0; fac < dimension + 1; fac++)
         for (int i = 0; i < dimension; i++)
           {
             const int fac_loc = elem_faces(num, fac);
             signe = le_dom_dis.oriente_normale(fac_loc, num);
             if (fac_loc != fac_glob)
-              gradient_num_local(fac_front) += (signe * face_normales(fac_glob, i) /
-                                                ratio * face_normales(fac_loc, i) * inco_valeurs(fac_loc));
+              gradient_num_local(fac_front) += (signe * face_normales(fac_glob, i) / ratio * face_normales(fac_loc, i) * inco_valeurs(fac_loc));
             else
               gradient_fro_local(fac_front) += (signe * face_normales(fac_loc, i) / ratio * face_normales(fac_loc, i));
           }
 
-      gradient_num_local(fac_front) *= (coeff / vol(num));
-      gradient_fro_local(fac_front) *= (coeff / vol(num));
+      gradient_num_local(fac_front) *= (k_eff / vol(num));
+      gradient_fro_local(fac_front) *= (k_eff / vol(num));
 
-      // On recalcul gradient_num_local et gradient_fro_local si l'ecoulement dans le domaine local est turbulent
-      if (ind_loi_paroi==1)
+      // loi de paroi avec distance équivalente
+      if (ind_loi_paroi == 1)
         {
           gradient_num_local(fac_front) = 0.;
           gradient_fro_local(fac_front) = 0.;
 
           gradient_num_local(fac_front) = -Scal_moy(fac_front);
-          double coeff_equiv = coeff/d_equiv(fac_front);
-          gradient_num_local(fac_front) *=coeff_equiv;
+          const double coeff_equiv = k_eff / d_equiv(fac_front);
+          gradient_num_local(fac_front) *= coeff_equiv;
           gradient_fro_local(fac_front) = coeff_equiv;
         }
     }
