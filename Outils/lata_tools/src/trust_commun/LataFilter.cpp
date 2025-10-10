@@ -936,6 +936,7 @@ const FieldFloat& LataFilter::get_float_field(const Field_Id& id)
   const FieldFloat *float_field_ptr = dynamic_cast<const FieldFloat*>(&field);
   if (!float_field_ptr)
     {
+      release_field(field);
       /*assert(! float_field_ptr);*/
       throw LataError(LataError::NOT_A_FLOAT_FIELD, "not a float field");
     }
