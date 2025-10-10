@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -59,12 +59,13 @@ protected:
 
   Motcle methode_; //Type de reduction : min, max, moyenne ou somme
   int numero_proc_ = -10; // numero du proc contenant la maille la plus a gauche
-  int numero_elem_= -10;    // numero local de la maille la plus a gauche sur numero_proc_
+  int numero_elem_ = -10; // numero local de la maille la plus a gauche sur numero_proc_
   mutable DoubleVect volume_controle_; //Tableau de travail
 
 private:
   mutable OWN_PTR(Champ_Fonc_base) espace_stockage_;
   mutable OWN_PTR(Champ_base) source_espace_stockage_;
+  mutable DoubleVect un_;
 };
 
 #endif
