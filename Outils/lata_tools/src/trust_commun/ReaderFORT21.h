@@ -90,17 +90,21 @@ public:
     T_PTR = 0x00,
     T_INT = 0x01,
     T_REAL = 0x02,
-    T_CHAR = 0x04,
+    T_CHAR = 0x03,
     T_UNDEF = 0x08
   };
   enum LocalisationField
   {
-    L_UNDEF = 0x01,
-    L_ELEM = 0x02,
-    L_DUAL = 0x04,
-    L_GLOBAL = 0x0F,
-    L_TWALL = 0x10,
-    L_ALTERNATE = 0x20
+    L_UNDEF,
+    L_ELEM,
+    L_DUAL,
+    L_GLOBAL,
+    L_TWALL,
+    L_TRACE,
+    L_ALTERNATE,
+    L_DUALX,
+    L_DUALY,
+    L_DUALZ
   };
 
 
@@ -246,7 +250,8 @@ public:
   };
 
   //! Get meaning of CATHARE variable.
-
+  const std::string& getTitle() const { return title_;};
+  const std::string& getVersion() const { return version_;};
 private:
   Status myStatus;
   int myRealSize;
@@ -259,6 +264,7 @@ private:
 
   std::vector<double> Times_glob_;
   std::vector<file_pos_t> offset_a_time_;
+  std::string title_,version_;
 
 public:
   class FieldInfo
@@ -332,14 +338,18 @@ public:
   template <typename _TYPE_> void getValuesVarFieldOnIndex(const std::string& name_stack, const std::string& name_field, std::vector<_TYPE_>& data, const int& id_index) const;
   template <typename _TYPE_> void getInterpolatedValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<_TYPE_>& data, const int& global_id_time) const;
   void getInterpolatedValuesVarPos(const std::string& name_stack, const std::string& name_field, std::vector<float>& data) const;
-  int getIndexFromPos(const std::string& name_stack, const std::string& name_field, const float& x, const float& y, const float& z) const;
-  int getIndexFromPos(const std::string& name_stack, const std::string& name_field, const float& pos) const ;
+  void getInterpolatedValuesVarPos(const std::string& name_stack, const std::string& name_field, std::vector<double>& data) const;
+  int getIndexFromPos(const std::string& name_stack, const std::string& name_field, const double& x, const double& y, const double& z) const;
+  std::vector<std::vector<float>>  getXYZS(const std::string& name_stack, const std::string& name_field) const;
+  int getIndexFromPos(const std::string& name_stack, const std::string& name_field, const double& x, const double& y, const double& z, const  std::vector<std::vector<float>>& xyzs, int& i,int& j,int& k, int control =1) const;
+  int getIndexFromPos(const std::string& name_stack, const std::string& name_field, const double& pos) const ;
   float getPosFromIndex(const std::string& name_stack, const std::string& name_field, int index) const;
   int getIndexFromTime(const std::string& name_stack, const double& t, const std::string& method="") const;
 
 
   file_pos_t getOffsetVarField(const std::string& name_stack, const std::string& name_field, const int& id_time_field) const;
   std::vector<std::string> getConstFieldNames(const std::string& name_stack) const;
+  std::vector<std::string> getValuesConstNames(const std::string& name_stack, const std::string& name_field) const;
   template <typename _TYPE_> void getValuesConstField(const std::string& name_stack, const std::string& name_field, std::vector<_TYPE_>& data) const;
   class BasicMesh
   {

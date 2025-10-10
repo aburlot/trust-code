@@ -35,6 +35,7 @@ double ymax = 0.0;
 double zmax = 0.0;
 
 int max_delta = 0;
+int same_mesh = 0;
 
 double seuil = 1e-12;
 
@@ -89,7 +90,7 @@ void open(Nom& filename, LataFilter& filter, LataOptions& opt, LataDB& lata_db)
 
 void usage(const char *arg0)
 {
-  cerr << "usage " << arg0 << " file1 file2 [--dernier] [--seuil val] [--valmin val] [--max_delta]" << endl;
+  cerr << "usage " << arg0 << " file1 file2 [--dernier] [--seuil val] [--valmin val] [--max_delta] [--same-mesh]" << endl;
 }
 
 const Domain& get_domain(LataFilter& filter, Domain_Id& id, Nom& filename)
@@ -330,7 +331,13 @@ void construit_corres(const DomainUnstructured& dom, const DomainUnstructured& d
   iseq.resize_array(nb_nodes2);
   iseq = -1;
   ielem = -1;
-
+  if (same_mesh==1)
+  {
+   // option --same-mesh on a une correspondance directe
+   for (int i=0;i<nb_maille2;i++) ielem[i]=i;
+   for (int i=0;i<nb_nodes2;i++) iseq[i]=i;
+   return;
+  }
   // pour chaque element de 2 on fait une dichotomie
 
   for (trustIdType j = 0; j < nb_maille2; j++)
@@ -650,11 +657,16 @@ int main(int argc, char **argv)
                       seuil = atof(argv[i]);
                     }
                   else
+                  {
+                   if (strcmp(argv[i], "--same_mesh") == 0)
+                      same_mesh = 1;
+                    else
                     {
                       cerr << argv[i] << " incompris " << endl;
                       usage(argv[0]);
                       exit(-1);
                     }
+                   }
                 }
             }
         }
@@ -819,10 +831,18 @@ int main(int argc, char **argv)
                   filter2.release_field(field2);
                   filter.release_field(field);
                 }
+              catch (LataDBError& err)
+                {
+                  cerr << " error while loading " << id.uname_ << " in file " << filename << " " <<kt <<" " << err.describe() << endl;
+                  break;
+                }
               catch (LataError& err)
                 {
                   if (err.code_ == LataError::NOT_A_FLOAT_FIELD)
+		  {
                     cerr << "Field '" << id.uname_ << "' is not a float field. No comparison done." << endl;
+		    break;
+		  }
                   else
                     {
                     cerr << "error loading field" << endl;

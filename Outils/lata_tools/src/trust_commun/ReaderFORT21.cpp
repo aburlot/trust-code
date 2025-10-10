@@ -402,6 +402,42 @@ void ReaderFORT21::parse()
   std::ofstream stream("D:/a.txt", std::ofstream::out);
   aTimer.Show(stream);
 #endif
+  // fix correct location of fields on wall
+  for (auto& a : elements_list_)
+    {
+      if  ((a.second.type_ == "WALVORAV")|| (a.second.type_ == "WALAXRAV"))
+        {
+          // on cherche le nombre de couches
+          int nr=1;
+          while(1)
+            {
+              std::string ris("RAYON");
+              ris+=std::to_string(nr);
+              try
+                {
+                  getConstFieldInfo(a.second,  ris);
+                  nr++;
+                }
+              catch(...)
+                {
+                  break;
+                }
+            }
+          nr--;
+          for (auto& f : a.second.VarFields_)
+            if (f.second.localisation_of_field_ != L_ALTERNATE)
+              {
+                if (f.second.nb_parts() == nr )
+                  {
+                    f.second.localisation_of_field_=L_TWALL;
+                  }
+                else if (f.second.nb_parts() != nr-1)
+                  {
+                    f.second.localisation_of_field_= L_TRACE;
+                  }
+              }
+        }
+    }
 }
 void ReaderFORT21::fix_bad_times()
 {
@@ -411,7 +447,7 @@ void ReaderFORT21::fix_bad_times()
   for (; i<getTimes().size(); i++)
     {
       double t = getTimes()[i];
-      if (t==told)
+      if ((t==told)|| (t==0 && told>0.))
         {
           //std::cout <<"t == told == " << t<<std::endl;
           repair=true;
@@ -431,25 +467,34 @@ void ReaderFORT21::fix_bad_times()
           auto     it = find (myvector.begin(), myvector.end(), i);
           if (it != myvector.end())
             {
-              auto     itold = find (myvector.begin(), myvector.end(), i-1);
-              if (itold==myvector.end())
+              if ( getTimes()[i]== told)
                 {
-                  // on n'avait pas le temps d'avant
-                  if (verbosity_ > 3)
-                    std::cout <<" removing duplicate times " << told <<" not for "<< a.first  << std::endl;
-                  // on change l'offset pour prendre le seul enregistrement dispo
-                  a.second.offset_rel_time_[it-myvector.begin()]+= (offset_a_time_[i]-offset_a_time_[i-1] );
+                  auto     itold = find (myvector.begin(), myvector.end(), i-1);
+                  if (itold==myvector.end())
+                    {
+                      // on n'avait pas le temps d'avant
+                      if (verbosity_ > 4)
+                        std::cout <<" removing duplicate times " << told <<" not for "<< a.first  << std::endl;
+                      // on change l'offset pour prendre le seul enregistrement dispo
+                      a.second.offset_rel_time_[it-myvector.begin()]+= (offset_a_time_[i]-offset_a_time_[i-1] );
+                    }
+                  else
+                    {
+                      if (verbosity_ > 4)
+                        std::cout <<" removing duplicate times " << told <<"  for "<< a.first  << std::endl;
+                      // on garde le dernier enregistrement pour cela on change l'offset
+                      a.second.offset_rel_time_[itold-myvector.begin()] = (offset_a_time_[i]-offset_a_time_[i-1] )   + a.second.offset_rel_time_[it-myvector.begin()];
+                      a.second.offset_rel_time_.erase(a.second.offset_rel_time_.begin()+(it-myvector.begin()));
+                      myvector.erase(it);
+                    }
                 }
               else
                 {
-                  if (verbosity_ > 3)
-                    std::cout <<" removing duplicate times " << told <<"  for "<< a.first  << std::endl;
-                  // on garde le dernier enregistrement pour cela on change l'offset
-                  a.second.offset_rel_time_[itold-myvector.begin()] = (offset_a_time_[i]-offset_a_time_[i-1] )   + a.second.offset_rel_time_[it-myvector.begin()];
+                  if (verbosity_ > 1)
+                    std::cout <<" removing stupid times for "<< a.first  << std::endl;
                   a.second.offset_rel_time_.erase(a.second.offset_rel_time_.begin()+(it-myvector.begin()));
                   myvector.erase(it);
                 }
-
             }
         }
       for (auto& a : elements_list_)
@@ -499,7 +544,8 @@ void ReaderFORT21::fix_bad_times()
                 std::cout << "remove time index  "<<c << " in "<< a.first<<" "<< getTimes()[stack.index_times_[c]] << std::endl;
               stack.index_times_.erase(stack.index_times_.begin()+c);
               stack.offset_rel_time_.erase(stack.offset_rel_time_.begin()+c);
-              n-=1;
+              n--; // le tableau est reduit
+              c--; // pour resteter
             }
 
         }
@@ -645,8 +691,23 @@ template <typename _TYPE_> void ReaderFORT21::getValuesVarFieldOnIndex(const std
     }
 }
 
+template <typename _TYPE_, typename _TYPE2_>
+void fromfloattodouble(const  std::vector<_TYPE_>& data0,  std::vector<_TYPE2_>& data)
+{
+  int s=int(data0.size());
+  data.resize(s);
+  for (int i=0; i<s; i++) { data[i]=(_TYPE2_)data0[i];}
+}
+
 template <typename _TYPE_> void ReaderFORT21::getValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<_TYPE_>& data, const int& id_time_field) const
 {
+  if(std::is_same<_TYPE_, double>::value)
+    {
+      std::vector<float> data0;
+      getValuesVarField(name_stack, name_field,  data0,id_time_field);
+      fromfloattodouble(data0,data);
+      return;
+    }
   const ElementInfo& eleminfo = getElementInfo(name_stack);
   const FieldInfo& fieldinfo = getVarFieldInfo(eleminfo, name_field);
   data.resize(fieldinfo.size_*fieldinfo.nb_parts());
@@ -746,9 +807,11 @@ int ReaderFORT21::getIndexFromTime(const std::string& name_stack, const double& 
   return i;
 }
 
-int index_from_zs(const float& ZCURV, std::vector<float>& ZAX, const ReaderFORT21::LocalisationField& loc, const int& verbosity_ )
+int index_from_zs(const double& ZCURV0, const std::vector<float>& ZAX0,  const int& verbosity_ )
 {
-
+  double ZCURV=ZCURV0;
+  std::vector<double> ZAX;
+  fromfloattodouble(ZAX0,ZAX);
   int nf = int(ZAX.size());
   {
     if (ZCURV <= ZAX[0])
@@ -849,91 +912,215 @@ int index_from_zv(const double& pos, std::vector<float>& zv, const ReaderFORT21:
     }
 }
 
-int ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::string& name_field, const float& x, const float& y, const float& z) const
+void WALL_getBOUNDS( const std::vector<int>& IWHYDR,  std::vector<float>& ZBORNE,
+                     const std::vector<float>& xs, const std::vector<float>& ys, const std::vector<float>& zs)
 {
+  int IDEB = 1000000;
+  int JDEB = 1000000;
+  int KDEB = 1000000;
+  int IFIN = 0;
+  int JFIN = 0;
+  int KFIN = 0;
+  int NWZ=int(IWHYDR.size());
+  int NDIM1=int(xs.size());
+  int NDIM2=int(ys.size());
+  int NDIM3=int(zs.size());
+  {
+    const int loop_stop_0(NWZ);
+    for (int IW = 1; IW <= loop_stop_0; IW++)
+      {
+        const int INODE = IWHYDR[IW-1];
+        const int K = (INODE - 1) %NDIM3 + 1;
+        const int J = ((INODE - 1) / NDIM3)% NDIM2 + 1;
+        const int I = ((INODE - 1) / (NDIM2 * NDIM3))% NDIM1 + 1;
+        IDEB=std::min(I,IDEB);
+        IFIN=std::max(I,IFIN);
+        JDEB=std::min(J,JDEB);
+        JFIN=std::max(J,JFIN);
+        KDEB=std::min(K,KDEB);
+        KFIN=std::max(K,KFIN);
+      }
+  }
+  std::cout<<"mmmmm "<<JDEB<< " "<< ZBORNE[2]<< " "<<ys[JDEB-1]<<std::endl;
+  if (IDEB != 1)
+    {
+      ZBORNE[0] = xs[IDEB-1];
+      std::cout<<"mmmmm "<<std::endl;
+    }
+  if (JDEB != 1)
+    {
+      ZBORNE[2] = ys[JDEB-1];
+    }
+  if (KDEB != 1)
+    {
+      ZBORNE[4] = zs[KDEB-1];
+    }
+  if (IFIN != NDIM1)
+    {
+      ZBORNE[1] = xs[IFIN];
+    }
+  if (JFIN != NDIM2)
+    {
+      std::cout<<"mmmmm "<<JFIN<< " "<< ZBORNE[3]<< " "<<ys[JFIN]<<std::endl;
+      ZBORNE[3] = ys[JFIN];
+      std::cout<<"mmmmm "<<std::endl;
+    }
+  if (KFIN != NDIM3)
+    {
+      ZBORNE[5] = zs[KFIN];
+    }
+  //
+  return;
+}
+std::vector<std::vector<float>>   ReaderFORT21::getXYZS(const std::string& name_stack, const std::string& name_field) const
+{
+
+  std::vector<std::vector<float>> XYZS;
+  XYZS.resize(3);
   const ElementInfo& eleminfo = getElementInfo(name_stack);
   auto fieldinfo =getVarFieldInfo(name_stack, name_field);
   auto loc= fieldinfo.localisation_of_field();
-  if (loc == ReaderFORT21::LocalisationField::L_GLOBAL)
-    return 0;
-  std::vector<float> xv,yv,zv;
   if  ((eleminfo.type_ == "TROIDRAV")|| (eleminfo.type_ == "WAL3DRAV"))
     {
 
       if  ((eleminfo.type_ == "TROIDRAV"))
         {
-          getValuesConstField(name_stack,  "ZV",  zv) ;
-          getValuesConstField(name_stack,  "YV", yv);
-          getValuesConstField(name_stack,  "XV",  xv) ;
+          if(loc!=  ReaderFORT21::LocalisationField::L_DUALZ)
+            getValuesConstField(name_stack,  "ZS",  XYZS[2]) ;
+          else
+            getValuesConstField(name_stack,  "ZV",  XYZS[2]) ;
+          if(loc!=  ReaderFORT21::LocalisationField::L_DUALY)
+            getValuesConstField(name_stack,  "YS", XYZS[1]);
+          else
+            {
+              getValuesConstField(name_stack,  "YV", XYZS[1]);
+              std::vector<int> co;
+              getValuesConstField(name_stack,"COORDINA",co);
+              if (co[0] == 101 /* CAT_CYLINDRIC */)
+                XYZS[1].pop_back(); // remove last yv = first
+            }
+          if(loc!=  ReaderFORT21::LocalisationField::L_DUALX)
+            getValuesConstField(name_stack,  "XS",  XYZS[0]) ;
+          else
+            getValuesConstField(name_stack,  "XV",  XYZS[0]) ;
         }
       else
         {
           try
             {
-              std::vector<float> xs,ys,zs;
-              getValuesConstField(name_stack,  "ZS",  zs) ;
-              getValuesConstField(name_stack,  "YS", ys);
-              getValuesConstField(name_stack,  "XS",  xs) ;
-              std::vector<float> bounds;
-              getValuesConstField(name_stack,  "PAVEBOUNDS",  bounds) ;
-              auto glambda = [](float xmin, float xmax, std::vector<float> xs)
-              {
-                std::vector<float> xv ;
-                int first=0;
-                float x1=0;
-                xv.push_back(xmin);
-                for (auto x : xs)
-                  {
-                    if (first==1)
-                      {
-                        if (x<xmax)
-                          {
-                            xv.push_back((x1+x)*0.5f);
-                            x1=x;
-                          }
-                        else
-                          {
-                            break;
-                          }
-                      }
-                    if ((first==0) && (x>xmin))
-                      {
-                        x1=x;
-                        first=1;
-                      }
-                  }
+              std::vector<float> xs0,ys0,zs0;
+              getValuesConstField(name_stack,  "ZS",  zs0) ;
 
-                xv.push_back(xmax);
-                return xv;
+              getValuesConstField(name_stack,  "YS", ys0);
+              getValuesConstField(name_stack,  "XS",  xs0) ;
+              std::vector<float> bounds;
+              std::vector<int> iwhyd;
+              getValuesConstField(name_stack,  "PAVEBOUNDS",  bounds) ;
+              getValuesConstField(name_stack,  "IWHYD",  iwhyd) ;
+              //WALL_getBOUNDS(  iwhyd,   bounds, xs0,ys0,zs0);
+              if( iwhyd[0]>iwhyd[1])
+                throw;
+              auto glambda = [](float xmin, float xmax, std::vector<float>& xxs0)
+              {
+                std::vector<float> xs ;
+                for (auto x : xxs0)
+                  if ((x>=xmin)&&(x<=xmax))
+                    xs.push_back(x);
+                if (xs.size()==0)
+                  xs.push_back(xmin);
+                return xs;
               };
-              xv = glambda( bounds[0],bounds[1],xs);
-              yv = glambda( bounds[2],bounds[3],ys);
-              zv = glambda( bounds[4],bounds[5],zs);
+              XYZS[0] = glambda( bounds[0],bounds[1],xs0);
+              XYZS[1] = glambda( bounds[2],bounds[3],ys0);
+              XYZS[2] = glambda( bounds[4],bounds[5],zs0);
             }
+
           catch(...)
             {
               throw std::invalid_argument("error in getIndexFromPos for wall");
             }
         }
-      int nx=int(xv.size())-1;
-      int ny=int(yv.size())-1;
-      int nz=int(zv.size())-1;
-      int k=   index_from_zv( z,  zv,  loc, verbosity_ );
-      int j=   index_from_zv( y,  yv,  loc, verbosity_ );
-      int i=   index_from_zv( x,  xv,  loc, verbosity_ );
-
-
-      //std::cout<<i << " "<<j<<" "<<k<<std::endl;
-      //int res= i+nx*(j+ny*k);
-      int res= k+nz*(j+ny*i);
-      if (res >=nx*ny*nz)
-        throw std::invalid_argument("error in getIndexFromPos");
-      return res;
+      return XYZS;
     }
-  std::cout<< "unkonwn conversion from pos to Index "<<eleminfo.type_<<std::endl;
-  return 0;
+  throw std::invalid_argument("error in getIndexFromPos for wall");
 }
-int ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::string& name_field, const float& pos) const
+int  ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::string& name_field, const double& x, const double& y, const double& z, const  std::vector<std::vector<float>>& xyzs, int& i,int& j,int& k, int control ) const
+{
+  if (control)
+    {
+      // const ElementInfo& eleminfo = getElementInfo(name_stack);
+      auto fieldinfo =getVarFieldInfo(name_stack, name_field);
+      auto loc= fieldinfo.localisation_of_field();
+      if (loc == ReaderFORT21::LocalisationField::L_GLOBAL)
+        return 0;
+    }
+  int nx=int(xyzs[0].size());
+  int ny=int(xyzs[1].size());
+  int nz=int(xyzs[2].size());
+  k=   index_from_zs( z,  xyzs[2],   verbosity_ );
+  j=   index_from_zs( y,  xyzs[1],   verbosity_ );
+  i=   index_from_zs( x,  xyzs[0],   verbosity_ );
+  int res= k+nz*(j+ny*i);
+  if (res >=nx*ny*nz)
+    throw std::invalid_argument("error in getIndexFromPos");
+  return res;
+}
+int ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::string& name_field, const double& x, const double& y, const double& z) const
+{
+  auto fieldinfo =getVarFieldInfo(name_stack, name_field);
+  auto loc= fieldinfo.localisation_of_field();
+  if (loc == ReaderFORT21::LocalisationField::L_GLOBAL)
+    return 0;
+  const ElementInfo& eleminfo = getElementInfo(name_stack);
+  if  (eleminfo.type_ == "WAL3DRAV")
+    {
+      auto namepere = getValuesConstNames(name_stack,"NAMPER")[0];
+      int iglob=getIndexFromPos(namepere,"PRESSURE",x,y,z);
+      std::vector<int> iwhyd;
+      getValuesConstField(name_stack,  "IWHYD",  iwhyd);
+      for (int i=int(iwhyd.size())-1; i>=0; i--)
+        if (iwhyd[i]==iglob+1) return i;
+      throw std::invalid_argument("point not in wall3d");
+      return -1;
+    }
+  auto xyzs = getXYZS(name_stack,name_field);
+  int i,j,k;
+  int control=0;
+  return getIndexFromPos(name_stack,name_field,x,y,z,xyzs,i,j,k,control);
+#if 0
+  std::vector<float> xv,yv,zv;
+  int first=0;
+  float x1=0;
+  xv.push_back(xmin);
+  for (auto x : xs)
+    {
+      if (first==1)
+        {
+          if (x<xmax)
+            {
+              xv.push_back((x1+x)*0.5f);
+              x1=x;
+            }
+          else
+            {
+              break;
+            }
+        }
+      if ((first==0) && (x>xmin))
+        {
+          x1=x;
+          first=1;
+        }
+    }
+
+  xv.push_back(xmax);
+  return xv;
+  xv = glambda( bounds[0],bounds[1],xs);
+  yv = glambda( bounds[2],bounds[3],ys);
+  zv = glambda( bounds[4],bounds[5],zs);
+#endif
+}
+int ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::string& name_field, const double& pos) const
 {
   const ElementInfo& eleminfo = getElementInfo(name_stack);
   auto loc =getVarFieldInfo(name_stack, name_field).localisation_of_field();
@@ -945,7 +1132,7 @@ int ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::stri
       std::vector<float> zs;
       getInterpolatedValuesVarPos(name_stack,name_field,zs);
 
-      return index_from_zs( pos,  zs,  loc, verbosity_ );
+      return index_from_zs( pos,  zs,   verbosity_ );
       std::vector<float> zv;
       if (eleminfo.type_ == "AXIALRAV")
         getValuesConstField(name_stack,  "ZV",  zv) ;
@@ -978,6 +1165,13 @@ float ReaderFORT21::getPosFromIndex(const std::string& name_stack, const std::st
   return data[index];
 }
 
+void ReaderFORT21::getInterpolatedValuesVarPos(const std::string& name_stack, const std::string& name_field, std::vector<double>& data) const
+{
+  std::vector<float> data0;
+  getInterpolatedValuesVarPos(name_stack, name_field,  data0);
+  fromfloattodouble(data0,data);
+
+}
 void ReaderFORT21::getInterpolatedValuesVarPos(const std::string& name_stack, const std::string& name_field, std::vector<float>& data) const
 {
 
@@ -985,7 +1179,8 @@ void ReaderFORT21::getInterpolatedValuesVarPos(const std::string& name_stack, co
   auto loc =getVarFieldInfo(name_stack, name_field).localisation_of_field();
   if  ((eleminfo.type_ == "AXIALRAV")|| (eleminfo.type_ == "WALAXRAV"))
     {
-      if ((loc == ReaderFORT21::LocalisationField::L_GLOBAL)|| (loc == ReaderFORT21::LocalisationField::L_ELEM))
+      if ((loc == ReaderFORT21::LocalisationField::L_GLOBAL)|| (loc == ReaderFORT21::LocalisationField::L_ELEM)
+          ||(loc == ReaderFORT21::LocalisationField::L_TRACE)|| (loc == ReaderFORT21::LocalisationField::L_TWALL))
         {
           if (eleminfo.type_ == "AXIALRAV")
             getValuesConstField(name_stack,  "ZS",  data) ;
@@ -1009,7 +1204,8 @@ void ReaderFORT21::getInterpolatedValuesVarPos(const std::string& name_stack, co
     {
 
       int nbcell=1;
-      if ((loc == ReaderFORT21::LocalisationField::L_GLOBAL)|| (loc == ReaderFORT21::LocalisationField::L_ELEM))
+      if ((loc == ReaderFORT21::LocalisationField::L_GLOBAL)|| (loc == ReaderFORT21::LocalisationField::L_ELEM)
+          ||(loc == ReaderFORT21::LocalisationField::L_TRACE)|| (loc == ReaderFORT21::LocalisationField::L_TWALL))
         {
           data.resize(nbcell);
         }
@@ -1023,6 +1219,13 @@ template <typename _TYPE_>
 void ReaderFORT21::getInterpolatedValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<_TYPE_>& data, const int& global_id_time) const
 {
 
+  if(std::is_same<_TYPE_, double>::value)
+    {
+      std::vector<float> data0;
+      getInterpolatedValuesVarField(name_stack, name_field,  data0,  global_id_time);
+      fromfloattodouble(data0,data);
+      return;
+    }
   std::vector<double> stak_times = getTimesStack(name_stack);
   if (global_id_time >= int(Times_glob_.size()))
     throw std::invalid_argument("invalid index time in getInterpolatedValuesVarField "+ name_field);
@@ -1035,8 +1238,51 @@ void ReaderFORT21::getInterpolatedValuesVarField(const std::string& name_stack, 
   getValuesVarField(name_stack, name_field,data, index);
 }
 
+std::vector<std::string> ReaderFORT21::getValuesConstNames(const std::string& name_stack, const std::string& name_field) const
+{
+
+  const ElementInfo& eleminfo = getElementInfo(name_stack);
+  const FieldInfo& fieldinfo = getConstFieldInfo(eleminfo, name_field);
+
+  if (fieldinfo.nb_parts()!=1)
+    throw std::invalid_argument("nb_parts!=1 not implemented for const field "+ name_field);
+  file_pos_t fp = fieldinfo.offsets_.back();
+
+  if (fieldinfo.type_of_field()!= T_CHAR)
+    throw std::invalid_argument("field type not implemented");
+  int N=fieldinfo.size();
+  set_file_pos(myField.getFile(), fp, SEEK_SET);
+  int aNameSize = myIsC3 ? 16 : 8;
+  std::vector<std::string> res;
+  res.resize(N);
+  char* res0;
+  res0=(char*)malloc(aNameSize*N);
+  size_t aSizeOfRecordLength =  N*aNameSize*sizeof(char);
+  if (fread(res0, aSizeOfRecordLength, 1, myField.getFile()) != 1)
+    throw std::invalid_argument("error reading");
+  for (int i=0; i<N; i++)
+    {
+      char* resi ;
+      resi=(char*)malloc(aNameSize+1);
+      strncpy(resi, res0+i*aNameSize,aNameSize);
+      TruncTailWS(resi,aNameSize);
+      resi[aNameSize]='\0';
+      res[i]=std::string(resi);
+      //resi.resize(strlen(resi.data()));
+      free(resi);
+    }
+  free(res0);
+  return res;
+}
 template <typename _TYPE_> void ReaderFORT21::getValuesConstField(const std::string& name_stack, const std::string& name_field, std::vector<_TYPE_>& data) const
 {
+  if(std::is_same<_TYPE_, double>::value)
+    {
+      std::vector<float> data0;
+      getValuesConstField(name_stack, name_field,  data0);
+      fromfloattodouble(data0,data);
+      return;
+    }
   const ElementInfo& eleminfo = getElementInfo(name_stack);
   const FieldInfo& fieldinfo = getConstFieldInfo(eleminfo, name_field);
   if (fieldinfo.nb_parts()!=1)
@@ -1156,16 +1402,21 @@ bool ReaderFORT21::readHeader()
 
   // get CATHARE version
   char aBuf[100];
-  strncpy(aBuf, aData + 8, 80);
+  strncpy(aBuf, aData + 9, 80);
   TruncTailWS(aBuf, 80);
 
   // IsC3()
   std::string aStr(aBuf);
-  myIsC3 = ((find(aStr, "c3") >= 0)|| (find(aStr, "C3") >= 0));
 
+  myIsC3 = ((find(aStr, "c3") >= 0)|| (find(aStr, "C3") >= 0));
+  version_=aStr;
+  std::cout<<"version:" <<version_<<"!"<<std::endl;
   // get title of calculation
   strncpy(aBuf, aData + 88, 80);
   TruncTailWS(aBuf, 80);
+  title_=std::string(aBuf);
+  std::cout<<"title:" <<title_<<"!"<<std::endl;
+
 
   // get time of calculation
   strncpy(aDate + 9, aData + 168, 8);
@@ -1461,7 +1712,7 @@ bool ReaderFORT21::readDesStack(bool theSkip)
                   locfield=LocalisationField::L_ALTERNATE;
                   continue;
                 }
-              if ((aQName=="SCALAR")||(aQName=="SUBVOL")||(aQName=="ZS")||(aQName=="ZSW"))
+              if ((aQName=="SCALAR")||(aQName=="SUBVOL")||(aQName=="ZSNO")||(aQName=="ZSWNO"))
                 {
                   //  loc=aQName;
                   locfield=LocalisationField::L_ELEM;
@@ -1474,10 +1725,19 @@ bool ReaderFORT21::readDesStack(bool theSkip)
                   locfield=LocalisationField::L_DUAL;
                   continue;
                 }
-              if ((aQName=="VECTX")||(aQName=="VECTY")||(aQName=="VECTZ"))
+              if (aQName=="VECTX")
                 {
-                  //loc=aQName;
-                  locfield=LocalisationField::L_DUAL;
+                  locfield=LocalisationField::L_DUALX;
+                  continue;
+                }
+              if (aQName=="VECTY")
+                {
+                  locfield=LocalisationField::L_DUALY;
+                  continue;
+                }
+              if (aQName=="VECTZ")
+                {
+                  locfield=LocalisationField::L_DUALZ;
                   continue;
                 }
               if (aQName=="SUBVOLINF")
@@ -1558,6 +1818,8 @@ bool ReaderFORT21::readDesStack(bool theSkip)
                           // on ajoute  p1
                           std::string aQNamep1= aQName + std::string("_p1");
                           eleminfo.VarFields_[aQNamep1]=eleminfo.VarFields_[aQName];
+                          if (verbosity_ > 4)
+                            std::cout<< aQNamep1<< " adding " << std::endl;
 
                         }
                       eleminfo.VarFields_[aQName].nb_parts_++;
@@ -1980,6 +2242,7 @@ ReaderFORT21::BasicMesh ReaderFORT21::getMeshStack(const std::string& name_stack
   else if ((eleminfo.type_ == "TROIDRAV")
            || (eleminfo.type_ == "WAL3DRAV"))
     {
+      bool cylindrical=false;
       std::vector<float> tabx,taby,tabz;
       if  (eleminfo.type_ == "WAL3DRAV")
         {
@@ -2001,6 +2264,10 @@ ReaderFORT21::BasicMesh ReaderFORT21::getMeshStack(const std::string& name_stack
           getValuesConstField(name_stack,  "XV",tabx);
           getValuesConstField(name_stack,  "YV",taby);
           getValuesConstField(name_stack,  "ZV",tabz);
+              std::vector<int> co;
+              getValuesConstField(name_stack,"COORDINA",co);
+              if (co[0] == 101 /* CAT_CYLINDRIC */)
+                cylindrical=true;
         }
       int nx=int(tabx.size())-1;
       int ny=int(taby.size())-1;
@@ -2015,6 +2282,19 @@ ReaderFORT21::BasicMesh ReaderFORT21::getMeshStack(const std::string& name_stack
       mesh.connectivity_.resize(8*NT,-1);
       mesh.nodes_per_elem_ = 8;
       mesh.type_mesh_=MESH_Hexa;
+      if (cylindrical==true)
+      for (int cx=0; cx<nx+1; cx++)
+        for (int cy=0; cy<ny+1; cy++)
+          for (int cz=0; cz<nz+1; cz++)
+            {
+              //    int elem=cx+cy*nx+ nx*ny*cz;
+              int som=cz+(nz+1)*(cy+(ny+1)*cx);
+
+              nodes_(som,0)= tabx[cx]*cos(taby[cy]);
+              nodes_(som,1)= tabx[cx]*sin(taby[cy]);
+              nodes_(som,2)= tabz[cz];
+            }
+      else
       for (int cx=0; cx<nx+1; cx++)
         for (int cy=0; cy<ny+1; cy++)
           for (int cz=0; cz<nz+1; cz++)
@@ -2050,9 +2330,12 @@ ReaderFORT21::BasicMesh ReaderFORT21::getMeshStack(const std::string& name_stack
   return mesh;
 }
 
+template void ReaderFORT21::getInterpolatedValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<double>& data, const int& id_time_field) const;
 template void ReaderFORT21::getInterpolatedValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<float>& data, const int& id_time_field) const;
 template void ReaderFORT21::getInterpolatedValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<int>& data, const int& id_time_field) const;
+template void ReaderFORT21::getValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<double>& data, const int& id_time_field) const;
 template void ReaderFORT21::getValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<float>& data, const int& id_time_field) const;
 template void ReaderFORT21::getValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<int>& data, const int& id_time_field) const;
+template void ReaderFORT21::getValuesVarFieldOnIndex(const std::string& name_stack, const std::string& name_field, std::vector<double>& data, const int& id_index) const;
 template void ReaderFORT21::getValuesVarFieldOnIndex(const std::string& name_stack, const std::string& name_field, std::vector<float>& data, const int& id_index) const;
 template void ReaderFORT21::getValuesVarFieldOnIndex(const std::string& name_stack, const std::string& name_field, std::vector<int>& data, const int& id_index) const;

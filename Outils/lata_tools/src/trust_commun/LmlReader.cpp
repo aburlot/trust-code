@@ -471,7 +471,7 @@ void read_any_format_options(const char *file, LataOptions& opt)
             s++;
         }
     }
-  else if (nom_fic.find("FORT21")>=0)
+  else if ((nom_fic.find("FORT21")>=0)||(nom_fic.finit_par(".21")))
     {
       // do nothing
     }

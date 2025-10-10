@@ -69,7 +69,8 @@ void LataDB::read_master_file_fort21(const char *prefix, const char *filename)
   // on ajoute les geom
   // on verra apres pour les champs elem et som
   std::vector<std::string> geoms= parser.getElementNames();
-
+  if (geoms.size()==0)
+    throw LataDBError(LataDBError::FILE_NOT_FOUND);
   basicmeshses_ = new MapBasicMesh();
   std::map<std::string,ReaderFORT21::BasicMesh>& map_basicmeshses = basicmeshses_->map_basicmeshses_;
   //int first=1;
