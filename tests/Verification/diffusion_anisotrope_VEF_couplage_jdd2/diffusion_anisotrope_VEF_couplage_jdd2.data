@@ -1,0 +1,176 @@
+# PARALLEL OK 4 #
+dimension 2
+Domaine dom_solid1
+# BEGIN MESH #
+Lire_MED {
+    domain dom_solid1
+    file solid1.med
+    exclude_groups 0
+
+}
+# END MESH #
+Domaine dom_solid2
+# BEGIN MESH #
+Lire_MED {
+    domain dom_solid2
+    file solid2.med
+    exclude_groups 4
+    _solid1_1_xm_1_1_ _solid1_1_yp_1_1_ _solid1_1_xp_1_1_ _solid1_1_ym_1_1_
+}
+# END MESH #
+# BEGIN MESH #
+Modif_bord_to_raccord dom_solid2 _solid1_1_solid2_1_1_1_xm_1_1_
+Modif_bord_to_raccord dom_solid1 _solid1_1_solid2_1_1_1_xm_1_1_
+Modif_bord_to_raccord dom_solid2 _solid1_1_solid2_1_1_1_yp_1_1_
+Modif_bord_to_raccord dom_solid1 _solid1_1_solid2_1_1_1_yp_1_1_
+Modif_bord_to_raccord dom_solid2 _solid1_1_solid2_1_1_1_xp_1_1_
+Modif_bord_to_raccord dom_solid1 _solid1_1_solid2_1_1_1_xp_1_1_
+Modif_bord_to_raccord dom_solid2 _solid1_1_solid2_1_1_1_ym_1_1_
+Modif_bord_to_raccord dom_solid1 _solid1_1_solid2_1_1_1_ym_1_1_
+# END MESH #
+# BEGIN PARTITION
+Partition dom_solid1 {
+    Partition_tool metis { Nb_parts 2 }
+    Larg_joint 2
+    zones_name DOM_solid1
+}
+Partition dom_solid2 {
+    Partition_tool metis { Nb_parts 2 }
+    Larg_joint 2
+    zones_name DOM_solid2
+}
+END PARTITION #
+# BEGIN SCATTER
+Scatter DOM_solid1.Zones dom_solid1
+Scatter DOM_solid2.Zones dom_solid2
+END SCATTER #
+Sous_Zone solid2_1_1
+Associate solid2_1_1 dom_solid2
+Read solid2_1_1 {
+    Rectangle Origine -2.500000e-01 -2.500000e-01 Cotes 5.000000e-01 5.000000e-01
+}
+Sous_Zone solid2
+Associate solid2 dom_solid2
+Read solid2 {
+    Rectangle Origine -2.500000e-01 -2.500000e-01 Cotes 5.000000e-01 5.000000e-01
+}
+VEF dis
+Schema_Euler_implicite sch
+Read sch {
+    tmax 10000.0
+    tinit 0.0
+	nb_pas_dt_max 3
+    dt_min 0.001
+    dt_max 10.0
+    dt_impr 10.0
+    solveur Implicite
+    {
+        no_qdm
+        seuil_convergence_solveur 1e-5
+        seuil_convergence_implicite 1e-2
+        Solveur petsc cholesky { }
+    }
+    facsec 100.0
+    seuil_statio 1E-10
+}
+Pb_conduction pb_solid2
+Associate pb_solid2 dom_solid2
+Pb_conduction pb_solid1
+Associate pb_solid1 dom_solid1
+Probleme_Couple pbc
+Associate pbc pb_solid2
+Associate pbc pb_solid1
+Associate pbc sch
+Discretize pbc dis
+Read pb_solid2 {
+    Solide {
+        rho Champ_Uniforme 1 2
+        lambda Champ_fonc_fonction pb_solid2 temperature 4 1.0 0.0 0.0 0.1
+        Cp Champ_Uniforme 1 0.5
+    }
+    Conduction {
+        diffusion { }
+        initial_conditions {
+            temperature Champ_Uniforme 1 1.
+        }
+        sources { 
+            puissance_thermique Champ_Uniforme 1 1000.0
+        }
+        boundary_conditions {
+            _solid1_1_solid2_1_1_1_xm_1_1_ paroi_contact pb_solid1 _solid1_1_solid2_1_1_1_xm_1_1_ 
+            _solid1_1_solid2_1_1_1_yp_1_1_ paroi_contact pb_solid1 _solid1_1_solid2_1_1_1_yp_1_1_ 
+            _solid1_1_solid2_1_1_1_xp_1_1_ paroi_contact pb_solid1 _solid1_1_solid2_1_1_1_xp_1_1_ 
+            _solid1_1_solid2_1_1_1_ym_1_1_ paroi_contact pb_solid1 _solid1_1_solid2_1_1_1_ym_1_1_ 
+
+        }
+    }
+    Post_processing {
+        Definition_champs {  
+           T_mean Reduction_0D { 
+               methode moyenne_ponderee
+               source Refchamp { Pb_champ pb_solid2 temperature } 
+           }
+        }
+        Probes
+        {
+           T_solid2 T_mean periode 1.0 numero_elem_sur_maitre 0
+        }
+        Format lml
+        fields dt_post 50.0
+        {
+           temperature elem
+           temperature som
+           puissance_volumique elem
+           conductivite elem
+        }
+    }
+}
+Read pb_solid1 {
+    Solide {
+        rho Champ_Uniforme 1 2
+        lambda Champ_Uniforme 4 0.01 0.0 0.0 0.01
+        Cp Champ_Uniforme 1 0.5
+    }
+    Conduction {
+        diffusion { }
+        initial_conditions {
+            temperature Champ_Uniforme 1 1.
+        }
+        sources { 
+            puissance_thermique Champ_Uniforme 1 0.0
+        }
+        boundary_conditions {
+            _solid1_1_xm_1_1_ paroi_adiabatique
+            _solid1_1_ym_1_1_ paroi_adiabatique
+            _solid1_1_yp_1_1_ paroi_adiabatique
+            _solid1_1_xp_1_1_ paroi_temperature_imposee Champ_Front_Uniforme 1 0.
+            _solid1_1_solid2_1_1_1_xm_1_1_ paroi_contact pb_solid2 _solid1_1_solid2_1_1_1_xm_1_1_ 
+            _solid1_1_solid2_1_1_1_yp_1_1_ paroi_contact pb_solid2 _solid1_1_solid2_1_1_1_yp_1_1_ 
+            _solid1_1_solid2_1_1_1_xp_1_1_ paroi_contact pb_solid2 _solid1_1_solid2_1_1_1_xp_1_1_ 
+            _solid1_1_solid2_1_1_1_ym_1_1_ paroi_contact pb_solid2 _solid1_1_solid2_1_1_1_ym_1_1_ 
+
+        }
+    }
+    Post_processing {
+        Definition_champs {  
+           T_mean Reduction_0D { 
+               methode moyenne_ponderee
+               source Refchamp { Pb_champ pb_solid1 temperature } 
+           }
+        }
+        Probes
+        {
+           T_solid1 T_mean periode 1.0 numero_elem_sur_maitre 0
+        }
+        Format lml
+        fields dt_post 50.0
+        {
+           temperature elem
+           temperature som
+           puissance_volumique elem
+           conductivite elem
+        }
+    }
+}
+Solve pbc
+End
