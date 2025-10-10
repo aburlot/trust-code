@@ -161,7 +161,7 @@ Nom::Nom(double le_reel, const char* format)
   unsigned int length=strlen(la_chaine);
   if (la_chaine[length-5]=='e')
     {
-      if (la_chaine[length-3]!='0') exit();
+      if (la_chaine[length-3]!='0') Process::exit();
       for (unsigned int i=length-3; i<=length; i++)
         la_chaine[i]=la_chaine[i+1];
     }
@@ -442,7 +442,7 @@ Nom Nom::nom_me(int n, const char* prefixe, int without_padding) const
       else
         {
           Cerr << "Error in Nom::nom_me. Contact TRUST support." << finl;
-          exit();
+          Process::exit();
         }
 
     }

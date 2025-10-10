@@ -13,7 +13,7 @@
 *
 *****************************************************************************/
 
-#include <TRUSTTrav.h>
+#include <TRUSTArray.h>
 #include <Device.h>
 #include <DeviceMemory.h>
 #include <ctime>

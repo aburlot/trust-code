@@ -16,8 +16,9 @@
 #ifndef DOUBLE_H
 #define DOUBLE_H
 
-
+#ifndef LATATOOLS
 #include <blas1.h>
+#endif
 #include <Objet_U.h>
 #include <cmath>
 
@@ -85,13 +86,14 @@ inline double* prodvect(const double* a, const double* b, double* resu)
 }
 
 inline double determinant(double a[2], double b[2]) { return (a[0]*b[1]-a[1]*b[0]); }
-
+#if 0
 inline double norme(int n, const double* const a)
 {
   const integer un=1;
   const integer m=n ;
   return F77NAME(DNRM2)(&m, a, &un);
 }
+#endif
 
 KOKKOS_INLINE_FUNCTION
 int est_egal(double x1, double x2, double eps)

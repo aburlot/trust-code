@@ -52,6 +52,8 @@
 #define Implemente_base_sans_constructeur_ni_destructeur(_TYPE_,_NOM_,_BASE_)
 
 #else
+#include <Cast.h>
+#include <Type_info.h>
 #define Declare_base_sans_constructeur_ni_destructeur(_TYPE_)        \
                                                                 \
   public :                                                        \

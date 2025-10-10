@@ -21,9 +21,8 @@
 
 #ifndef LATATOOLS
 #include <Perf_counters.h>
-#endif
-
 #include <kokkos++.h>
+#endif
 
 #ifdef TRUST_USE_CUDA
 // See https://nvidia.github.io/NVTX/

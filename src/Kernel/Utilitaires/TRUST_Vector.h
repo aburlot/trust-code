@@ -83,17 +83,21 @@ class TRUST_Vector: public Objet_U
 protected:
   unsigned taille_memoire() const override { throw; }
   int duplique() const override { throw; }
+#ifndef LATATOOLS
   Sortie& printOn(Sortie& s) const override { return printOn_<_CLASSE_>(s); }
   Entree& readOn(Entree& s) override { return readOn_<_CLASSE_>(s); }
-
+#else
+  Sortie& printOn(Sortie& s) const override { return s; }
+  Entree& readOn(Entree& s) override { return s; }
+#endif
 private:
   STLVect z_vect_;
 
+#ifndef LATATOOLS
   template<typename _TYPE_>
   std::enable_if_t< !(std::is_same<_TYPE_,MD_Vector>::value), Entree&>
   readOn_(Entree& s)
   {
-#ifndef LATATOOLS
     int i;
     s >> i;
     clear();
@@ -103,7 +107,6 @@ private:
         s >> obj;
         add(std::move(obj));
       }
-#endif
     return s;
   }
 
@@ -111,11 +114,9 @@ private:
   std::enable_if_t< !(std::is_same<_TYPE_,MD_Vector>::value), Sortie&>
   printOn_(Sortie& s) const
   {
-#ifndef LATATOOLS
     s << (int) z_vect_.size() << tspace;
     for (auto &itr : z_vect_) s << *itr << tspace;
     s << finl;
-#endif
     return s;
   }
 
@@ -127,7 +128,10 @@ private:
   template<typename _TYPE_>
   std::enable_if_t<(std::is_same<_TYPE_,MD_Vector>::value), Sortie&>
   printOn_(Sortie& s) const { return s ; }
-
+#else
+  Sortie& printOn_(Sortie& s) const { return s; }
+  Entree& readOn_(Entree& s) { return s; }
+#endif
 public:
   ~TRUST_Vector() { z_vect_.clear(); }
 
@@ -200,9 +204,9 @@ public:
     z_vect_.resize(i);
     for (auto& itr : z_vect_) itr = std::make_shared<_CLASSE_>();
   }
-
+#ifndef LATATOOLS
   Entree& lit(Entree& s) { return readOn_<_CLASSE_>(s); }
-
+#endif
   TRUST_Vector& operator=(const TRUST_Vector& avect)
   {
     if (this == &avect) return *this;

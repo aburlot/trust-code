@@ -22,6 +22,7 @@
 #ifdef LATATOOLS
 #include <string>
 #include <stdlib.h>
+#include <stdexcept>
 #else
 #include <kokkos++.h>
 #endif
@@ -54,18 +55,16 @@ public:
   static int me() { return 0; }
   static int nproc()  { return 1; }
   static bool is_parallel()  { return false; }
-  static void exit(int exit_code = -1) { ::exit(exit_code); }
-  static void exit(const std::string& s) { ::exit(-1); }
-
-  static double mp_sum(double) { return 0; }
-  static float mp_sum(float) { return 0; }
-  static double mp_max(double) { return 0; }
-  static int mp_max(int) { return 0; }
-  static double mp_min(double) { return 0; }
-  static int mp_min(int) { return 0; }
-  static trustIdType mp_sum(int) { return 0; }
-  static trustIdType mp_sum(trustIdType) { return 0; }
-
+  static void exit(int exit_code = -1) { throw std::invalid_argument("an error is occured"); }
+  static void exit(const std::string& s) {  throw std::invalid_argument(std::string("an error is occured ")+s); }
+  static double mp_sum(double x) { return x; }
+  static float mp_sum(float x) { return x; }
+  static double mp_max(double x) { return x; }
+  static int mp_max(int x) { return x; }
+  static double mp_min(double x) { return x; }
+  static int mp_min(int x) { return x; }
+  static trustIdType mp_sum(int x) { return x; }
+  static trustIdType mp_sum(trustIdType x) { return x; }
 #else
   static int me(); /* mon rang dans le groupe courant */
   static int nproc();

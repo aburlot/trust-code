@@ -13,7 +13,5 @@
 *
 *****************************************************************************/
 
-#include <Cast.h>
-#include <Type_info.h>
 #include <Declare_Base.h>
 #include <Declare_Inst.h>

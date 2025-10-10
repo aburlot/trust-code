@@ -26,7 +26,6 @@
 // };
 // .SECTION Description du source
 // Implemente_instanciable_sans_destructeur(A_base, "A_base", B);
-#include <Cast.h>
 #include <arch.h>
 
 #ifdef LATATOOLS
@@ -77,6 +76,8 @@
 #define Implemente_instanciable_sans_constructeur_ni_destructeur(_TYPE_,_NOM_,_BASE_)
 
 #else
+#include <Cast.h>
+#include <Type_info.h>
 #define Implemente_instanciable_sans_constructeur_ni_destructeur(_TYPE_,_NOM_,_BASE_) \
                                                                         \
   const Type_info* name2(_TYPE_,bases)[1]={                                \
@@ -87,7 +88,7 @@
   int _TYPE_::duplique()  const                                        \
   {                                                                        \
     _TYPE_* xxx = new _TYPE_(*this);                                        \
-    if(!xxx){Cerr << "Not enough memory " << finl; exit();}                \
+    if(!xxx){Cerr << "Not enough memory " << finl; Process::exit();}                \
     return xxx->numero();                                                \
   }                                                                        \
   _TYPE_& _TYPE_::self_cast( Objet_U& r)   {                                \
@@ -98,7 +99,7 @@
   }                                                                        \
   Objet_U* _TYPE_::cree_instance()                                        \
   {  _TYPE_* xxx = new _TYPE_();                                        \
-    if(!xxx){Cerr << "Not enough memory " << finl; exit();}                \
+    if(!xxx){Cerr << "Not enough memory " << finl; Process::exit();}                \
     return xxx ;                                                        \
   }                                                                        \
                                                                         \
