@@ -14,8 +14,9 @@ EXTRA_SRCS+=$(trust_mt)/TRUSTArray.cpp $(trust_mt)/TRUSTVect_tools.cpp $(trust_m
 all: $(trg)
 
 # Retrieve TRUST_DEFINES variable:
-OPT=_opt
+#OPT=_opt
 include $(TRUST_ENV)/make.$(TRUST_ARCH_CC)$(OPT)
+#include $(TRUST_ENV)/make.$(TRUST_ARCH_CC)
  
 $(trg): Makefile $(tools_src)/CMakeLists.txt $(tools_src)/tools/CMakeLists.txt $(tools_src)/scripts/CMakeLists.txt $(tools_src)/build.sh Makefile $(TRUST_MEDCOUPLING_ROOT)/$(TRUST_ARCH)_opt/lib/libmedcoupling.a $(SRCS) $(EXTRA_SRCS) $(trust_ut) $(trust_ge) $(trust_mt)
 	(cd $(tools_src);env TRUST_DEFINES="$(Defines)" EXTRA_SRCS="$(EXTRA_SRCS)" ./build.sh)

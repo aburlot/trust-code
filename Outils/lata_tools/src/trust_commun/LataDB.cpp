@@ -1297,7 +1297,7 @@ int is_fort21(const char* filename)
 
   if (motcle_nom_fic.find("FORT21")>=0)
     return 1;
-  return 0;
+  return (motcle_nom_fic.finit_par(".21"));
 }
 
 // Description: Reads the .lata database in the given file indicating than the
@@ -2104,7 +2104,7 @@ void LataDB::read_data(const LataDBField& fld, BigIntTab& data, Size_t debut, Si
   read_data_(fld, data, debut, n);
   if (fld.datatype_.array_index_ == LataDBDataType::F_INDEXING)
     {
-      BigIntTab& data2 = data;
+      BigIntVect& data2 = data;
       const trustIdType n2 = data2.size_array();
       for (trustIdType i = 0; i < n2; i++)
         data2[i]--;
@@ -2117,7 +2117,7 @@ void LataDB::read_data(const LataDBField& fld, BigTIDTab& data, Size_t debut, Si
   read_data_(fld, data, debut, n);
   if (fld.datatype_.array_index_ == LataDBDataType::F_INDEXING)
     {
-      BigTIDTab& data2 = data;
+      BigTIDVect& data2 = data;
       const trustIdType n2 = data2.size_array();
       for (trustIdType i = 0; i < n2; i++)
         data2[i]--  ;
@@ -2144,7 +2144,7 @@ void LataDB::read_data(const LataDBField& fld, BigIntTab& data, const BigArrOfTI
   read_data_(fld, data, lines_to_read);
   if (fld.datatype_.array_index_ == LataDBDataType::F_INDEXING)
     {
-      BigIntTab& data2 = data;
+      BigIntVect& data2 = data;
       const trustIdType n = data2.size_array();
       for (trustIdType i = 0; i < n; i++)
         data2[i]--;
@@ -2157,7 +2157,7 @@ void LataDB::read_data(const LataDBField& fld, BigTIDTab& data, const BigArrOfTI
   read_data_(fld, data, lines_to_read);
   if (fld.datatype_.array_index_ == LataDBDataType::F_INDEXING)
     {
-      BigTIDTab& data2 = data;
+      BigTIDVect& data2 = data;
       const trustIdType n = data2.size_array();
       for (trustIdType i = 0; i < n; i++)
         data2[i]--;

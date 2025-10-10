@@ -424,7 +424,7 @@ void LataDB::read_data2_med_(const LataDBField& fld, C_Tab * const data, // cons
   if (fld.name_=="SOMMETS")
     {
       // Type checking:
-      assert((std::is_same<value_t, double>::value));
+      assert(!(std::is_integral<value_t>::value));
 
       //    cerr<<"load sommets "<<endl;
       MCAuto<MEDCouplingUMesh> mesh = ReadUMeshFromFile(fld.filename_.getString(),fld.geometry_.getString());
@@ -464,7 +464,7 @@ void LataDB::read_data2_med_(const LataDBField& fld, C_Tab * const data, // cons
   else if (fld.name_.debute_par("SOMMETS_IJK_"))
     {
       // Type checking:
-      assert((std::is_same<value_t, double>::value));
+      assert(!(std::is_integral<value_t>::value));
 
       MEDCouplingMesh * mesh = ReadMeshFromFile(fld.filename_.getString(),fld.geometry_.getString());
       data->resize(fld.size_,fld.nb_comp_);
@@ -492,7 +492,7 @@ void LataDB::read_data2_med_(const LataDBField& fld, C_Tab * const data, // cons
   else
     {
       // Type checking:
-      assert((std::is_same<value_t, double>::value));
+      assert(!(std::is_integral<value_t>::value));
 
       data->resize(fld.size_,fld.nb_comp_);
 

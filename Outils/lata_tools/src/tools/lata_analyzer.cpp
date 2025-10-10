@@ -798,7 +798,7 @@ static void merge_tab(const LataVector<LataDB>& lata_db, LataDB& dest_db, const 
       const LataDBField& fld = lata_db[i].get_field(dest_fld.timestep_, dest_fld.uname_);
       lata_db[i].read_data(fld, tmp);
       // Check offset is OK if 32b data:
-      assert(offset < std::numeric_limits<value_t>::max());
+      assert(offset < std::numeric_limits<trustIdType>::max());
       if (offset)
         tmp += (value_t)offset;
       const trustIdType sz = tab.dimension(0);
