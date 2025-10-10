@@ -81,6 +81,13 @@ void LataDB::read_master_file_fort21(const char *prefix, const char *filename)
       dom.name_=geoms[i];
       ReaderFORT21::BasicMesh mesh= parser.getMeshStack(geoms[i]);
 
+      if (Nom(filename).finit_par(".21"))
+	 if (Nom(filename)!="FORT.21")
+          if (!Nom(filename).contient(Nom(geoms[i])))
+           {
+	      std::cerr<<" we dont load " << geoms[i]<< std::endl;
+               continue;
+            }
       if (mesh.type_mesh_!=ReaderFORT21::MESH_Polygone)
         if (mesh.type_mesh_!=ReaderFORT21::MESH_Polyedre)
           if (mesh.type_mesh_!=ReaderFORT21::MESH_Hexa)

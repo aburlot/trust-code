@@ -67,10 +67,10 @@ if [ "$TRUST_MEDCOUPLING_ROOT" != "" ]; then
   $TRUST_ROOT/exec/lata_tools/bin/compare_lata upwind_0000.med upwind_0000.med || exit -1
 fi
 echo "   with FORT21 files ..."
-$TRUST_ROOT/exec/lata_tools/bin/compare_lata $TRUST_ROOT/Outils/lata_tools/src/tools/FORT21 $TRUST_ROOT/Outils/lata_tools/src/tools/FORT21 || exit -1
+$TRUST_ROOT/exec/lata_tools/bin/compare_lata $TRUST_ROOT/Outils/lata_tools/src/tools/FORT21 $TRUST_ROOT/Outils/lata_tools/src/tools/FORT21 --same_mesh || exit -1
 $TRUST_ROOT/exec/lata_tools/bin/lata_analyzer $TRUST_ROOT/Outils/lata_tools/src/tools/FORT21 write_singlelata=testf21 || exit -1
 nc=$(grep CHAMP testf21.lata | wc| awk '{print $1}')
-ref=111
+ref=62
 [ $nc -ne $ref ] && echo invalid number of CHAMP $nc != $ref&& exit -2
 cd ..
 rm -rf $Build
