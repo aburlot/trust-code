@@ -168,6 +168,7 @@
  Champ_P1NC Champ_P1NC Champ_P1NC.h
  Champ_P1_EF Champ_P1_EF Champ_P1_EF.h
  Champ_P1_isoP1Bulle Champ_P1_isoP1Bulle Champ_P1_isoP1Bulle.h
+ Champ_P1_VEF Champ_P1_VEF Champ_P1_VEF.h
  Champ_Parametrique Champ_Parametrique Champ_Parametrique.h
  Champ_Post_Interpolation|Interpolation Champ_Generique_Interpolation Champ_Generique_Interpolation.h
  Champ_Post_Statistiques_Correlation|Correlation Champ_Generique_Correlation Champ_Generique_Correlation.h
