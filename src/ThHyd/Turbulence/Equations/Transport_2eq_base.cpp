@@ -53,6 +53,7 @@ void Transport_2eq_base::set_param(Param& param)
   param.ajouter_non_std("convection", (this));
   param.ajouter_condition("is_read_diffusion", "The diffusion operator must be read, select negligeable type if you want to neglect it.");
   param.ajouter_condition("is_read_convection", "The convection operator must be read, select negligeable type if you want to neglect it.");
+  param.ajouter_flag("disable_VEF_mean_value_corrections", &disable_VEF_mean_value_corrections_); // X_D_ADD_P flag Flag to prevent usage of mean value of neighbors for corrections applied to k-eps and k-omega models. This only applies to VEF (mean values not used in VDF). See methods 'Transport_K_Eps_base::controler_K_Eps' and 'Transport_K_Omega_base::controler_K_Omega' for more details.
 }
 
 // Lecture et typage de l'operateur diffusion turbulente.

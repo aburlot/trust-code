@@ -56,6 +56,9 @@ protected:
   Operateur_Diff terme_diffusif;
   Operateur_Conv terme_convectif;
 
+
+  bool disable_VEF_mean_value_corrections_ = false;
+
   OBS_PTR(Milieu_base) le_fluide;
   OBS_PTR(Champ_Inc_base) la_vitesse_transportante;
   OBS_PTR(Modele_turbulence_hyd_2_eq_base) mon_modele;

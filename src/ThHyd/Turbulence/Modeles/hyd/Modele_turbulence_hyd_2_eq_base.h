@@ -54,8 +54,16 @@ public:
 
 protected:
   OWN_PTR(Transport_2eq_base) ptr_eq_transport_;
-  double Sigma_K_=1., Sigma_Eps_=1.3, Sigma_Omega_=1./2.;
-  double K_MIN_ = 1.e-20, EPS_MIN_ = 1.e-20, EPS_MAX_ = 1.e+10, OMEGA_MIN_ = 1.e-20, OMEGA_MAX_ = 1.e+10;
+  double Sigma_K_=1.;
+  double Sigma_Eps_=1.3;
+  double Sigma_Omega_=1./2.;
+
+  double K_MIN_ = 1.e-20;
+  double EPS_MIN_ = 1.e-20;
+  double EPS_MAX_ = 1.e+10;
+  double OMEGA_MIN_ = 1.e-5;
+  double OMEGA_MAX_ = 1.e+20;
+
   bool lquiet_ = false;
 };
 
