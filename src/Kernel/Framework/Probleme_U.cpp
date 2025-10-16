@@ -242,7 +242,6 @@ bool  Probleme_U::updateGivenFields()
 bool Probleme_U::run()
 {
   // Force the post process task at the beginning of the run
-  std::cout << std::endl << "Stop 0" << std::endl<< std::endl;
   Cerr<<"First postprocessing, this can take some minutes"<<finl;
   postraiter(1);
   Cerr<<"First postprocessing OK"<<finl;
