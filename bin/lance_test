@@ -1365,7 +1365,7 @@ then
                       if [ $PB_CHECK != 0 ]
                       then
                          echo $ECHO_OPTS "Error."
-                         [ -f `pwd`/verifie.log ] && echo $ECHO_OPTS "Check the file `pwd`/verifie.log\n"
+                         [ -f `pwd`/verifie.log ] && echo $ECHO_OPTS "Check the file `pwd`/verifie.log\n" || echo $ECHO_OPTS "Check the folder: `pwd`\n"
                          PB=254
                       else
                          echo $ECHO_OPTS "End."
