@@ -501,14 +501,14 @@ std::string Perf_counters::Impl::get_cpu() const
   int result;
   result = std::system("lscpu 2>/dev/null | grep 'Model name' > cpu_detail.txt");
   if (result !=0)
-    Cerr << "Bash command in Perf_counters::get_cpu failed"<<std::endl;
+    Cerr << "Bash command in Perf_counters::get_cpu failed" << finl;
   result = std::system("lscpu 2>/dev/null | grep 'Thread(s) per core' >> cpu_detail.txt");
   if (result !=0)
-    Cerr << "Bash command in Perf_counters::get_cpu failed" <<std::endl;
+    Cerr << "Bash command in Perf_counters::get_cpu failed" << finl;
   std::ifstream file("cpu_detail.txt");
   if (!file.is_open())
     {
-      Cerr << "Failed to open file in get_cpu: " << std::endl;
+      Cerr << "Failed to open file in get_cpu: " << finl;
       return "";
     }
   std::string line1, line2;
@@ -519,7 +519,7 @@ std::string Perf_counters::Impl::get_cpu() const
   std::string str = line1 + " ; " + line2;
   result = std::system("rm cpu_detail.txt");
   if (result !=0)
-    Cerr << "Bash command in Perf_counters::get_cpu failed"<<std::endl;
+    Cerr << "Bash command in Perf_counters::get_cpu failed" << finl;
   str= delete_blank_spaces(str);
   return (str.substr(0,max_str_length_));
 }
@@ -533,23 +533,23 @@ std::string Perf_counters::Impl::get_gpu() const
 #ifdef TRUST_USE_CUDA
   int result = std::system("nvidia-smi 2>/dev/null | grep NVIDIA > gpu_detail.txt");
   if (result !=0)
-    Cerr << "Bash command in Perf_counters::get_gpu failed"<<std::endl;
+    Cerr << "Bash command in Perf_counters::get_gpu failed" << finl;
   std::ostringstream gpu_desc;
   gpu_desc << std::ifstream("gpu_detail.txt").rdbuf();
   result = std::system("rm gpu_detail.txt");
   if (result !=0)
-    Cerr << "Bash command in Perf_counters::get_gpu failed"<<std::endl;
+    Cerr << "Bash command in Perf_counters::get_gpu failed" << finl;
   gpu_description = gpu_desc.str();
 #endif
 #ifdef TRUST_USE_HIP
   int result_ = std::system("rocminfo 2>/dev/null | grep Marketing > gpu_detail.txt");
   if (result_ !=0)
-    Cerr << "Bash command in Perf_counters::get_gpu failed"<<std::endl;
+    Cerr << "Bash command in Perf_counters::get_gpu failed" << finl;
   std::ostringstream gpu_desc;
   gpu_desc << std::ifstream("gpu_detail.txt").rdbuf();
   result_ = std::system("rm gpu_detail.txt");
   if (result_ !=0)
-    Cerr << "Bash command in Perf_counters::get_gpu failed"<<std::endl;
+    Cerr << "Bash command in Perf_counters::get_gpu failed" << finl;
   gpu_description = gpu_desc.str();
 #endif
   gpu_description=delete_blank_spaces(gpu_description);
@@ -1182,7 +1182,7 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
           file_header << line_sep_cpu << std::endl;
           if (nb_ts <= 0)
             {
-              cerr<<"No time step after cache filling was computed"<<std::endl;
+              Cerr << "No time step after cache filling was computed" << finl;
               return;
             }
           if (nb_steps_elapsed_>0)
@@ -1311,12 +1311,13 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
           perfs_GPU << std::setprecision(3) << "GPU: " << ratio_gpu << "% Copy H<->D: " << ratio_copy << "% Alloc/free:" << ratio_allocfree << "% Comm: "<< ratio_comm << "% CPU & other: " << ratio_cpu << std::setprecision(6)<<"%"<<std::endl;
           if (ratio_gpu<50)
             {
-              Cerr << "==============================================================================================" << std::endl;
-              Cerr << "[GPU] Warning: Only " << 0.1*int(10*ratio_gpu) << " % of the time calculation is spent on GPU." << std::endl;
-              if (ratio_gpu_library==0) Cerr << "[GPU] First add a GPU solver !" << std::endl;
+              Cerr << "==============================================================================================" << finl;
+              Cerr << "[GPU] Warning: Only " << 0.1*int(10*ratio_gpu) << " % of the time calculation is spent on GPU." << finl;
+              if (ratio_gpu_library==0)
+                Cerr << "[GPU] First add a GPU solver !" << finl;
               else
-                Cerr << "[GPU] Probably some algorithms used are not ported yet on GPU. Contact TRUST team." << std::endl;
-              Cerr << "==============================================================================================" << std::endl;
+                Cerr << "[GPU] Probably some algorithms used are not ported yet on GPU. Contact TRUST team." << finl;
+              Cerr << "==============================================================================================" << finl;
             }
         }
       if (message=="Time loop statistics")
