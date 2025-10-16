@@ -23,7 +23,14 @@ then
    then
       cd $TRUST_TMP
       wget https://developer.download.nvidia.com/hpc-sdk/$SDK_VERSION/$installer.tar.gz 1>/dev/null 2>&1 
-      [ $? != 0 ] && echo "Error when downloading. See https://developer.nvidia.com/nvidia-hpc-sdk-releases" && rm -f $installer.tar.gz && exit -1
+      if [ $? != 0 ]
+      then
+         echo "Error when downloading."
+         echo "https://developer.download.nvidia.com/hpc-sdk/$SDK_VERSION/$installer.tar.gz"
+         echo "See https://developer.nvidia.com/nvidia-hpc-sdk-releases"
+         rm -f $installer.tar.gz
+         exit -1
+      fi
    fi
    if [ "`md5sum $TRUST_TMP/$installer.tar.gz | cut -f 1 -d' '`" != "$installer_md5sum" ]
    then
