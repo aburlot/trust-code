@@ -140,9 +140,10 @@ then
      version_openblas=$tag
      echo "version_openblas = $tag"
      install_OpenBlas
+     err=$?
      lib=`ls libopenblas_*$version_openblas.a 2>/dev/null | head -1`
      # On copie la librairie si elle existe sinon on sort
-     if [ "`ls $lib 2>/dev/null`" != "" ]
+     if [ "$err" = "0" ]
      then
         cp $lib ..
         cd ..
@@ -155,9 +156,15 @@ then
         break
      else
         cd ..
-        echo "Contact trust@cea.fr if you have issues with OpenBlas build."
-        #exit -1 # Comment if issue
-        echo "Error during OpenBLAS install, so switching to Netlib non optimized blas..."
+        #echo "Contact trust@cea.fr if you have issues with OpenBlas build."
+        echo ""
+        echo "========================================"
+        echo "Error during OpenBLAS install"
+        echo "Contact trust@cea.fr or switch to Netlib non optimized blas by reconfiguring TRUST with:"
+        echo "$(tail -1 $TRUST_ROOT/configure.log) -disable-openblas"
+        echo "========================================"
+        echo ""
+        exit -1 # Comment if issue
         install_NetLib
      fi
    done
