@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+21/10/25 (TRUST) Fix          : Mandatory ModifyDomaineAxi1D (define axi 1D origin) for parallel test cases with Domaine_EF_axi
 17/10/25 (TRUST) Keyword      : 'med_major' post-processing format not supported anymore
 17/10/25 (TRUST) Minor change : TRUST (and its baltiks) cannot be built with '-with-32-bit-indices'. Default and unique mode is with 64b support!
 14/10/25 (TRUST) Fix          : Paroi_contact VEF was not working if diffusion operator is anisotropic

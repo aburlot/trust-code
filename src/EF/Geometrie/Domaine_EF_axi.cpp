@@ -132,17 +132,15 @@ void Domaine_EF_axi::remplir_tableau_origine()
   if (domax.has_champ_origine())
     {
       const Champ_base& orig = domax.champ_origine();
-      const DoubleTab& positions = xp();
-
-      IntVect les_polys(nb_elem());
-      for(int e = 0; e < nb_elem(); e++)
-        les_polys(e) = e;
-
-      orig.valeur_aux_elems(positions, les_polys, origine_repere_);
+      DoubleTab positions;
+      domax.calculer_centres_gravite(positions);
+      orig.valeur_aux(positions, origine_repere_);
     }
   else
-    origine_repere_=0.;
-
+    {
+      origine_repere_=0.;
+      Process::exit("Error, origine should be explicitly defined with ModifyDomaineAxi1D keyword.");
+    }
   domax.associer_origine_repere(origine_repere_);
 }
 
