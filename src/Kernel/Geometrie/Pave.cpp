@@ -598,7 +598,6 @@ void Pave_32_64<_SIZE_>::maille2D()
                   assert(!est_egal(xa_tanh,-123.));
                   for (j=0; j<My; j++)
                     coord_noeud(i,j,0)=origine_(0)+longueurs_(0)/fac_sym*(1.+tanh((-1.+fac_sym*i/((Mx-1)*1.))*atanh(xa_tanh))/xa_tanh);
-                  Cerr << "coord_noeud(0,j,1)=" << coord_noeud(0,j,0) << finl;
                   Cerr << "It was created " << pourcent << "% of coordx" << flush;
                 }
             }
@@ -616,7 +615,6 @@ void Pave_32_64<_SIZE_>::maille2D()
                   assert(!est_egal(xa_tanh,-123.));
                   for (j=0; j<My; j++)
                     coord_noeud(i,j,0)=origine_(0)+longueurs_(0)-longueurs_(0)/fac_sym*(1.+tanh((-1.+fac_sym*(Mx-1-i)/((Mx-1)*1.))*atanh(xa_tanh))/xa_tanh);
-                  Cerr << "coord_noeud(0,j,0)=" << coord_noeud(0,j,0) << finl;
                   Cerr << "It was created " << pourcent << "% of coordx" << flush;
                 }
             }
