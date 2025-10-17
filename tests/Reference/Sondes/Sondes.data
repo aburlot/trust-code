@@ -25,6 +25,12 @@ Mailler dom
     }
 }
 Trianguler_H dom
+Postraiter_domaine
+{
+    fichier mesh
+    format cgns
+    domaine dom
+}
 # END MESH #
 
 # BEGIN PARTITION
@@ -204,7 +210,37 @@ Read pb
             pression_hydrostatique som
         }
     }
+    Post_processings
+    {
+        cgns
+        {
+            format cgns
+            fichier Sondes
+            fields dt_post 1
+            {
+                pression elem
+                pression som
+                vitesse elem
+                vitesse som
+                vitesse faces
+            }
+        }
+        lata
+        {
+            format lata
+            fichier Sondes
+            fields dt_post 1
+            {
+                pression elem
+                pression som
+                vitesse elem
+                vitesse som
+                vitesse faces
+            }
+        }
+    }
 }
 
 Solve pb
+lata_to_cgns Sondes.lata Sondes_converted.cgns
 End
