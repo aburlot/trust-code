@@ -970,7 +970,7 @@ then
        choix=$choix_USER
        export choix
        let k=$k+1
-       CAS_AVEC_ECART=0 && [ "`grep "# lance_test" $file | grep ecarts 2>/dev/null`" != "" ] && CAS_AVEC_ECART=1
+       CAS_AVEC_ECART=0 && [ "`grep "# lance_test" $file | grep ecart 2>/dev/null`" != "" ] && CAS_AVEC_ECART=1
        # Si parallele choisi, filtre les cas
        if [ ${choix#P_} != $choix ]
        then

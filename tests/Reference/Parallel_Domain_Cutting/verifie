@@ -1,3 +1,6 @@
+# blocages constates sur debian testing en clang sur ce cas et sur fedora 38 avec clang
+# viennent de ptscotch qui fait une erreur mais que n'est pas renvoyee a TRUST pour detecter
+# cette erreur. 
 (
 jdd=`pwd`
 jdd=`basename $jdd`

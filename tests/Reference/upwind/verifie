@@ -12,7 +12,9 @@ if [ $? != 0 ] && [ "`grep 'Aborting calculation' PAR_exit.err 2>&1`" != "" ]
 then
    exit 0
 else
-   cat PAR_exit.err
+   #cat PAR_exit.err
+   echo "command: trust PAR_exit 2 1>PAR_exit.out 2>PAR_exit.err"
+   echo "failed without message: Aborting calculation"
    echo "TRUST process exit is not aborting correctly a parallel calculation!"
    exit 1
 fi
