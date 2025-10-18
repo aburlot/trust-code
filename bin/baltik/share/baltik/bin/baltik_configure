@@ -881,6 +881,9 @@ else
    BALTIK_VERSION=$TRUST_VERSION
 fi
 
+export project_name=${project_name}
+export project_version=${BALTIK_VERSION}
+
 echo "# Initial install performed here:
 #export project_directory=${project_directory}
 export project_name=${project_name}
