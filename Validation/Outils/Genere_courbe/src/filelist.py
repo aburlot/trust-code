@@ -236,8 +236,10 @@ class FileAccumulator(object):
         cls.Append(dir + "/" + case + ".err")
         cls.Append(dir + "/" + case + ".TU")
         # Commenting those 2 - they might be huge if many timesteps:
-        #  cls.Append(dir + "/" + case + ".out")
-        #  cls.Append(dir + "/" + case + ".dt_ev")
+        # ND: even if huge, it could be helpful to compare with previous version
+        # This avoids regenerating a form (happened in cas where dt was 10 times less than in previous version)
+        cls.Append(dir + "/" + case + ".out")
+        cls.Append(dir + "/" + case + ".dt_ev")
         cls.Append(dir + "/" + case + ".sons")  # mandatory to spot 'plane' probes
         cls.Append(dir + "/" + case + ".perf")
 

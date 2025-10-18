@@ -17,7 +17,7 @@ linux	rsync_ssh	tache	is231001-cpp14.intra.cea.fr	-all 		-GENEPI3 -C3D     		-st
 linux	rsync_ssh	tache	is245205.intra.cea.fr	-all 		-FLICA5 -TrioCFD -GENEPI3 -STT -PEMFC -C3D -SIDES -SCORPIO     		 	 -disable-plot2d -force_even_unsupported -without-pdflatex    							# Fedora 41 	Bat 454 SGLS titania  GA
 linux	rsync_ssh	cible	is227246.intra.cea.fr		-all     	-ICoCo -MPCube -TrioCFD  -GENEPI3 -SIDES -SCORPIO -STT -PEMFC -FLICA5 -C3D -TrioMC -MATHYS    -force_latest_mpich  							# Fedora 34	Bat 451 Erwan titania
 linux	rsync_ssh  	tache	irene-ccrt.ccc.cea.fr	-limited	-ICoCo -TrioCFD 						-disable-gnuplot -without-doc -disable-plot2d -without-conda -disable-hwloc  						# RedHat 7.6	CEA CCRT
-linux	rsync_ssh 	tache	desactive_irene-amd-ccrt.ccc.cea.fr	-limited	-TrioCFD 					-benchmark	-disable-gnuplot -without-doc -disable-plot2d -without-conda -disable-hwloc -without-visit     									# RedHat 8.4	CEA CCRT
+linux	rsync_ssh 	tache	irene-amd-ccrt.ccc.cea.fr	-limited	-TrioCFD 					-benchmark	-disable-gnuplot -without-doc -disable-plot2d -without-conda -disable-hwloc -without-visit     									# RedHat 8.4	CEA CCRT
 linux	rsync_ssh 	tache	topaze.ccc.cea.fr		-limited	-TrioCFD  				-benchmark	-without-doc -disable-plot2d -without-conda -disable-hwloc   									# RedHat 8.3	CEA CCRT
 linux	rsync_ssh	tache	jean-zay.idris.fr   -limited	-TrioCFD           		 		-without-doc -disable-plot2d -without-visit -disable-hwloc                					# RedHat 8.1
 linux	ssh_pass 	tache	adastra.cines.fr		-limited		-ICoCo  -TrioCFD						 -without-conda -without-doc -disable-hwloc -disable-plot2d -disable-gmsh -without-visit
