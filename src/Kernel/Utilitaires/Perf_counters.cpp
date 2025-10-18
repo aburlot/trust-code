@@ -75,7 +75,6 @@ struct Counter
   /*! @brief update variables : avg_time_per_step_ , min_time_per_step_ , max_time_per_step_ , sd_time_per_step_
    *
    */
-  void compute_avg_min_max_var_per_step();
 
   std::array< std::array<double,4> ,4> compute_min_max_avg_sd_() const;
 
@@ -1658,9 +1657,9 @@ void Perf_counters::Impl::end_time_step_impl(long int tstep)
         c.max_time_per_step_ = (c.min_time_per_step_ > (c.time_ts_).count()) ? c.min_time_per_step_ : (c.time_ts_).count();
         c.avg_time_per_step_ = ((step-1)*c.avg_time_per_step_ + (c.time_ts_).count())/step;
         c.sd_time_per_step_ += ((c.time_ts_).count()* (c.time_ts_).count() - 2*((c.time_ts_).count())* c.avg_time_per_step_ +  c.avg_time_per_step_ *  c.avg_time_per_step_)/static_cast<double>(step);
-        c.sd_time_per_step_ = sqrt(c.sd_time_per_step_);
         if (c.sd_time_per_step_ < 0)
           c.sd_time_per_step_ = 0;
+        c.sd_time_per_step_ = sqrt(c.sd_time_per_step_);
       }
     c.open_time_ts_=time_point();
   };
