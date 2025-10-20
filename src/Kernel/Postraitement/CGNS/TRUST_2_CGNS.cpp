@@ -664,15 +664,20 @@ int TRUST_2_CGNS::convert_connectivity_nface(std::vector<cgsize_t>& econ, std::v
       eoff.push_back(s);
     }
 
-//  // XXX Elie Saikali ... je pense pas qu'on a besoin ...
-//  std::unordered_set<cgsize_t> seen;
-//  for (auto& itr : econ)
-//    {
-//      if (seen.find(itr) != seen.end())
-//        itr *= -1; // already seen -> times -1 !!!
-//      else
-//        seen.insert(itr);
-//    }
+  // XXX Elie Saikali ...
+  // on en a besoin pour eviter ce warning
+  // reading zone "Zone_0002"
+  // reading element set "NGON_n"
+  // reading element set "NFACE_n"
+  // ERROR:  duplicate positive faces indices detected in NFace_n Elements connectivity
+  std::unordered_set<cgsize_t> seen;
+  for (auto& itr : econ)
+    {
+      if (seen.find(itr) != seen.end())
+        itr *= -1; // already seen -> times -1 !!!
+      else
+        seen.insert(itr);
+    }
 
   return ef.dimension(0);
 }
