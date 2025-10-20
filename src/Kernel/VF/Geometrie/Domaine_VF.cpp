@@ -1545,7 +1545,7 @@ void Domaine_VF::build_mc_dual_mesh() const
   if (Objet_U::dimension == 3) /* Only polyhedron case !*/
     {
       DAId desc(DataArrayIdType::New()), descIndx(DataArrayIdType::New()), revDesc(DataArrayIdType::New()), revDescIndx(DataArrayIdType::New());
-      MCAuto<MEDCoupling::MEDCouplingUMesh> mc_dual_desc(mc_dual_mesh_->buildDescendingConnectivity(desc, descIndx, revDesc, revDescIndx));
+      mc_dual_mesh_->buildDescendingConnectivity(desc, descIndx, revDesc, revDescIndx);
 
       DAId dsi = descIndx->deltaShiftIndex();
       DAId res = dsi->findIdsLowerOrEqualTo(3) ;
