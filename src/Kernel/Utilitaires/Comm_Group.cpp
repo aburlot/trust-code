@@ -103,8 +103,10 @@ void Comm_Group::init_group(const ArrOfInt& pe_list)
   for (int i = 0; i < nproc_; i++)
     {
       // rank du pe dans current_group()
-      const int pe = pe_list[i];
-      if (check_enabled() && nproc_ > 1)
+      const int pe = pe_list[i], me = Process::me();
+      const bool in_group = std::find(pe_list.begin(), pe_list.end(), me) != pe_list.end();
+
+      if (check_enabled() && nproc_ > 1 && in_group)
         {
           if(Process::me() == pe_list[0])
             {
