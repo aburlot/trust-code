@@ -32,9 +32,9 @@ enum class STD_COUNTERS : int
   system_solver, ///< Track time elapsed in SolveurSys::resoudre_systeme
   convection ,
   diffusion ,
-  rhs ,
   gradient ,
   divergence ,
+  rhs ,
   matrix_assembly ,
   update_variables  ,
   implicit_diffusion,  ///< Track time elapsed in Equation_base::conjugue_diff_impl
