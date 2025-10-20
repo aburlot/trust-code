@@ -45,6 +45,10 @@ Associate pb pb_dom
 Associate pb sch
 Discretize pb dis
 
+option_cgns { use_links }
+postraiter_domaine { format cgns fichier dom domaine dom }
+postraiter_domaine { format cgns fichier box domaine box }
+
 # Read the first problem #
 Read pb_box
 {
@@ -105,25 +109,42 @@ Read pb_box
         }
     }
     # Post processing definition #
-    Post_processing
+    Post_processings
     {
-        # 1D probes to monitor #
-        Probes
+        lml
         {
-            # Define a velocity probe for checking evolution #
-            velocity 	nodes 	vitesse			periode 0.005 point   1 -0.5 -0.1524 0.
-            velocity2 	nodes 	vitesse			periode 0.005 point   1 -0.496362 -0.1524 0.021194
-            # Define non-interpolated profiles for velocity and temperature #
-            inlet_velocity 	nodes	vitesse			periode 0.005 segment 30 -0.5334 -0.1524 0. -0.4572 -0.1524 0.
-            inlet_T 	nodes	temperature		periode 0.005 segment 30 -0.5334 -0.1524 0. -0.4572 -0.1524 0.
-        }
+            # 1D probes to monitor #
+            Probes
+            {
+                # Define a velocity probe for checking evolution #
+                velocity 	nodes 	vitesse			periode 0.005 point   1 -0.5 -0.1524 0.
+                velocity2 	nodes 	vitesse			periode 0.005 point   1 -0.496362 -0.1524 0.021194
+                # Define non-interpolated profiles for velocity and temperature #
+                inlet_velocity 	nodes	vitesse			periode 0.005 segment 30 -0.5334 -0.1524 0. -0.4572 -0.1524 0.
+                inlet_T 	nodes	temperature		periode 0.005 segment 30 -0.5334 -0.1524 0. -0.4572 -0.1524 0.
+            }
 
-        Format lml
-        fields dt_post 0.2 # 1000 #
+            Format lml
+            fichier DomainFlow
+            fields dt_post 0.2 # 1000 #
+            {
+                vitesse			elem	# velocity at the faces #
+                temperature		elem	# temperature at the faces #
+            }
+        } 
+        cgns
         {
-            vitesse			elem	# velocity at the faces #
-            temperature		elem	# temperature at the faces #
-        }
+            fichier pb1
+            Format cgns
+            fields dt_post 0.2 # 1000 #
+            {
+                vitesse         elem    # velocity at the faces #
+                temperature     elem    # temperature at the faces #
+                vitesse         som    # velocity at the faces #
+                temperature     som    # temperature at the faces #
+
+            }
+        }    
     }
 }
 
@@ -187,24 +208,44 @@ Read pb_dom
         }
     }
     # Post processing definition #
-    Post_processing
+    Post_processings
     {
-        # 1D probes to monitor #
-        Probes
+        lml
         {
-            vitesse_a_teta_22.5		vitesse	periode 1.e-3 point 1 -0.4576 0.1894 0
-            vitesse_a_S_sur_D_egal_1 	vitesse	periode 1.e-3 point 1  0.4953 -0.0762 0
-            pression_paroi_interne 	 	pression_pa periode 1.e-3 point 1  -0.4572 -0.1524 0
-            pression_paroi_externe  	pression_pa periode 1.e-3 point 1  -0.5334 -0.1524 0
-            temperature_a_teta_22.5		temperature periode 1.e-3 point 1 -0.4576 0.1894 0
-        }
+            # 1D probes to monitor #
+            Probes
+            {
+                vitesse_a_teta_22.5		vitesse	periode 1.e-3 point 1 -0.4576 0.1894 0
+                vitesse_a_S_sur_D_egal_1 	vitesse	periode 1.e-3 point 1  0.4953 -0.0762 0
+                pression_paroi_interne 	 	pression_pa periode 1.e-3 point 1  -0.4572 -0.1524 0
+                pression_paroi_externe  	pression_pa periode 1.e-3 point 1  -0.5334 -0.1524 0
+                temperature_a_teta_22.5		temperature periode 1.e-3 point 1 -0.4576 0.1894 0
+            }
 
-        format lml
-        fields dt_post 0.2 # 1000.0 #
+            format lml
+            fichier DomainFlow
+            fields dt_post 0.2 # 1000.0 #
+            {
+                vitesse 	elem	# velocity at the elements #
+                pression_pa 	elem	# pressure [Pa] at the elements #
+                temperature	elem	# temperature at the faces #
+            }
+        }
+        cgns
         {
-            vitesse 	elem	# velocity at the elements #
-            pression_pa 	elem	# pressure [Pa] at the elements #
-            temperature	elem	# temperature at the faces #
+            format cgns
+            fichier pb2
+            fields dt_post 0.2 # 1000.0 #
+            {
+                vitesse     elem    # velocity at the elements #
+                pression_pa     elem    # pressure [Pa] at the elements #
+                temperature elem    # temperature at the faces #
+                vitesse     som    # velocity at the elements #
+                pression_pa     som    # pressure [Pa] at the elements #
+                temperature som    # temperature at the faces #
+                vitesse     faces    # velocity at the elements #
+                temperature faces    # temperature at the faces #
+            }
         }
     }
 }
