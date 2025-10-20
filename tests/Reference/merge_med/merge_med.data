@@ -4,6 +4,13 @@ dimension 2
 Pb_hydraulique pb
 Domaine dom
 
+option_cgns { FILE_PER_COMM_GROUP }
+
+My_Comm_Group
+{
+    Group_nb 2
+}
+
 # BEGIN MESH
 Read_file upwind.geo ;
 END MESH #
@@ -181,6 +188,23 @@ Read pb
                 compo_vitessex_elem
                 compo_graPx_elem
 
+            }
+        }
+        cgns Post_processing
+        {
+            fichier post
+            format cgns
+            fields dt_post 1.3
+            {
+                pression elem
+                vitesse elem
+                masse_volumique elem
+                gradient_pression elem
+                pression som
+                vitesse som
+                masse_volumique som
+                gradient_pression som
+                vitesse faces
             }
         }
 
