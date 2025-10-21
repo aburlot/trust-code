@@ -234,6 +234,7 @@ void Ecrire_CGNS::add_new_linked_base(const std::string& LOC, const Nom& nom_dom
 // Attention : ind 0 => ELEM et SOM, ind 1 => FACES (si besoin pour faces) !
 void Ecrire_CGNS::gather_local_sizeId_multi_loc(std::vector<std::vector<cgsize_t>>& sizeId_som_local_comm_tmp, std::vector<std::vector<cgsize_t>>& sizeId_elem_local_comm_tmp) const
 {
+#ifdef MPI_
   sizeId_som_local_comm_tmp.push_back(std::vector<cgsize_t>());
   sizeId_elem_local_comm_tmp.push_back(std::vector<cgsize_t>());
 
@@ -267,10 +268,12 @@ void Ecrire_CGNS::gather_local_sizeId_multi_loc(std::vector<std::vector<cgsize_t
       MPI_Allgather(&sizeId_[ind_base][0], 1, CGNS_MPI_SIZE, sizeId_som_local_comm_tmp[1].data(), 1, CGNS_MPI_SIZE, Comm_Group_MPI::get_trio_u_world());
       MPI_Allgather(&sizeId_[ind_base][1], 1, CGNS_MPI_SIZE, sizeId_elem_local_comm_tmp[1].data(), 1, CGNS_MPI_SIZE, Comm_Group_MPI::get_trio_u_world());
     }
+#endif /* MPI_ */
 }
 
 void Ecrire_CGNS::cgns_write_final_link_file_comm_group()
 {
+#ifdef MPI_
   if (vec_proc_maitre_local_comm_.empty())
     {
       vec_proc_maitre_local_comm_.assign(Process::nproc(), -123 /* default */);
@@ -426,6 +429,7 @@ void Ecrire_CGNS::cgns_write_final_link_file_comm_group()
         }
       cgns_helper_.cgns_close_file<TYPE_RUN_CGNS::SEQ>(fn, fileId_, true);
     }
+#endif
 }
 
 void Ecrire_CGNS::cgns_init_solution_link_file(const std::string& LOC, const Nom& nom_dom)

@@ -188,11 +188,12 @@ void Ecrire_CGNS::cgns_write_final_link_file_pb_deformable()
 {
   if (Process::is_parallel() && Option_CGNS::FILE_PER_COMM_GROUP && PE_Groups::has_user_defined_group())
     {
+#ifdef MPI_
       if (vec_proc_maitre_local_comm_.empty())
         cgns_write_final_link_file_comm_group();
 
       cgns_write_final_link_file_comm_group_pb_deformable();
-
+#endif
       return;
     }
 
