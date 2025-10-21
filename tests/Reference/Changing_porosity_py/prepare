@@ -6,7 +6,10 @@ source $TRUST_ROOT/env_for_python.sh
 #  2. running in parallel
 # I use mpirun since test case fails on orcus and on other installs using openmpi
 # Remark: test fails if no petsc since not able to build icoco_swig...
-mpirun -np 1 python main.py > main.out
+
+# NB: with openmpi 5 on rhodia8.4, python interpreter not correctly found by openmpi.
+# To debug, use: strace -f -e execve -- mpirun -np 1 $(which python) main.py
+mpirun -np 1 $(which python) main.py > main.out
 
 if [ $? -eq 0 ]
 then

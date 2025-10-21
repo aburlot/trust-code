@@ -14,7 +14,10 @@ if [ "$TRUST_DISABLE_MPI" != 1 ] && [ "$TRUST_DISABLE_MPI4PY" != 1 ]
 then
     source $TRUST_MEDCOUPLING_ROOT/env.sh
     source $TRUST_ROOT/Outils/ICoCo/ICoCo_src/share/swig/env.sh
-    mpirun -np 4 python main.py > main.out
+    # NB: with openmpi 5 on rhodia8.4, python interpreter not correctly found by openmpi.
+    # To debug, use: strace -f -e execve -- mpirun -np 4 $(which python) main.py
+
+    mpirun -np 4 $(which python) main.py > main.out
 
     if [ $? -eq 0 ]
     then
