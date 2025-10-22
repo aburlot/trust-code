@@ -238,10 +238,10 @@ class Write_notebook:
         for plot in visu.plot:
             if plot[0] in list(dico_plots.keys()):  # TODO a voir pour blackvector
                 if not show:
-                    code0 += f'visu = visit.Show("{plot[1]}","{dico_plots[plot[0]]}","{plot[3]}_{plot[4]}_{plot[2]}",mesh="{plot[2]}")\n'
+                    code0 += f'visu = visit.Show("{plot[1]}","{dico_plots[plot[0]]}","{plot[3]}_{plot[4]}_{plot[2]}")\n'
                     show = 1
                 else:
-                    code1 += f'visu.addField("{plot[1]}","{dico_plots[plot[0]]}","{plot[3]}_{plot[4]}_{plot[2]}",mesh="{plot[2]}")\n'
+                    code1 += f'visu.addField("{plot[1]}","{dico_plots[plot[0]]}","{plot[3]}_{plot[4]}_{plot[2]}")\n'
 
             if plot[0] == "mesh":
                 if not show:
