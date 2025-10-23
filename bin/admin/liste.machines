@@ -35,7 +35,7 @@ linux   rsync_ssh	tache	is158963-gpu.intra.cea.fr 		-all	 	-TrioCFD             
 linux   rsync_ssh   tache   is246524-gpu.intra.cea.fr  		-all	-benchmark	-TrioCFD			-gcc12 -rocm -without-pdflatex -without-visit     # PC Pierre titania 
 linux   rsync_ssh   tache   is247793-gpu.intra.cea.fr  		-limited 	-benchmark -ICoCo -TrioCFD				-rocm -force_latest_mpich -without-pdflatex -without-visit     # PC Guillaume titania 
 linux	rsync_ssh	tache	desactive_pegasi2.intra.cea.fr	  	-ICoCo -TrioCFD     		-ctest_mode_valgrind 		 		     -without-pdflatex			# Redhat 9 serveur rackable pour validation TrioCFD titania
-linux	rsync_ssh	tache	UB24.intra.cea.fr	  	  		-TrioCFD   	 		 -disable-openblas      			# Ubuntu 24 serveur rackable eureka titania
+linux	rsync_ssh	tache	UB24.intra.cea.fr	  	  		-TrioCFD   	 		 -disable-openblas -without-doc      			# Ubuntu 24 serveur rackable eureka titania
 linux	ssh_pass	cible	rhodia8-4.intra.cea.fr	  	-all  		-ICoCo -GENEPI3 -TrioCFD -FLICA5   	 		      -without-pdflatex  			# Redhat 8.4 serveur rackable titania
 linux	ssh_pass	tache	rhodia8-4-woconda.intra.cea.fr  		-ICoCo -FLICA5 -C3D    	 		     -without-conda -alternative-cmake -without-pdflatex  			# Redhat 8.4 serveur rackable titania
 linux	rsync_ssh	tache	is158963-woconda.intra.cea.fr  		-ICoCo -FLICA5 -C3D    	 		     -without-conda -without-pdflatex  			# Ubuntu 24 serveur rackable titania

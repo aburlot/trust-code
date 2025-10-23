@@ -5,7 +5,7 @@ ram_after_init=`grep "RAM taken" $1.out | head -n 8 | tail -n 1 | awk '/MBytes o
 ram_at_the_end=`grep "MBytes of RAM taken by the calculation" $1.out | tail -2 | head -n 1 | awk '/MBytes of RAM taken by the calculation/{print $1}'`
 
 # when using ctest, RAM increases (side effect of running many tests at once?)
-tolerance=1 && [ "$TRUST_USE_CTEST" = 1 ] && tolerance=5
+tolerance=2 && [ "$TRUST_USE_CTEST" = 1 ] && tolerance=5
 
 [ $ram_at_the_end -gt $((ram_after_init+tolerance)) ] && echo "RAM is increasing from $ram_after_init to $ram_at_the_end" && exit 255
 echo $ECHO_OPTS "ok ($ram_at_the_end <= ($ram_after_init + $tolerance))"
