@@ -1,0 +1,5 @@
+# GPU NOT #
+Nom ok
+Read_file ok is_ok
+ecrire ok
+system "cp jdd.lml getOutputPointValues_py.lml"
