@@ -115,9 +115,9 @@ public :
                             const std::vector<double>& x,
                             const std::vector<double>& y,
                             const std::vector<double>& z,
-                            std::vector<double>& vals, int compo = -1);
+                            std::vector<double>& vals, int compo = 0);
 
-  double getOutputPointValues(const std::string& name, const double x, const double y, const double z, int compo = -1);
+  double getOutputPointValues(const std::string& name, const double x, const double y, const double z, int compo = 0);
 
   // I/O for strings:
   void setInputStringValue(const std::string& name, const std::string& val) override;

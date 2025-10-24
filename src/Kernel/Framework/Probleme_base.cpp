@@ -1248,21 +1248,17 @@ void Probleme_base::getOutputPointValues(const Nom& name,
   if (Process::is_parallel())
     Process::exit("Probleme_base::getOutputPointValues not implemented in // !! \n");
 
-  int dim = 2;
+  assert (compo > -1);
+
   const int size_x = static_cast<int>(x.size());
   const int size_y = static_cast<int>(y.size());
   const int size_z = static_cast<int>(z.size());
   const int size_vals = static_cast<int>(vals.size());
 
-  if (size_z > 0) dim = 3;
-
-  if (dim != Objet_U::dimension)
-    Process::exit("Error in Probleme_base::getOutputPointValues => vectors x, y and z are not coherent with the space dimension !!!");
-
   if (size_x != size_y)
     Process::exit("Error in Probleme_base::getOutputPointValues => vectors x and y must have same dimensions !!!");
 
-  if (dim > 2 && (size_x != size_z))
+  if (Objet_U::dimension > 2 && (size_x != size_z))
     Process::exit("Error in Probleme_base::getOutputPointValues => vectors x, y and z must have same dimensions !!!");
 
   if (size_vals == 0)
@@ -1280,7 +1276,7 @@ void Probleme_base::getOutputPointValues(const Nom& name,
     {
       les_positions(i, 0) = x[i];
       les_positions(i, 1) = y[i];
-      if (dim > 2) les_positions(i, 2) = z[i];
+      if (Objet_U::dimension > 2) les_positions(i, 2) = z[i];
     }
 
   IntVect elem; // TODO FIXME : attribute ?
@@ -1302,29 +1298,24 @@ void Probleme_base::getOutputPointValues(const Nom& name,
         Process::exit();
       }
 
-  // TODO FIXME : reste histoire de som/grav ... a factorizer avec Sonde::initialiser()
+  DoubleTrav valeurs_locales;
+  valeurs_locales.resize(size_x, 1);
 
+  // TODO FIXME : reste histoire de som/grav ... a factorizer avec Sonde::initialiser()
   if (has_champ(Motcle(name)))
     {
       OBS_PTR(Champ_base) champ_ref = get_champ(Motcle(name));
-      const DoubleTab& ch_vals = champ_ref->valeurs();
 
-      DoubleTrav valeurs_locales;
-      valeurs_locales.resize(size_x, ch_vals.line_size());
-
-      if (compo == -1)
+      if (champ_ref->nb_comp() == 1)
         {
-          assert(ch_vals.line_size() == 1);
+          assert(champ_ref->valeurs().line_size() == 1);
           champ_ref->valeur_aux_elems(les_positions, elem, valeurs_locales);
         }
       else
         {
-          assert(ch_vals.line_size() < compo);
+          assert(compo < champ_ref->nb_comp());
           champ_ref->valeur_aux_elems_compo(les_positions, elem, valeurs_locales, compo);
         }
-
-      for (int i = 0; i < size_x; i++)
-        vals[i] = (compo == -1) ? valeurs_locales(i) : valeurs_locales(i, compo);
     }
   else /* from post like ICoCo*/
     {
@@ -1338,23 +1329,19 @@ void Probleme_base::getOutputPointValues(const Nom& name,
 
       OWN_PTR(Champ_base) espace_stockage;
       const Champ_base& ma_source = ref_ch->get_champ(espace_stockage);
-      const DoubleTab& ch_vals = ma_source.valeurs();
 
-      DoubleTrav valeurs_locales;
-      valeurs_locales.resize(size_x, ch_vals.line_size());
-
-      if (compo == -1)
+      if (ma_source.nb_comp() == 1)
         {
-          assert(ch_vals.line_size() == 1);
+          assert(ma_source.valeurs().line_size() == 1);
           ma_source.valeur_aux_elems(les_positions, elem, valeurs_locales);
         }
       else
         {
-          assert(ch_vals.line_size() < compo);
+          assert(compo < ma_source.nb_comp());
           ma_source.valeur_aux_elems_compo(les_positions, elem, valeurs_locales, compo);
         }
-
-      for (int i = 0; i < size_x; i++)
-        vals[i] = (compo == -1) ? valeurs_locales(i) : valeurs_locales(i, compo);
     }
+
+  for (int i = 0; i < size_x; i++)
+    vals[i] = valeurs_locales(i, 0);
 }

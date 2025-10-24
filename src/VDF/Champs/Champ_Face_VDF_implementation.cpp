@@ -144,6 +144,13 @@ DoubleVect& Champ_Face_VDF_implementation::valeur_aux_elems_compo(const DoubleTa
 
 double Champ_Face_VDF_implementation::valeur_a_elem_compo(const DoubleVect& position, int e, int d) const
 {
+  if (le_champ().valeurs().line_size() > 1)
+    {
+      Cerr<<"Champ_Face_VDF_implementation::valeur_a_elem_compo"<<finl;
+      Cerr <<"Not compatible with multi-phase ... Call the 911 ! " << finl;
+      Process::exit();
+    }
+
   assert (le_champ().nb_comp() > 1); // a scalar field should not be a champ_face
   assert(le_champ().valeurs().line_size() == 1); // not compatible with multiphase
   if (e == -1) return 0;
