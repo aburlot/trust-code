@@ -497,6 +497,9 @@ std::string Perf_counters::Impl::get_os() const
 
 std::string Perf_counters::Impl::get_cpu() const
 {
+#if defined(__APPLE__)
+  return std::string("Apple");
+#else
   int result;
   result = std::system("lscpu 2>/dev/null | grep 'Model name' > cpu_detail.txt");
   if (result !=0)
@@ -521,7 +524,9 @@ std::string Perf_counters::Impl::get_cpu() const
     Cerr << "Bash command in Perf_counters::get_cpu failed" << finl;
   str= delete_blank_spaces(str);
   return (str.substr(0,max_str_length_));
+#endif
 }
+
 /*!
  *
  * @return string with gpu model name
