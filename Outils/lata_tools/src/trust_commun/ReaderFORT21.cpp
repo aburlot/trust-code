@@ -978,8 +978,16 @@ std::vector<std::vector<float>>   ReaderFORT21::getXYZS(const std::string& name_
   std::vector<std::vector<float>> XYZS;
   XYZS.resize(3);
   const ElementInfo& eleminfo = getElementInfo(name_stack);
-  auto fieldinfo =getVarFieldInfo(name_stack, name_field);
-  auto loc= fieldinfo.localisation_of_field();
+  ReaderFORT21::LocalisationField loc;
+  if (name_field=="ELEM")
+    {
+      loc=ReaderFORT21::LocalisationField::L_ELEM;
+    }
+  else
+    {
+      auto fieldinfo =getVarFieldInfo(name_stack, name_field);
+      loc= fieldinfo.localisation_of_field();
+    }
   if  ((eleminfo.type_ == "TROIDRAV")|| (eleminfo.type_ == "WAL3DRAV"))
     {
 
@@ -1018,9 +1026,9 @@ std::vector<std::vector<float>>   ReaderFORT21::getXYZS(const std::string& name_
               getValuesConstField(name_stack,  "PAVEBOUNDS",  bounds) ;
               getValuesConstField(name_stack,  "IWHYD",  iwhyd) ;
               //WALL_getBOUNDS(  iwhyd,   bounds, xs0,ys0,zs0);
-              if( iwhyd[0]>iwhyd[1])
-                throw;
-              auto glambda = [](float xmin, float xmax, std::vector<float>& xxs0)
+              if (iwhyd[0]>iwhyd[1])
+                throw std::invalid_argument("iwhyd ....");
+              auto glambda = [](float xmin, float xmax, std::vector<float> xxs0)
               {
                 std::vector<float> xs ;
                 for (auto x : xxs0)
@@ -1684,7 +1692,7 @@ bool ReaderFORT21::readDesStack(bool theSkip)
             continue;
           /*
           // provisoire pour guithare slt
-          if ( catType != T_INT && catType != T_REAL)
+          if ( catType == T_CHAR)
             continue;
            */
 
@@ -1722,7 +1730,7 @@ bool ReaderFORT21::readDesStack(bool theSkip)
               if ((aQName=="ZV"))
                 {
                   //loc=aQName;
-                  locfield=LocalisationField::L_DUAL;
+                  locfield=LocalisationField::L_DUALZ;
                   continue;
                 }
               if (aQName=="VECTX")
@@ -2258,16 +2266,19 @@ ReaderFORT21::BasicMesh ReaderFORT21::getMeshStack(const std::string& name_stack
           taby[ny]=taby[ny-1]+1;
           tabz.resize(nz+1);
           tabz[nz]=tabz[nz-1]+1;
+          /* auto xyzs = getXYZS(name_stack, "ELEM");
+          std::cerr<<"uuuu "<< xyzs[0].size()<<" "<< xyzs[1].size()<<" "<< xyzs[2].size()<<std::endl;
+           */
         }
       else
         {
           getValuesConstField(name_stack,  "XV",tabx);
           getValuesConstField(name_stack,  "YV",taby);
           getValuesConstField(name_stack,  "ZV",tabz);
-              std::vector<int> co;
-              getValuesConstField(name_stack,"COORDINA",co);
-              if (co[0] == 101 /* CAT_CYLINDRIC */)
-                cylindrical=true;
+          std::vector<int> co;
+          getValuesConstField(name_stack,"COORDINA",co);
+          if (co[0] == 101 /* CAT_CYLINDRIC */)
+            cylindrical=true;
         }
       int nx=int(tabx.size())-1;
       int ny=int(taby.size())-1;
@@ -2283,29 +2294,29 @@ ReaderFORT21::BasicMesh ReaderFORT21::getMeshStack(const std::string& name_stack
       mesh.nodes_per_elem_ = 8;
       mesh.type_mesh_=MESH_Hexa;
       if (cylindrical==true)
-      for (int cx=0; cx<nx+1; cx++)
-        for (int cy=0; cy<ny+1; cy++)
-          for (int cz=0; cz<nz+1; cz++)
-            {
-              //    int elem=cx+cy*nx+ nx*ny*cz;
-              int som=cz+(nz+1)*(cy+(ny+1)*cx);
+        for (int cx=0; cx<nx+1; cx++)
+          for (int cy=0; cy<ny+1; cy++)
+            for (int cz=0; cz<nz+1; cz++)
+              {
+                //    int elem=cx+cy*nx+ nx*ny*cz;
+                int som=cz+(nz+1)*(cy+(ny+1)*cx);
 
-              nodes_(som,0)= tabx[cx]*cos(taby[cy]);
-              nodes_(som,1)= tabx[cx]*sin(taby[cy]);
-              nodes_(som,2)= tabz[cz];
-            }
+                nodes_(som,0)= tabx[cx]*cos(taby[cy]);
+                nodes_(som,1)= tabx[cx]*sin(taby[cy]);
+                nodes_(som,2)= tabz[cz];
+              }
       else
-      for (int cx=0; cx<nx+1; cx++)
-        for (int cy=0; cy<ny+1; cy++)
-          for (int cz=0; cz<nz+1; cz++)
-            {
-              //    int elem=cx+cy*nx+ nx*ny*cz;
-              int som=cz+(nz+1)*(cy+(ny+1)*cx);
+        for (int cx=0; cx<nx+1; cx++)
+          for (int cy=0; cy<ny+1; cy++)
+            for (int cz=0; cz<nz+1; cz++)
+              {
+                //    int elem=cx+cy*nx+ nx*ny*cz;
+                int som=cz+(nz+1)*(cy+(ny+1)*cx);
 
-              nodes_(som,0)= tabx[cx];
-              nodes_(som,1)= taby[cy];
-              nodes_(som,2)= tabz[cz];
-            }
+                nodes_(som,0)= tabx[cx];
+                nodes_(som,1)= taby[cy];
+                nodes_(som,2)= tabz[cz];
+              }
       for (int cx=0; cx<nx; cx++)
         for (int cy=0; cy<ny; cy++)
           for (int cz=0; cz<nz; cz++)
@@ -2329,7 +2340,11 @@ ReaderFORT21::BasicMesh ReaderFORT21::getMeshStack(const std::string& name_stack
     }
   return mesh;
 }
-
+bool ReaderFORT21::is3D(const std::string& name_stack) const
+{
+  const ElementInfo& eleminfo = getElementInfo(name_stack);
+  return (eleminfo.type_ == "TROIDRAV");
+}
 template void ReaderFORT21::getInterpolatedValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<double>& data, const int& id_time_field) const;
 template void ReaderFORT21::getInterpolatedValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<float>& data, const int& id_time_field) const;
 template void ReaderFORT21::getInterpolatedValuesVarField(const std::string& name_stack, const std::string& name_field, std::vector<int>& data, const int& id_time_field) const;

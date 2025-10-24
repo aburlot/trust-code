@@ -97,7 +97,6 @@ public:
   {
     L_UNDEF,
     L_ELEM,
-    L_DUAL,
     L_GLOBAL,
     L_TWALL,
     L_TRACE,
@@ -392,5 +391,6 @@ public:
     std::vector<double> coords_;     ///< Coordinate array
   };
   BasicMesh getMeshStack(const std::string& name_stack) const;
+  bool is3D(const std::string& name_stack) const;
 };
 #endif

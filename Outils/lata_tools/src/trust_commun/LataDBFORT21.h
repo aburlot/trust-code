@@ -74,6 +74,7 @@ void LataDB::read_master_file_fort21(const char *prefix, const char *filename)
   basicmeshses_ = new MapBasicMesh();
   std::map<std::string,ReaderFORT21::BasicMesh>& map_basicmeshses = basicmeshses_->map_basicmeshses_;
   //int first=1;
+  std::string onedomain;
   for (unsigned int i=0; i<geoms.size(); i++)
     {
       LataDBGeometry dom;
@@ -82,12 +83,18 @@ void LataDB::read_master_file_fort21(const char *prefix, const char *filename)
       ReaderFORT21::BasicMesh mesh= parser.getMeshStack(geoms[i]);
 
       if (Nom(filename).finit_par(".21"))
-	 if (Nom(filename)!="FORT.21")
-          if (!Nom(filename).contient(Nom(geoms[i])))
-           {
-	      std::cerr<<" we dont load " << geoms[i]<< std::endl;
-               continue;
-            }
+        if (Nom(filename)!="FORT.21")
+          {
+            if (!Nom(filename).finit_par(Nom(geoms[i])+Nom(".21")))
+              {
+                std::cerr<<" we dont load " << geoms[i]<< std::endl;
+                continue;
+              }
+            else
+              {
+                onedomain=geoms[i];
+              }
+          }
       if (mesh.type_mesh_!=ReaderFORT21::MESH_Polygone)
         if (mesh.type_mesh_!=ReaderFORT21::MESH_Polyedre)
           if (mesh.type_mesh_!=ReaderFORT21::MESH_Hexa)
@@ -127,6 +134,8 @@ void LataDB::read_master_file_fort21(const char *prefix, const char *filename)
       }
     }
   std::vector<double> times =parser.getTimes();
+  //auto  times =(onedomain==std::string()?parser.getTimes():parser.getTimesStack(onedomain)) ;
+
   for (auto t: times)
     {
 
@@ -185,13 +194,19 @@ void LataDB::read_master_file_fort21(const char *prefix, const char *filename)
           som.nb_comp_=1;
 
 
-
-          for (unsigned int  index=0; index<timesf.size(); index++)
+          int indexf=0;
+          for (unsigned int  index=0; index<times.size(); index++)
             {
-              file_pos_t fp = parser.getOffsetVarField(geomname,fields[i],index) ;
-              //     std::cout<< "pf "<< geomname <<" "<< fields[i]<<" " << index<< " "<<fp<< std::endl;
+              file_pos_t fp;
+              fp  = parser.getOffsetVarField(geomname,fields[i],indexf) ;
               som.datatype_.file_offset_ = fp;
               add(index+1,som);
+              if (times[index]<timesf[indexf])
+                {
+                  Journal(0) <<" We use time "<< timesf[indexf] <<" for " << times[index]<<std::endl;
+                }
+              else
+                indexf++;
             }
         }
     }
