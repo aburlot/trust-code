@@ -588,3 +588,13 @@ bool Probleme_U::checkOutputIntEntry(const Nom& name) const
 {
   return reg_.checkOutputIntEntry(name);
 }
+
+double Probleme_U::getOutputPointValues(const Nom& name, const double x, const double y, const double z, int compo)
+{
+  std::vector<double> xx, yy, zz, vals;
+  xx.push_back(x);
+  yy.push_back(y);
+  zz.push_back(z);
+  getOutputPointValues(name, xx, yy, zz, vals, compo);
+  return vals[0];
+}

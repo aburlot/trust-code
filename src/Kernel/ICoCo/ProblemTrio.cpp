@@ -484,6 +484,11 @@ void ProblemTrio::getOutputPointValues(const std::string& name,
   pb->getOutputPointValues(Nom(name), x, y, z, vals, compo);
 }
 
+double ProblemTrio::getOutputPointValues(const std::string& name, const double x, const double y, const double z, int compo)
+{
+  return pb->getOutputPointValues(Nom(name), x, y, z, compo);
+}
+
 vector<string> ProblemTrio::getOutputFieldsNames() const
 {
 

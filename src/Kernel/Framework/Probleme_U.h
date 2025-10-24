@@ -81,6 +81,8 @@ public :
     Process::exit();
   }
 
+  double getOutputPointValues(const Nom& name, const double x, const double y, const double z, int compo);
+
   virtual void setInputDoubleValue(const Nom& name, const double val);
 
   virtual void setInputStringValue(const std::string& name, const std::string& val) { str_params_[name] = val; }
