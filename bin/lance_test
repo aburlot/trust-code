@@ -1172,8 +1172,9 @@ then
           i=""
        fi
 
-       # Discard test case with RefProp if disabled:
-       if [ "$i" != "" ] && [ "$TRUST_USE_REFPROP" != "1" ] && [ "`grep -i refprop $REP/* 2>/dev/null`" != "" ]
+       # Discard test case with Fluide_generique_CoolProp and RefProp if disabled: (TRUST_USE_REFPROP checks usage of --with-refprop at configure)
+       # Maybe a test should be added for Fluide_generique_eos and refprop
+       if [ "$i" != "" ] && [ "$TRUST_USE_REFPROP" != "1" ] && [ "`grep -i 'refprop' $REP/* 2>/dev/null | grep -iv refprop10`" != "" ]
        then
           echo "Test $i skipped (TRUST is not built with RefProp)"
           liste_skipped=$liste_skipped" $i"
