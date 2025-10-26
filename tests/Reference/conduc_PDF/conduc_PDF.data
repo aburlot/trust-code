@@ -1,4 +1,5 @@
 # Conduction 2D : Diverses conditions limites thermiques #
+# GPU NOT #
 # PARALLEL OK 4 #
 dimension 3
 
