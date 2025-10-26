@@ -34,7 +34,7 @@ double distance_2D(int fac,int elem,const Domaine_VEF& domaine);
 double norm_3D_vit1(const DoubleTab& vit,int elem,int num1,const Domaine_VEF& domaine,double& val1 ,double& val2,double& val3);
 double norm_3D_vit1(const DoubleTab& vit,int elem,int num1,int num2,int num3,const Domaine_VEF& domaine,double& val1 ,double& val2,double& val3);
 double norm_3D_vit1(const DoubleTab& vit,int fac,int num1,int num2,int num3,int num4,const Domaine_VEF& domaine,double& val1,double& val2,double& val3);
-double norm_3D_vit2(const DoubleTab& vit,int elem,int num1,const Domaine_VEF& domaine,double& val1 ,double& val2,double& val3);
+//double norm_3D_vit2(const DoubleTab& vit,int elem,int num1,const Domaine_VEF& domaine,double& val1 ,double& val2,double& val3);
 double norm_3D_vit2(const DoubleTab& vit,int elem,int num1,int num2,int num3,const Domaine_VEF& domaine,double& val1 ,double& val2,double& val3);
 double norm_3D_vit1_lp(const DoubleTab& vit,int elem,int num1,int num2,int num3,
                        const Domaine_VEF& domaine,
@@ -83,29 +83,41 @@ inline void calcule_r0r1r2(const DoubleTab& face_normale, int& fac, double& r0, 
   r2*=tmp;
 }
 
+/*!
+ * @brief Calculates the projected distance between the centroids of two faces along the normal of the first face.
+ * @param fac Index of the first face.
+ * @param fac1 Index of the second face.
+ * @param domaine Reference to the Domaine_VEF object containing mesh geometry.
+ * @return The absolute value of the projected distance.
+ */
 inline double distance_face(int fac,int fac1,const Domaine_VEF& domaine)
 {
   int dimension=Objet_U::dimension;
   const DoubleTab& xv = domaine.xv();    // centre de gravite des faces
   const DoubleTab& face_normale = domaine.face_normales();
-  double r0,r1;
-  double x0=xv(fac,0);
-  double y0=xv(fac,1);
-  double x1=xv(fac1,0);
-  double y1=xv(fac1,1);
-  if (dimension==3)
+  double a = 0;
+  double b = 0;
+  for (int i=0; i<dimension; i++)
     {
-      double r2;
-      double z0=xv(fac,2);
-      double z1=xv(fac1,2);
-      calcule_r0r1r2(face_normale,fac,r0,r1,r2);
-      return std::fabs(r0*(x1-x0)+r1*(y1-y0)+r2*(z1-z0));
+      double ni = face_normale(fac,i);
+      a += ni * (xv(fac1,i) - xv(fac,i));
+      b += ni * ni;
     }
-  else
+  return std::fabs(a / sqrt(b));
+}
+
+KOKKOS_INLINE_FUNCTION
+double distance_face(int dim, int fac, int fac1, CDoubleTabView xv, CDoubleTabView face_normale)
+{
+  double a = 0;
+  double b = 0;
+  for (int i=0; i<dim; i++)
     {
-      calcule_r0r1(face_normale,fac,r0,r1);
-      return std::fabs(r0*(x1-x0)+r1*(y1-y0));
+      double ni = face_normale(fac,i);
+      a += ni * (xv(fac1,i) - xv(fac,i));
+      b += ni * ni;
     }
+  return std::fabs(a / sqrt(b));
 }
 
 // Kokkos function (factorize distance_2D and distance_3D functions)
@@ -206,4 +218,40 @@ double norm_vit1_lp(int dim, CDoubleTabView vit, int fac, int nfac, const int* n
 
   return norm_vit;
 }
+
+KOKKOS_INLINE_FUNCTION
+double norm_vit_lp_k(int dim, CDoubleTabView vit, int num1, int fac, CDoubleTabView face_normale, double* val, int is_defilante)
+{
+  // fac numero de la face paroi
+  double r[3];
+  double norme = 0;
+  for (int i=0; i<dim; i++)
+    {
+      r[i] = face_normale(fac, i);
+      norme += r[i] * r[i];
+    }
+  norme = sqrt(norme);
+  for(int i = 0; i < dim; i++)
+    r[i] /= norme;
+
+  double v[3];
+  for (int i=0; i<dim; i++)
+    v[i] = vit(num1, i) - is_defilante * vit(fac, i);
+
+  double sum_carre=0;
+  double psc=0;
+  for (int i=0; i<dim; i++)
+    {
+      sum_carre += carre(v[i]);
+      psc += v[i] * r[i];
+    }
+  double norm_vit = sqrt(std::fabs(sum_carre-carre(psc)));
+
+  // val1,val2 val3 sont les vitesses tangentielles
+  for (int i=0; i<dim; i++)
+    val[i] = (v[i]-psc*r[i])/(norm_vit+DMINFLOAT);
+  return norm_vit;
+}
+// ToDo factorize norm_vit1, norm_vit1_lp, norm_vit_lp_k ?
+
 #endif

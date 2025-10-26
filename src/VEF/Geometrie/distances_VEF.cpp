@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -16,6 +16,7 @@
 #include <Domaine.h>
 #include <Motcle.h>
 
+// See norm_vit1 in distances_VEF.h for Kokkos functions
 double norm_2D_vit1(const DoubleTab& vit,int num1,int num2,int fac,const Domaine_VEF& domaine,double& u)
 {
   const DoubleTab& face_normale = domaine.face_normales();
@@ -36,6 +37,7 @@ double norm_2D_vit1(const DoubleTab& vit,int num1,int num2,int fac,const Domaine
   return v;
 }
 
+// See norm_vit1 in distances_VEF.h for Kokkos functions
 double norm_2D_vit1(const DoubleTab& vit,int num1,int num2,int fac,const Domaine_VEF& domaine,double& val1, double& val2)
 {
   const DoubleTab& face_normale = domaine.face_normales();
@@ -93,6 +95,7 @@ double norm_2D_vit1_lp(const DoubleTab& vit,int fac,int num1,int num2,const Doma
   return norm_vit;
 }
 
+// See norm_vit1 in distances_VEF.h for Kokkos functions
 double norm_2D_vit1(const DoubleTab& vit,int num1,int num2,int num3,int fac,const Domaine_VEF& domaine,double& u)
 {
   const DoubleTab& face_normale = domaine.face_normales();
@@ -112,6 +115,7 @@ double norm_2D_vit1(const DoubleTab& vit,int num1,int num2,int num3,int fac,cons
   return v;
 }
 
+// See norm_vit1 in distances_VEF.h for Kokkos functions
 double norm_2D_vit1(const DoubleTab& vit,int num1,int num2,int num3,int num4,int fac,const Domaine_VEF& domaine,double& u)
 {
   const DoubleTab& face_normale = domaine.face_normales();
@@ -187,7 +191,7 @@ double norm_2D_vit2(const DoubleTab& vit,int num1,int num2,int num3,int num4,int
   return v;
 }
 
-
+// See distance in distances_VEF.h for Kokkos functions
 double distance_2D(int fac,int elem,const Domaine_VEF& domaine)
 {
   const DoubleTab& xp = domaine.xp();    // centre de gravite des elements
@@ -204,6 +208,7 @@ double distance_2D(int fac,int elem,const Domaine_VEF& domaine)
 
   return std::fabs(r0*(x1-x0)+r1*(y1-y0));
 }
+
 
 double norm_2D_vit1_k(const DoubleTab& vit,int fac,int num1,
                       const Domaine_VEF& domaine,
@@ -226,9 +231,10 @@ double norm_2D_vit1_k(const DoubleTab& vit,int fac,int num1,
 
   return norm_vit;
 }
-double norm_3D_vit1(const DoubleTab& vit,int fac,int num1,
-                    const Domaine_VEF& domaine,
-                    double& val1,double& val2,double& val3)
+
+double norm_3D_vit1_k(const DoubleTab& vit,int fac,int num1,
+                      const Domaine_VEF& domaine,
+                      double& val1,double& val2,double& val3)
 {
   const DoubleTab& face_normale = domaine.face_normales();
   // fac numero de la face a paroi fixe
@@ -248,8 +254,7 @@ double norm_3D_vit1(const DoubleTab& vit,int fac,int num1,
   return norm_vit;
 }
 
-
-
+// See norm_vit1 in distances_VEF.h for Kokkos functions
 double norm_3D_vit1(const DoubleTab& vit,int fac,int num1,int num2,int num3,
                     const Domaine_VEF& domaine,
                     double& val1,double& val2,double& val3)
@@ -336,9 +341,9 @@ double norm_2D_vit2_k(const DoubleTab& vit,int fac,int num1,
 
   return norm_vit;
 }
-double norm_3D_vit2(const DoubleTab& vit,int fac,int num1,
-                    const Domaine_VEF& domaine,
-                    double& val1,double& val2,double& val3)
+double norm_3D_vit2_k(const DoubleTab& vit,int fac,int num1,
+                      const Domaine_VEF& domaine,
+                      double& val1,double& val2,double& val3)
 {
   const DoubleTab& face_normale = domaine.face_normales();
   // fac numero de la face a paroi defilante
@@ -468,6 +473,7 @@ double norm_3D_vit2(const DoubleTab& vit,int fac,int num1,int num2,int num3,int 
   return norm_vit;
 }
 
+// See distance in distances_VEF.h for Kokkos functions
 double distance_3D(int fac,int elem,const Domaine_VEF& domaine)
 {
   const DoubleTab& xp = domaine.xp();    // centre de gravite des elements
@@ -721,14 +727,14 @@ double norm_vit_lp_k(const DoubleTab& vit,int face,int face_b,const Domaine_VEF&
   //assert(face_b<domaine.premiere_face_int()); assert a ameliorer ou faces_virt...
   if (is_defilante==0)
     if (dimension==3)
-      return norm_3D_vit1(vit,face_b,face,domaine,val[0],val[1],val[2]);
+      return norm_3D_vit1_k(vit,face_b,face,domaine,val[0],val[1],val[2]);
     else
       return norm_2D_vit1_k(vit,face_b,face,domaine,val[0],val[1]);
 
   else
     {
       if (dimension==3)
-        return norm_3D_vit2(vit,face_b,face,domaine,val[0],val[1],val[2]);
+        return norm_3D_vit2_k(vit,face_b,face,domaine,val[0],val[1],val[2]);
       else
         return norm_2D_vit2_k(vit,face_b,face,domaine,val[0],val[1]);
     }
