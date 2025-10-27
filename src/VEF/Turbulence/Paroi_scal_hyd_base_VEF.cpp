@@ -190,7 +190,7 @@ void Paroi_scal_hyd_base_VEF::compute_nusselt() const
           DoubleArrView lambda_v = static_cast<DoubleVect&>(lambda).view_wo();
           DoubleArrView lambda_t_v = static_cast<DoubleVect&>(lambda_t).view_wo();
           DoubleArrView tfluide_v = static_cast<DoubleVect&>(tfluide).view_rw();
-          Kokkos::parallel_for(__KERNEL_NAME__, Kokkos::RangePolicy<>(ndeb, nfin),
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(ndeb, nfin),
                                KOKKOS_LAMBDA(const int num_face)
           {
             int ind_face = num_face - ndeb;

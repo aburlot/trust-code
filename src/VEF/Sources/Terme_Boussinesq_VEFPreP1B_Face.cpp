@@ -256,7 +256,6 @@ DoubleTab& Terme_Boussinesq_VEFPreP1B_Face::ajouter(DoubleTab& tab_resu) const
   end_gpu_timer(__KERNEL_NAME__);
 
   // modif pour periodique
-  start_gpu_timer();
   for (int n_bord=0; n_bord<domaine_VEF.nb_front_Cl(); n_bord++)
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
@@ -267,7 +266,7 @@ DoubleTab& Terme_Boussinesq_VEFPreP1B_Face::ajouter(DoubleTab& tab_resu) const
           int nb_faces_bord=le_bord.nb_faces();
           CIntArrView le_bord_num_face = le_bord.num_face().view_ro();
           CIntArrView la_cl_perio_face_associee = la_cl_perio.face_associee().view_ro();
-          Kokkos::parallel_for(__KERNEL_NAME__,
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
                                Kokkos::RangePolicy<>(0, nb_faces_bord/2), KOKKOS_LAMBDA(
                                  const int ind_face)
           {
@@ -279,8 +278,8 @@ DoubleTab& Terme_Boussinesq_VEFPreP1B_Face::ajouter(DoubleTab& tab_resu) const
                 resu(face, d) = resu(face_associee, d);
               }
           });// for face
+          end_gpu_timer(__KERNEL_NAME__);
         }// sub_type Perio
     }
-  end_gpu_timer(__KERNEL_NAME__);
   return tab_resu;
 }

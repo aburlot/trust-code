@@ -777,7 +777,6 @@ void Op_Conv_Muscl_New_VEF_Face::calculer_flux_bords(const DoubleTab& Kij, const
   CDoubleArrView transporte = static_cast<const DoubleVect&>(tab_transporte).view_ro();
   CDoubleTabView velocity = tab_velocity.view_ro();
   DoubleTabView flux_bords = flux_bords_.view_wo();
-  start_gpu_timer(__KERNEL_NAME__);
   for (int n_bord=0; n_bord<nb_bord; n_bord++)
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
@@ -792,7 +791,7 @@ void Op_Conv_Muscl_New_VEF_Face::calculer_flux_bords(const DoubleTab& Kij, const
         {
           const Neumann_sortie_libre& la_sortie_libre = ref_cast(Neumann_sortie_libre, la_cl.valeur());
           CDoubleTabView val_ext = la_sortie_libre.val_ext().view_ro();
-          Kokkos::parallel_for(__KERNEL_NAME__, num2, KOKKOS_LAMBDA(const int ind_face)
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), num2, KOKKOS_LAMBDA(const int ind_face)
           {
             int facei = le_bord_num_face(ind_face);
 
@@ -806,6 +805,7 @@ void Op_Conv_Muscl_New_VEF_Face::calculer_flux_bords(const DoubleTab& Kij, const
                 flux_bords(facei,dim) = psc*val;
               }
           });
+          end_gpu_timer(__KERNEL_NAME__);
         }
       else if ( sub_type(Dirichlet,la_cl.valeur())
                 || sub_type(Neumann,la_cl.valeur())
@@ -814,7 +814,7 @@ void Op_Conv_Muscl_New_VEF_Face::calculer_flux_bords(const DoubleTab& Kij, const
                 || sub_type(Echange_impose_base,la_cl.valeur())
               )
         {
-          Kokkos::parallel_for(__KERNEL_NAME__, num2, KOKKOS_LAMBDA(const int ind_face)
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), num2, KOKKOS_LAMBDA(const int ind_face)
           {
             int facei = le_bord_num_face(ind_face);
 
@@ -825,12 +825,13 @@ void Op_Conv_Muscl_New_VEF_Face::calculer_flux_bords(const DoubleTab& Kij, const
             for (int dim=0; dim<nb_comp; dim++)
               flux_bords(facei,dim)=psc*transporte[facei*nb_comp+dim];
           });
+          end_gpu_timer(__KERNEL_NAME__);
         }//fin du if sur "Neumann", "Neumann_homogene", "Symetrie", "Echange_impose_base"
       else if (sub_type(Periodique,la_cl.valeur()))
         {
           const Periodique& la_cl_perio = ref_cast(Periodique, la_cl.valeur());
           CIntArrView face_associee = la_cl_perio.face_associee().view_ro();
-          Kokkos::parallel_for(__KERNEL_NAME__, num2, KOKKOS_LAMBDA(const int ind_face)
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), num2, KOKKOS_LAMBDA(const int ind_face)
           {
             int facei            = le_bord_num_face(ind_face);
             int ind_face_voisine = face_associee(ind_face);
@@ -847,6 +848,7 @@ void Op_Conv_Muscl_New_VEF_Face::calculer_flux_bords(const DoubleTab& Kij, const
                 Kokkos::atomic_add(&flux_bords(facei_voisine,dim), -0.5 * flux);
               }
           });
+          end_gpu_timer(__KERNEL_NAME__);
         }
       else
         {
@@ -856,7 +858,6 @@ void Op_Conv_Muscl_New_VEF_Face::calculer_flux_bords(const DoubleTab& Kij, const
           Process::exit();
         }//fin du else sur les autres conditions aux limites
     }
-  end_gpu_timer(__KERNEL_NAME__);
 }
 
 DoubleTab&

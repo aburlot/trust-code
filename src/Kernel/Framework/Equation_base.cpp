@@ -1607,8 +1607,7 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
             Matrice_Morse_View matrice; // ToDo Kokkos CMatrice_Morse_View diag = diag_.view_ro();
             matrice.set(diag_);
             DoubleTabView tempo = tab_tempo.view_wo();
-            start_gpu_timer(__KERNEL_NAME__);
-            Kokkos::parallel_for(__KERNEL_NAME__,
+            Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
                                  Kokkos::RangePolicy<>(0, nb_case), KOKKOS_LAMBDA(
                                    const int ca)
             {
@@ -1626,8 +1625,7 @@ void Equation_base::Gradient_conjugue_diff_impl(DoubleTrav& secmem, DoubleTab& s
             CDoubleTabView terme_mul_v = terme_mul.view_ro();
             Matrice_Morse_View matrice;  // ToDo Kokkos Matrice_Morse_View diag = diag_.view_rw();
             matrice.set(diag_);
-            start_gpu_timer(__KERNEL_NAME__);
-            Kokkos::parallel_for(__KERNEL_NAME__,
+            Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
                                  Kokkos::RangePolicy<>(0, nb_case), KOKKOS_LAMBDA(
                                    const int ca)
             {

@@ -873,8 +873,7 @@ DoubleVect& Matrice_Morse::ajouter_multvect_(const DoubleVect& tab_x,DoubleVect&
       CDoubleArrView coeff = coeff_.view_ro();
       CDoubleArrView x = tab_x.view_ro();
       DoubleArrView resu = tab_resu.view_rw();
-      start_gpu_timer(__KERNEL_NAME__);
-      Kokkos::parallel_for(__KERNEL_NAME__,
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
                            Kokkos::RangePolicy<>(0, n), KOKKOS_LAMBDA(
                              const int i)
       {

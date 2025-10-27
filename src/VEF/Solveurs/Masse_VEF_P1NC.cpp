@@ -92,8 +92,6 @@ DoubleTab& Masse_VEF_P1NC::appliquer_impl(DoubleTab& tab_sm) const
   CIntTabView face_voisins = domaine_VEF.face_voisins().view_ro();
   CDoubleTabView normales = domaine_VEF.face_normales().view_ro();
   CDoubleArrView volumes_entrelaces_Cl = domaine_Cl_VEF.volumes_entrelaces_Cl().view_ro();
-
-  start_gpu_timer(__KERNEL_NAME__);
   for (int n_bord = 0; n_bord < domaine_VEF.nb_front_Cl(); n_bord++)
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
@@ -103,17 +101,20 @@ DoubleTab& Masse_VEF_P1NC::appliquer_impl(DoubleTab& tab_sm) const
 
       if ((sub_type(Dirichlet,la_cl.valeur())) ||
           (sub_type(Dirichlet_homogene,la_cl.valeur())))
-        // Pour les faces de Dirichlet on met sm a 0
-        Kokkos::parallel_for(__KERNEL_NAME__,
-                             range_1D(num1, num2),
-                             KOKKOS_LAMBDA(const int face)
         {
-          for (int comp = 0; comp < nbcomp; comp++)
-            sm(face, comp) = 0;
-        });
+          // Pour les faces de Dirichlet on met sm a 0
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
+                               range_1D(num1, num2),
+                               KOKKOS_LAMBDA(const int face)
+          {
+            for (int comp = 0; comp < nbcomp; comp++)
+              sm(face, comp) = 0;
+          });
+          end_gpu_timer(__KERNEL_NAME__);
+        }
       else if ((sub_type(Symetrie,la_cl.valeur())) && (domaine_Cl_VEF.equation().inconnue().nature_du_champ()==vectoriel))
         {
-          Kokkos::parallel_for(__KERNEL_NAME__,
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
                                range_1D(num1, num2),
                                KOKKOS_LAMBDA(const int face)
           {
@@ -132,19 +133,23 @@ DoubleTab& Masse_VEF_P1NC::appliquer_impl(DoubleTab& tab_sm) const
                                   porosite_face(face));
               }
           });
+          end_gpu_timer(__KERNEL_NAME__);
         }
       else
-        Kokkos::parallel_for(__KERNEL_NAME__,
-                             range_1D(num1, num2),
-                             KOKKOS_LAMBDA(const int face)
         {
-          int elem = face_voisins(face,0);
-          if (elem == -1) elem = face_voisins(face,1);
-          for (int comp = 0; comp < nbcomp; comp++)
-            sm(face,comp) /= (volumes_entrelaces_Cl(face) * porosite_face(face));
-        });
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
+                               range_1D(num1, num2),
+                               KOKKOS_LAMBDA(
+                                 const int face)
+          {
+            int elem = face_voisins(face, 0);
+            if (elem == -1) elem = face_voisins(face, 1);
+            for (int comp = 0; comp < nbcomp; comp++)
+              sm(face, comp) /= (volumes_entrelaces_Cl(face) * porosite_face(face));
+          });
+          end_gpu_timer(__KERNEL_NAME__);
+        }
     }
-  end_gpu_timer(__KERNEL_NAME__);
 
   Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
                        range_2D({num_int,0}, {num_std,nbcomp}),
