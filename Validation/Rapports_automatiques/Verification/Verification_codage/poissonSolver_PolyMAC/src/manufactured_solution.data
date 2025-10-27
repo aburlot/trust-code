@@ -24,6 +24,12 @@ END SCATTER #
 
 $dis_ dis
 
+option_DG
+{
+	order 2
+	gram_schmidt 1
+}
+
 Schema_euler_implicite sch
 Read sch
 {
@@ -58,10 +64,10 @@ Read pb
         initial_conditions { temperature Champ_Uniforme 1 0 }
         boundary_conditions
         {
-            left paroi_flux_impose Champ_Front_fonc_XYZ 1  -$dx_
-            right  paroi_temperature_imposee Champ_Front_fonc_XYZ 1 $func_
-            up  paroi_temperature_imposee Champ_Front_fonc_XYZ 1 $func_
-            down  paroi_flux_impose Champ_Front_fonc_XYZ 1   -$dy_
+            left paroi_flux_impose Champ_Front_fonc_TXYZ 1  -$dx_
+            right  paroi_temperature_imposee Champ_Front_fonc_TXYZ 1 $func_
+            up  paroi_temperature_imposee Champ_Front_fonc_TXYZ 1 $func_
+            down  paroi_flux_impose Champ_Front_fonc_TXYZ 1   -$dy_
         }
     }
 
