@@ -32,12 +32,15 @@
 #define Robin_VEF_included
 
 #include <Cond_lim_base.h>
+#include<Champ_front_txyz.h>
 
-/*! @brief Class Robin_VEF for Robin boundary condititions
+/*! @brief Class Robin_VEF for Robin boundary conditions
  *
  *    Robin boundary conditions functions are set as it follows :
- *      g = \alpha( \nabla(u)n.n - p ) + u.n
- *      xi = \beta(\nabla(u)n\times n) + u \times n
+ *      g = \alpha( \nu  \dn u \cdot n - p ) + u \cdot n
+ *      xi = \beta( \nu  \dn u \times n)     + u \times n
+ *
+ *      with \dn = \nabla \cdot n
  *
  *      The parameters \alpha, \beta, and the functions g and xi comes from the data file e.g.
  *
@@ -52,7 +55,7 @@
  * @sa Cond_lim_base Robin_VEF
  */
 
-class Robin_VEF : public Cond_lim_base
+class Robin_VEF : public Cond_lim_base// , Champ_front_txyz
 {
 
   Declare_instanciable( Robin_VEF ) ;
@@ -63,16 +66,21 @@ public :
   inline double get_beta_cl() const { return beta_robin_cl_; };
 
 
-  // recuperation du champ complet
+  // get the normal and the tangential flux
   double flux_robin_normal_et_trangentiel_imp(int i, int j) const;
 
-  // champ normal
+  // get the normal flux
   double flux_normal_imp(int i) const;
 
-  // champ tangentiel
+  // get the tangential flux
   double flux_tangentiel_imp(int i, int j ) const;
 
 
+
+  // udapte time data
+  void mettre_a_jour(double temps) override;
+
+  // for domain decomposition, not implemented yet
   double flux_robin_imp_au_temps(double temps, int i) const ;
   double flux_robin_imp_au_temps(double temps, int i, int j ) const;
 

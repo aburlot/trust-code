@@ -26,6 +26,8 @@
 #include <Front_VF.h>
 
 Implemente_instanciable( Robin_VEF, "Robin_VEF", Cond_lim_base ) ;
+// XD robin_vef condlim_base robin_vef -1 Robin condition at the boundary (edge)
+
 
 Sortie& Robin_VEF::printOn( Sortie& os ) const
 {
@@ -37,11 +39,10 @@ Entree& Robin_VEF::readOn( Entree& is )
 {
   ;
   Param param(que_suis_je());
-  // reading Robin border conditions parameters
 
   param.ajouter("alpha", 		&alpha_robin_cl_, 		Param::REQUIRED);
   param.ajouter("beta" , 		&beta_robin_cl_ , 		Param::REQUIRED);
-  param.ajouter("champ_front_normal_et_tangentiel_robin",&le_champ_front,Param::REQUIRED); // Champ_front_tangentiel_robin::readOn(is);
+  param.ajouter("champ_front_normal_et_tangentiel_robin",&le_champ_front,Param::REQUIRED);
   param.lire_avec_accolades_depuis(is);
 
 
@@ -54,22 +55,26 @@ Entree& Robin_VEF::readOn( Entree& is )
       exit() ;
     }
 
-
   return is; //Cond_lim_base::readOn(is);
 }
 
 int Robin_VEF::compatible_avec_eqn( const Equation_base& eqn) const
 {
   // TODO : if we need to do some verification ?
+  // for example, ROBIN_VEF is only valid for Pnc-P0 and not for the P1
   return 1;
 }
 
-
+/*! @brief Returns the value of the imposed normal and tangential Robin flux on the (i,j)-th component of the field representing the flux at the boundary.
+ *
+ * @param (int i) index along the first dimension of the field
+ * @param (int j) index along the second dimension of the field (j=1 returns the normal component, and for j>1, returns the (j-1)-th tangential component)
+ * @return (double) the imposed value on the specified field component
+ */
 double Robin_VEF::flux_robin_normal_et_trangentiel_imp(int i, int j) const
 {
-  // Si 2D : nb_dim = 3 : 1 col pour les indices des mailles, 1 col pour le champ normal, 1 col pour le champ tangent
-  // Si 3D : nb_dim = 5 : 1 col pour les indices des mailles, 1 col pour le champ normal, 3 col pour le champ tangent
-
+  // if dim = 2 : le_champ_front has 1+2 dimensions  : 1 column for the localisation of the field + 1 column for the normal field value, and 1 column for the tangential field value
+  // if dim = 3 : le_champ_front has 1+4 dimensions  : 1 column for the localisation of the field + 1 column for the normal field value, and 3 column for the tangential field value
 
 
   if ((le_champ_front->valeurs().dimension(1)==2 && dimension == 2) || (le_champ_front->valeurs().dimension(1)==4 && dimension == 3))
@@ -87,10 +92,20 @@ double Robin_VEF::flux_robin_normal_et_trangentiel_imp(int i, int j) const
   return 0.;
 }
 
+/*! @brief Returns the value of the imposed normal flux on the i-th component of the field representing the flux at the boundary.
+ *
+ * @param (int i) index along the first dimension of the field
+ * @return (double) the imposed value on the specified field component
+ */
 
 double Robin_VEF::flux_normal_imp(int i) const {	return flux_robin_normal_et_trangentiel_imp(i, 0);}
 
-
+/*! @brief Returns the value of the imposed tangential flux on the (i,j)-th component of the field representing the tangential flux at the boundary.
+ *
+ * @param (int i) index along the first dimension of the field
+ * @param (int j) index along the second dimension of the field
+ * @return (double) the imposed value on the specified field component
+ */
 double Robin_VEF::flux_tangentiel_imp(int i, int j ) const
 {
   if ((dimension==2 && j<2) || (dimension ==3 && j<4))
@@ -101,26 +116,32 @@ double Robin_VEF::flux_tangentiel_imp(int i, int j ) const
   return 0.;
 }
 
+void Robin_VEF::mettre_a_jour(double temps)
+{
+  le_champ_front->mettre_a_jour(temps);
+}
 
-
-
-
+// for domain decomposition, not implemented yet
 double Robin_VEF::flux_robin_imp_au_temps(double temps, int i) const
 {
   return 0.;
 
 }
 
+// for domain decomposition, not implemented yet
 double Robin_VEF::flux_robin_imp_au_temps(double temps, int i, int j ) const
 {
   return 0.;
 
 }
 
-
-
-/*! @brief Retourne le tableau flux_robin_impose_ mis a jour
+/*! @brief Updates and returns the imposed flux array.
  *
+ * This function checks the total number of faces in the boundary and resizes the
+ * `flux_normal_impose_` array if necessary. It updates the values based on the imposed
+ * flux from the front field if the field is unsteady or if the dimensions have changed.
+ *
+ * @return const DoubleTab& Reference to the updated imposed flux array.
  */
 const DoubleTab& Robin_VEF::flux_robin_normal_imp() const
 {
@@ -140,6 +161,14 @@ const DoubleTab& Robin_VEF::flux_robin_normal_imp() const
 }
 
 
+/*! @brief Updates and returns the imposed flux array.
+ *
+ * This function checks the total number of faces in the boundary and resizes the
+ * `flux_tangentiel_impose_` array if necessary. It updates the values based on the imposed
+ * flux from the front field if the field is unsteady or if the dimensions have changed.
+ *
+ * @return const DoubleTab& Reference to the updated imposed flux array.
+ */
 const DoubleTab& Robin_VEF::flux_robin_tangentiel_imp() const
 {
   const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());
