@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+28/10/25 (TRUST) New feature  : Add a Robin Boundary condition Available for NS equation in VEF discretization.
 27/10/25 (TRUST) Fix          : Stability time-step computation is now evaluated correctly for the convective operator of PolyMAC.
 27/10/25 (TRUST) New feature  : Add getOutputPointValues method to get field values at given point(s) in space. Currently only for sequential calculations. Available also in ICoCo for ProblemTrio.
 21/10/25 (TRUST) Fix          : Mandatory ModifyDomaineAxi1D (define axi 1D origin) for parallel test cases with Domaine_EF_axi
