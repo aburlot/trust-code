@@ -43,7 +43,8 @@ if [ ! -d ${Build} ]; then
     # Extra sources from TRUST:
     cd $TRUST_ROOT/Outils/lata_tools; env OUTFILE=${Build}/extra_src make write_extra_src;  cd $Build
     for i in `cat extra_src`; do
-      nam=`basename $i .cpp`.C
+      #nam=`basename $i .cpp`.C
+      nam=`basename $i`
       ln -sf $i $nam
       all_srcs=$all_srcs" "$nam
     done

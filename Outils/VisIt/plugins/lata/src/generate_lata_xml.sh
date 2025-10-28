@@ -11,7 +11,6 @@ if [ "$2" = "-with_med" ]; then
     med_libs="${medc_root}/lib/libmedloader.a  ${medc_root}/lib/libmedcouplingremapper.a ${medc_root}/lib/libmedcoupling.a ${medc_root}/lib/libinterpkernel.a ${TRUST_MED_ROOT}/lib/libmed.a ${TRUST_MED_ROOT}/lib/libmedimport.a ${TRUST_MED_ROOT}/lib/libmedC.a ${TRUST_HDF5_ROOT}/lib/libhdf5.a -lz -lm  "  
 fi
 
-extra_incl=" -I${TRUST_ROOT}/src/Kernel/Utilitaires -I${TRUST_ROOT}/src/Kernel/Math -I${TRUST_ROOT}/src/Kernel/Geometrie "
 
 #
 # 64b management - lata_tools (and ViSit plugin) are always compiled in 64b
@@ -32,7 +31,6 @@ cat > lata.xml <<EOF
     <CXXFLAGS>
         ${def_latatools}
         ${med_cxx_flags} 
-        ${extra_incl}
     </CXXFLAGS>
     <LIBS>
         ${med_libs}
