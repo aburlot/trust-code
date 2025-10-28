@@ -298,29 +298,6 @@ DoubleTab& Op_Grad_VEF_P1B_Face::ajouter_elem(const DoubleTab& tab_pre, DoubleTa
               });
               end_gpu_timer(__KERNEL_NAME__);
             }
-
-
-
-          /*
-                    if (sub_type(Robin_VEF, la_cl.valeur()))
-                      {
-                        const Front_VF& le_bord = ref_cast(Front_VF, la_cl->frontiere_dis());
-                        const DoubleTab& tab_face_normales = domaine_VEF.face_normales();
-                        const DoubleVect& tab_porosite_face = equation().milieu().porosite_face();
-                        const IntTab& tab_face_voisins = domaine_VEF.face_voisins();
-                        //CDoubleArrView pre = tab_pre.view_ro();
-                        int num1 = le_bord.num_premiere_face();
-                        int num2 = num1 + le_bord.nb_faces();
-                        for (int face = num1 ; face < num2; face++) // loop on edges with Robin bc
-                          {
-                            int elem = tab_face_voisins(face,0);
-                            double Pstar_OSWR = tab_pre(elem,0);//la_cl_robin.increment_pression_bord(face);// // TODO : [VKR] get the value of dPstar considering OSWR algorithm
-                            double diff = Pstar_OSWR*0;
-                            for (int comp = 0; comp < dimension; comp++)
-                              tab_grad(face, comp) += diff * tab_face_normales(face, comp) * tab_porosite_face(face) ;
-                          }
-                      }
-                      */
         }
     }
 

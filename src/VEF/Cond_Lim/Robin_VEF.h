@@ -12,27 +12,12 @@
 * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-/////////////////////////////////////////////////////////////////////////////
-//
-// File      : Robin_VEF.h
-// Directory : $TRUST_ROOT/src/Kernel/Cond_Lim
-//
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-//
-// .DESCRIPTION : class Robin_VEF
-//
-// <Description of class Robin_VEF>
-//
-// g = \alpha( \nabla(u)n.n - p ) + u.n
-// xi = \beta(\nabla(u)n\times n) + u \times n
-/////////////////////////////////////////////////////////////////////////////
 
 #ifndef Robin_VEF_included
 #define Robin_VEF_included
 
 #include <Cond_lim_base.h>
-#include<Champ_front_txyz.h>
+#include <Champ_front_txyz.h>
 
 /*! @brief Class Robin_VEF for Robin boundary conditions
  *
@@ -61,10 +46,11 @@ class Robin_VEF : public Cond_lim_base// , Champ_front_txyz
   Declare_instanciable( Robin_VEF ) ;
 
 public :
-  int compatible_avec_eqn(const Equation_base&) const override ;
+
+  void completer() override;
+
   inline  double get_alpha_cl() const { return alpha_robin_cl_; } ;
   inline double get_beta_cl() const { return beta_robin_cl_; };
-
 
   // get the normal and the tangential flux
   double flux_robin_normal_et_trangentiel_imp(int i, int j) const;
@@ -74,8 +60,6 @@ public :
 
   // get the tangential flux
   double flux_tangentiel_imp(int i, int j ) const;
-
-
 
   // udapte time data
   void mettre_a_jour(double temps) override;
@@ -91,15 +75,12 @@ public :
 
 protected :
 
-
-  double alpha_robin_cl_  ;
-  double beta_robin_cl_   ;
+  double alpha_robin_cl_ = -123.  ;
+  double beta_robin_cl_ = -123.   ;
   // Champ_front_normal_robin champ_normal_robin_cl_;
   // Champ_front_tangentiel_robin champ_tangent_robin_cl_;
   mutable DoubleTab flux_normal_impose_; // Stocke toutes les valeurs du flux sur toutes les faces de la frontiere (pas d'hypothese sur un champ uniforme). Utile pour le GPU.
   mutable DoubleTab flux_tangentiel_impose_; // Stocke toutes les valeurs du flux sur toutes les faces de la frontiere (pas d'hypothese sur un champ uniforme). Utile pour le GPU.
-
-
 };
 
 #endif /* Robin_VEF_included */

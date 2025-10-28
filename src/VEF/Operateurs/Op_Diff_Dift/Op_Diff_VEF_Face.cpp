@@ -391,6 +391,11 @@ void Op_Diff_VEF_Face::ajouter_cas_vectoriel(const DoubleTab& inconnue,
 
       else if (sub_type(Robin_VEF, la_cl.valeur()))
         {
+#ifdef TRUST_USE_GPU
+          Cerr << "Warning not tested on GPU" << finl;
+#endif
+          ToDo_Kokkos("critical");
+
           const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
           const Robin_VEF& la_cl_robin = ref_cast(Robin_VEF,la_cl.valeur());
           int marq = phi_psi_diffuse(equation());
@@ -402,9 +407,6 @@ void Op_Diff_VEF_Face::ajouter_cas_vectoriel(const DoubleTab& inconnue,
           DoubleTab normal_vector;
           int ndeb = le_bord.num_premiere_face();
           int nfin = ndeb +le_bord.nb_faces();
-#ifdef TRUST_USE_GPU
-          Cerr << "Warning not tested on GPU" << finl;
-#endif
           for (int face=ndeb; face<nfin; face++)
             {
               int id_face_bord = face -ndeb;
@@ -957,6 +959,7 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
         }
       else if (sub_type(Robin_VEF, la_cl.valeur()))
         {
+          ToDo_Kokkos("critical");
           const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
           const Robin_VEF& la_cl_robin = ref_cast(Robin_VEF,la_cl.valeur());
           double inv_alpha_minus_inv_beta = 1./la_cl_robin.get_alpha_cl() - 1./la_cl_robin.get_beta_cl();
