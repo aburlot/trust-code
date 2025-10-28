@@ -1089,7 +1089,6 @@ int ReaderFORT21::getIndexFromPos(const std::string& name_stack, const std::stri
       for (int i=int(iwhyd.size())-1; i>=0; i--)
         if (iwhyd[i]==iglob+1) return i;
       throw std::invalid_argument("point not in wall3d");
-      return -1;
     }
   auto xyzs = getXYZS(name_stack,name_field);
   int i,j,k;
