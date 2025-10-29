@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2023, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -54,10 +54,59 @@ const Nom& Tetraedre_32_64<_SIZE_>::nom_lml() const
 }
 
 
+namespace
+{
+/*! @brief tests if 2 points are on the same side of a plane defined by three points
+*
+* Takes the coordinates of all points involved as arguments (5 points, so 15 arguments)
+* The order is X, Y, Z coord of a point, then next point
+*
+* The first nine arguments are for the points defining the plane (X/Y/Z 0 to 2)
+*
+* The next 6 describe the point for which we want to test they are on the same side (X3/Y3/Z3 and Mx/My/Mz)
+*
+* The use case is testing if a point M is inside a tetrahedra.
+* To do that, call this function 4 times in a row while cycling the first 4 points,
+* which must correspond to the 4 vertexes of the tetrahedra,
+* as done in function Tetraedre_32_64<_SIZE_>::contient
+* (hence the names of the arguments, which may be confusing for a different use case)
+*
+*
+*
+* @return (int) 1 si le point de coordonnees specifiees appartient a l'element ielem 0 sinon
+*/
+inline bool is_on_same_side_of_plane(const double& X0, const double& Y0, const double& Z0,
+                                     const double& X1, const double& Y1, const double& Z1,
+                                     const double& X2, const double& Y2, const double& Z2,
+                                     const double& X3, const double& Y3, const double& Z3,
+                                     const double& Mx, const double& My, const double& Mz
+                                    )
+{
+
+  // computes the normal vector of the plane
+  double xn = (Y1 - Y0) * (Z2 - Z0) - (Z1 - Z0) * (Y2 - Y0);
+  double yn = (Z1 - Z0) * (X2 - X0) - (X1 - X0) * (Z2 - Z0);
+  double zn = (X1 - X0) * (Y2 - Y0) - (Y1 - Y0) * (X2 - X0);
+
+  // computes the scalar product between normal vector and a vector from the plane to each of the points we want to test
+  double prod1 = xn * (X3 - X0) + yn * (Y3 - Y0) + zn * (Z3 - Z0);
+  double prod2 = xn * (Mx - X0) + yn * (My - Y0) + zn * (Mz - Z0);
+
+  // if scalar products have the same sign, the points are on the same sides
+  // we allow a slight tolerance for points very close to the plane
+  if (prod1 * prod2 < 0 && std::fabs(prod2)>std::fabs(prod1)*Objet_U::precision_geom)
+    {
+      return false;
+    }
+  else
+    {
+      return true;
+    }
+}
+}
+
 /*! @brief Renvoie 1 si l'element ielem du domaine associe a l'element geometrique contient le point
- *
- *               de coordonnees specifiees par le parametre "pos".
- *     Renvoie 0 sinon.
+ *  de coordonnees specifiees par le parametre "pos". Renvoie 0 sinon.
  *
  * @param (DoubleVect& pos) coordonnees du point que l'on cherche a localiser
  * @param (int ielem) le numero de l'element du domaine dans lequel on cherche le point.
@@ -70,11 +119,11 @@ int Tetraedre_32_64<_SIZE_>::contient(const ArrOfDouble& pos, int_t ielem) const
   assert(pos.size_array()==3);
   const Domaine_t& domaine=mon_dom.valeur();
   const DoubleTab_t& coord=domaine.coord_sommets();
-  double prod1,prod2,xn,yn,zn;
-  int_t som0 = domaine.sommet_elem(ielem,0),
-        som1 = domaine.sommet_elem(ielem,1),
-        som2 = domaine.sommet_elem(ielem,2),
-        som3 = domaine.sommet_elem(ielem,3);
+
+  int_t som0 = domaine.sommet_elem(ielem,0);
+  int_t som1 = domaine.sommet_elem(ielem,1);
+  int_t som2 = domaine.sommet_elem(ielem,2);
+  int_t som3 = domaine.sommet_elem(ielem,3);
   double X0 = coord(som0,0);
   double Y0 = coord(som0,1);
   double Z0 = coord(som0,2);
@@ -88,86 +137,47 @@ int Tetraedre_32_64<_SIZE_>::contient(const ArrOfDouble& pos, int_t ielem) const
   double Y3 = coord(som3,1);
   double Z3 = coord(som3,2);
 
-  // On regarde tout d'abord si le point cherche n'est pas un des sommets du triangle
-  // D'apres gcov sur les 1000 cas tests, on ne gagne pas beaucoup a faire cela (utile dans 0.03% des cas!!!)
-  /*
-    if ((est_egal(X0,pos(0)) && est_egal(Y0,pos(1)) && est_egal(Z0,pos(2)))
-    || (est_egal(X1,pos(0)) && est_egal(Y1,pos(1)) && est_egal(Z1,pos(2)))
-    || (est_egal(X2,pos(0)) && est_egal(Y2,pos(1)) && est_egal(Z2,pos(2)))
-    || (est_egal(X3,pos(0)) && est_egal(Y3,pos(1)) && est_egal(Z3,pos(2))))
-    return 1; */
+  // Here we used to test if the point was one of the vertexes of the tetra using est_egal
+  // probably not worth it, happened in 0.03% of test cases according to gcov
+  // must mean we rarely lookup for a point of the mesh using this function
 
-  for (int j=0; j<4; j++)
+
+  // However, it might be worth to check a simpler distance to center of tetra first
+  // Using some bound at which we are certain the point is outside (one that is easier to compute than circumradius preferably, don't know if that exists)
+  // depending on usage of this function, may avoid testing on each face in a lot of cases
+
+  // Now we do the real work
+  // For a point to be inside a tetra, for each face made of three of the 4 vertexes
+  // the point must be on the same side as the fourth vertex
+  // We test that with the function is_on_same_side_of_plane defined in this file
+
+
+  // test som3 and pos are on same side
+  if (not is_on_same_side_of_plane(X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, pos[0], pos[1], pos[2]))
     {
-      switch(j)
-        {
-        case 0 :
-          // Inutile car deja fait quelques lignes plus haut
-          //som0 = domaine.sommet_elem(ielem,0);
-          //som1 = domaine.sommet_elem(ielem,1);
-          //som2 = domaine.sommet_elem(ielem,2);
-          //som3 = domaine.sommet_elem(ielem,3);
-          break;
-        case 1 :
-          swap(som0,som1);
-          swap(som2,som3);
-          swap(X0,X1);
-          swap(Y0,Y1);
-          swap(Z0,Z1);
-          swap(X2,X3);
-          swap(Y2,Y3);
-          swap(Z2,Z3);
-          //som0 = domaine.sommet_elem(ielem,1);
-          //som1 = domaine.sommet_elem(ielem,0);
-          //som2 = domaine.sommet_elem(ielem,3);
-          //som3 = domaine.sommet_elem(ielem,2);
-          break;
-        case 2 :
-          swap(som0,som1);
-          swap(som1,som3);
-          swap(X0,X1);
-          swap(Y0,Y1);
-          swap(Z0,Z1);
-          swap(X1,X3);
-          swap(Y1,Y3);
-          swap(Z1,Z3);
-          //som0 = domaine.sommet_elem(ielem,0);
-          //som1 = domaine.sommet_elem(ielem,2);
-          //som2 = domaine.sommet_elem(ielem,3);
-          //som3 = domaine.sommet_elem(ielem,1);
-          break;
-        case 3 :
-          swap(som0,som1);
-          swap(som1,som3);
-          swap(X0,X1);
-          swap(Y0,Y1);
-          swap(Z0,Z1);
-          swap(X1,X3);
-          swap(Y1,Y3);
-          swap(Z1,Z3);
-          //som0 = domaine.sommet_elem(ielem,2);
-          //som1 = domaine.sommet_elem(ielem,1);
-          //som2 = domaine.sommet_elem(ielem,3);
-          //som3 = domaine.sommet_elem(ielem,0);
-          break;
-        }
-
-      // Algorithme : le sommet 3 et le point M doivent pour j=0 a 3 du meme cote
-      // que le plan formes par les points som0,som1,som2.
-      // calcul de la normale au plan som0,som1,som2 :
-      xn = ( Y1 - Y0 ) * ( Z2 - Z0 ) - ( Z1 - Z0 ) * ( Y2 - Y0 );
-      yn = ( Z1 - Z0 ) * ( X2 - X0 ) - ( X1 - X0 ) * ( Z2 - Z0 );
-      zn = ( X1 - X0 ) * ( Y2 - Y0 ) - ( Y1 - Y0 ) * ( X2 - X0 );
-      prod1 = xn * ( X3 - X0 )
-              + yn * ( Y3 - Y0 )
-              + zn * ( Z3 - Z0 );
-      prod2 = xn * ( pos[0] - X0 )
-              + yn * ( pos[1] - Y0 )
-              + zn * ( pos[2] - Z0 );
-      // Si le point est sur le plan (prod2 quasi nul) : on ne peut pas conclure...
-      if (prod1*prod2 < 0 && std::fabs(prod2)>std::fabs(prod1)*Objet_U::precision_geom) return 0;
+      return false;
     }
-  return 1;
+
+  // test som2 and pos are on same side
+  if (not is_on_same_side_of_plane(X3, Y3, Z3, X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2, pos[0], pos[1], pos[2]))
+    {
+      return false;
+    }
+
+  // test som1 and pos are on same side
+  if (not is_on_same_side_of_plane(X2, Y2, Z2, X3, Y3, Z3, X0, Y0, Z0, X1, Y1, Z1, pos[0], pos[1], pos[2]))
+    {
+      return false;
+    }
+
+  // test som0 and pos are on same side
+  if (not is_on_same_side_of_plane(X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, X0, Y0, Z0, pos[0], pos[1], pos[2]))
+    {
+      return false;
+    }
+
+  return true;
+
 }
 
 
