@@ -28,6 +28,7 @@
 #include <Perf_counters.h>
 #include <comm_incl.h>
 #include <Comm_Group_MPI.h>
+#include <PE_Groups.h>
 #endif
 
 /*
