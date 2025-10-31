@@ -286,7 +286,7 @@ void Op_Conv_EF_VEF_P1NC_Stab::reinit_conv_pour_Cl(const DoubleTab& transporte,c
         {
           const Neumann_sortie_libre& la_sortie_libre
             = ref_cast(Neumann_sortie_libre, la_cl.valeur());
-          ToDo_Kokkos("Boundary condition");
+          ToDo_Kokkos("critical");
           for (ind_face=num1; ind_face<num2; ind_face++)
             {
               facei = le_bord.num_face(ind_face);
@@ -1605,40 +1605,39 @@ void Op_Conv_EF_VEF_P1NC_Stab::mettre_a_jour_pour_periodicite(DoubleTab& resu) c
   const Domaine_Cl_VEF& domaine_Cl_VEF = la_zcl_vef.valeur();
   const int nb_bord = domaine_Cl_VEF.nb_cond_lim();
   const int nb_comp = (resu.nb_dim()==1) ? 1 : resu.dimension(1);
-  DoubleVect& resuV = resu;
-  int ligne=0,ligneAss=0,facei=0,faceiAss=0, ind_face=0;
-  int num1=0,num2=0, ind_face_associee=0, dim=0;
 
   //Faces de bord
   for (int n_bord=0; n_bord<nb_bord; n_bord++)
     {
       const Cond_lim& la_cl = domaine_Cl_VEF.les_conditions_limites(n_bord);
       const Front_VF& le_bord = ref_cast(Front_VF,la_cl->frontiere_dis());
-      num1=0;
-      num2=le_bord.nb_faces();
+      int num1=0;
+      int num2=le_bord.nb_faces();
 
       if (sub_type(Periodique,la_cl.valeur()))
         {
           const Periodique& la_cl_perio = ref_cast(Periodique,la_cl.valeur());
-          ToDo_Kokkos("Periodic boundary condition");
-          for (ind_face=num1; ind_face<num2; ind_face++)
-            {
-              facei=le_bord.num_face(ind_face);
-              ind_face_associee=la_cl_perio.face_associee(ind_face);
-              faceiAss=le_bord.num_face(ind_face_associee);
+          CIntArrView le_bord_num_face = static_cast<const ArrOfInt&>(le_bord.num_face()).view_ro();
+          CIntArrView face_associee = static_cast<const ArrOfInt&>(la_cl_perio.face_associee()).view_ro();
+          DoubleArrView resuV = static_cast<ArrOfDouble&>(resu).view_rw();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(num1, num2), KOKKOS_LAMBDA(const int ind_face)
+          {
+            int facei = le_bord_num_face(ind_face);
+            int ind_face_associee = face_associee(ind_face);
+            int faceiAss = le_bord_num_face(ind_face_associee);
 
-              if (facei<faceiAss)
-                for (dim=0; dim<nb_comp; dim++)
-                  {
-                    ligne=facei*nb_comp+dim;
-                    ligneAss=faceiAss*nb_comp+dim;
+            if (facei<faceiAss)
+              for (int dim=0; dim<nb_comp; dim++)
+                {
+                  int ligne=facei*nb_comp+dim;
+                  int ligneAss=faceiAss*nb_comp+dim;
 
-                    resuV[ligneAss]+=resuV[ligne];
-                    resuV[ligne]=resuV[ligneAss];
-                  }
+                  Kokkos::atomic_add(&resuV[ligneAss],resuV[ligne]);
+                  Kokkos::atomic_store(&resuV[ligne],resuV[ligneAss]);
+                }
 
-            }//fin du for sur "face_i"
-
+          });//fin du for sur "face_i"
+          end_gpu_timer(__KERNEL_NAME__);
         }//fin du if sur "Periodique"
 
     }//fin du for sur "n_bord"
