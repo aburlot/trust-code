@@ -287,7 +287,11 @@ private:
   duration computation_time_=duration::zero();      ///< Used to compute the total time of the simulation.
   duration time_skipped_ts_=duration::zero();       ///< the duration in seconds of the cache. If cache is too long, use function set_three_first_steps_elapsed in oder to include the stats of the cache in your stats
   Counter* last_opened_counter_=nullptr;   ///< pointer to the last opened counter. Each counter has a parent attribute, which also give the pointer of the counter open before them.
+#ifdef TRUST_USE_GPU
+  int nb_steps_elapsed_=1;  ///< On GPU, the first time step is not repreentative: a lot of H->D copies occur yet
+#else
   int nb_steps_elapsed_=0;  ///< By default, we consider that the two first time steps are used to file the cache, so they are not taken into account in the stats.
+#endif
   int total_nb_backup_=0;
   double total_data_exchange_per_backup_=0.;
   bool gpu_verbose_ =false;
@@ -310,6 +314,7 @@ Perf_counters::Impl::Impl()
   std_counters_[static_cast<int>(STD_COUNTERS::backup_file)] = std::make_unique<Counter>(0, "Back-up operations");
   std_counters_[static_cast<int>(STD_COUNTERS::system_solver)] = std::make_unique<Counter>(1, "Linear solver resolutions Ax=B");
   std_counters_[static_cast<int>(STD_COUNTERS::petsc_solver)] = std::make_unique<Counter>(2, "Petsc solver");
+  std_counters_[static_cast<int>(STD_COUNTERS::matrix_assembly)] = std::make_unique<Counter>(1, "Matrix assembly for implicit scheme");
   std_counters_[static_cast<int>(STD_COUNTERS::implicit_diffusion)] = std::make_unique<Counter>(1, "Solver for implicit diffusion");
   std_counters_[static_cast<int>(STD_COUNTERS::compute_dt)] = std::make_unique<Counter>(1, "Computation of the time step dt");
   std_counters_[static_cast<int>(STD_COUNTERS::turbulent_viscosity)] = std::make_unique<Counter>(1, "Turbulence model::update");
@@ -320,7 +325,6 @@ Perf_counters::Impl::Impl()
   std_counters_[static_cast<int>(STD_COUNTERS::rhs)] = std::make_unique<Counter>(1, "Source terms");
   std_counters_[static_cast<int>(STD_COUNTERS::postreatment)] = std::make_unique<Counter>(1, "Post-treatment operations");
   std_counters_[static_cast<int>(STD_COUNTERS::restart)] = std::make_unique<Counter>(1, "Read file for restart");
-  std_counters_[static_cast<int>(STD_COUNTERS::matrix_assembly)] = std::make_unique<Counter>(1, "Nb matrix assembly for implicit scheme:");
   std_counters_[static_cast<int>(STD_COUNTERS::update_variables)] = std::make_unique<Counter>(1, "Update ::mettre_a_jour");
   // MPI communication counters
   std_counters_[static_cast<int>(STD_COUNTERS::mpi_sendrecv)] = std::make_unique<Counter>(2, "MPI_send_recv", "MPI_sendrecv", true);
@@ -936,6 +940,15 @@ inline std::array< std::array<double,4> ,3> compute_min_max_avg_sd(double& time,
       return {min_max_avg_sd_time,min_max_avg_sd_quantity,min_max_avg_sd_count};
     }
 }
+
+template <typename... Args>
+std::string fmt(const char* format, Args... args)
+{
+  char buf[128];
+  std::snprintf(buf, sizeof(buf), format, args...);
+  return std::string(buf);
+}
+
 /*!
  *
  * @param message
@@ -1023,7 +1036,7 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
         int count = c_to_print_.count_;
         line << std::left <<std::setw(counter_description_width) << c_to_print_.description_ <<separator ;
         double t = nb_ts>0 ? c_to_print_.avg_time_per_step_ : t_c;
-        line << std::left << std::setw(time_per_step_width) <<t << separator << std::setprecision(3) << std::setw(percent_loop_time_width) << t_c/total_time*100 ;
+        line << std::left << std::setw(time_per_step_width) <<t << separator << std::setprecision(3) << std::setw(percent_loop_time_width) << fmt("%4.1f", t_c/total_time*100);
         if (nb_ts>0)
           {
             double n = static_cast<double>(count)/nb_ts;
@@ -1202,7 +1215,8 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
                 file_header << "The first time step is not accounted for the computation of the time loop statistics"<< std::endl;
             }
           file_header <<  std::left <<std::setw(text_width)<< "Total time of the time loop: "<<  std::left <<std::setw(number_width) << c_total_time.total_time_.count() << std::endl;
-          file_header <<  std::left <<std::setw(text_width) <<  "Number of time steps: " <<  std::left <<std::setw(number_width) << nb_ts << std::endl;
+          file_header <<  std::left <<std::setw(text_width) << "Number of time steps: " <<  std::left <<std::setw(number_width) << nb_ts << std::endl;
+          file_header <<  std::left <<std::setw(text_width) << "Skipped time steps: " <<  std::left <<std::setw(number_width) << nb_steps_elapsed_ << std::endl;
           file_header <<  std::left <<std::setw(text_width) << "Average time per time step: " <<  std::left <<std::setw(number_width) << c_total_time.total_time_.count()/nb_ts << endl;
           file_header <<  std::left <<std::setw(text_width) << "Standard deviation between time steps: " <<  std::left <<std::setw(number_width) << std::sqrt(c_timeloop.var_time_per_step_) << std::endl;
           file_header <<  std::left <<std::setw(text_width) << "Time elapsed in the skipped time steps: " <<  std::left <<std::setw(number_width) << time_skipped_ts_.count() <<std::endl << std::endl;
@@ -1232,27 +1246,32 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
 
       if(message == "Time loop statistics" && c_total_time.total_time_.count()>1.0e-12 && c_timeloop.total_time_.count()>1.0e-12)
         {
+          total_time = c_total_time.total_time_.count();
+          double other = total_time/nb_ts;
           perfs_TU<<std::endl;
           perfs_TU << std::left <<std::setw(counter_description_width) << "Standard counter description" << separator << std::setw(time_per_step_width) << "Time/step" << separator << std::setw(percent_loop_time_width) << "% loop time" << separator << std::setw(count_per_ts_width) << "Call(s)/step"<<std::endl;
           perfs_TU << line_sep_tabular << std::endl;
           for (int i = static_cast<int>(STD_COUNTERS::system_solver); i< static_cast<int>(STD_COUNTERS::petsc_solver); i++)
             {
               Counter& c_to_print = *std_counters_[i];
+              other -= c_to_print.avg_time_per_step_;
               write_globalTU_line(c_to_print,perfs_TU);
             }
-          total_time = c_total_time.total_time_.count();
           // Loop on the custom counters
-          if (custom_counter_map_str_to_counter_.empty())
-            perfs_TU <<std::endl  << std::left <<std::setw(counter_description_width) << "Untracked time" << separator << std::setw(time_per_step_width) << total_untracked_time_ts + total_untracked_time << separator << std::setprecision(3) <<  std::setw(percent_loop_time_width) << 100* (total_untracked_time_ts/time_tl + total_untracked_time/total_time) << separator <<std::endl <<std::endl;
-          else
+          if (!custom_counter_map_str_to_counter_.empty())
             {
               perfs_TU << std::endl;
               perfs_TU << std::left <<std::setw(counter_description_width) << "Custom counter description" << separator << std::setw(time_per_step_width) << "Time/step" << separator << std::setw(percent_loop_time_width) << "% loop time" << separator << std::setw(count_per_ts_width) << "Call(s)/step"<< separator <<std::setw(level_width) << "Level" <<std::endl;
               perfs_TU << line_sep_tabular_custom<<std::endl;
               for (const auto & pair : custom_counter_map_str_to_counter_)
-                write_globalTU_line_custom_counters(*pair.second, perfs_TU);
-              perfs_TU <<std::endl   << std::left <<std::setw(counter_description_width) << "Untracked time" << separator << std::setw(time_per_step_width) << total_untracked_time_ts + total_untracked_time << separator << std::setprecision(3) <<  std::setw(percent_loop_time_width) << 100* (total_untracked_time_ts/time_tl + total_untracked_time/total_time) << separator <<std::endl <<std::endl ;
+                {
+                  Counter& c_to_print = *pair.second;
+                  other -= c_to_print.avg_time_per_step_;
+                  write_globalTU_line_custom_counters(c_to_print, perfs_TU);
+                }
             }
+          perfs_TU << std::left <<std::setw(counter_description_width) << "Other operations" << separator << std::setw(time_per_step_width) << other << separator << std::setprecision(3) <<  std::setw(percent_loop_time_width) << fmt("%4.1f", other/(total_time/nb_ts)*100) << separator <<std::endl;
+          perfs_TU << std::endl << std::left <<std::setw(counter_description_width) << "Untracked time" << separator << std::setw(time_per_step_width) << total_untracked_time_ts + total_untracked_time << separator << std::setprecision(3) <<  std::setw(percent_loop_time_width) << 100* (total_untracked_time_ts/time_tl + total_untracked_time/total_time) << separator <<std::endl <<std::endl;
         }
       if (max_virtual_swap_c>0)
         {
@@ -1295,9 +1314,10 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
         double t_ts = max_time/nb_ts;
         double bw = static_cast<double>(c_.quantity_)/(1024.*1024.*1024*max_time);
         double percent = 100*max_time/time_tl;
-        perfs_GPU << std::left << std::setw(counter_description_width) << str <<separator << std::setw(time_per_step_width) << t_ts<<separator  << std::setw(percent_loop_time_width) <<  percent <<separator<< std::setw(count_per_ts_width) << calls <<separator;
+        perfs_GPU << std::left << std::setw(counter_description_width) << str <<separator << std::setw(time_per_step_width) << t_ts<<separator  << std::setw(percent_loop_time_width) << fmt("%4.1f", percent) <<separator<< std::setw(count_per_ts_width) << calls <<separator;
         if (bw >1.0e-10)
-          perfs_GPU << std::setw(bandwith_width) << bw << "GB/s" << std::endl;
+          perfs_GPU << fmt("%3.1f GB/s", bw) << std::endl;
+        //perfs_GPU << std::setw(bandwith_width) << bw << "GB/s" << std::endl;
         else
           perfs_GPU << std::endl;
         return percent;
@@ -1316,9 +1336,10 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
           double ratio_copy = compute_percent_and_write_tabular_line(c_todevice,"Copy host to device: ");
           ratio_copy += compute_percent_and_write_tabular_line(c_fromdevice,"Copy device to host: ");
           double ratio_comm = 100.0 * (total_comm_time)/time_tl;
-          double ratio_cpu = 100 * cpu_time/time_tl;
           double ratio_allocfree = compute_percent_and_write_tabular_line(c_allocfree,"Alloc/Free on device: ");
-          perfs_GPU << std::setprecision(3) << "GPU: " << ratio_gpu << "% Copy H<->D: " << ratio_copy << "% Alloc/free:" << ratio_allocfree << "% Comm: "<< ratio_comm << "% CPU & other: " << ratio_cpu << std::setprecision(6)<<"%"<<std::endl;
+          //double ratio_cpu = 100 * cpu_time/time_tl;
+          double ratio_cpu = 100 - ratio_gpu - ratio_copy - ratio_allocfree - ratio_comm;
+          perfs_GPU << std::setprecision(2) << "GPU: " << ratio_gpu << "% Copy H<->D: " << ratio_copy << "% Alloc/free: " << ratio_allocfree << "% Comm: "<< ratio_comm << "% CPU & I/O: " << ratio_cpu <<"%"<<std::endl;
           if (ratio_gpu<50)
             {
               Cerr << "==============================================================================================" << finl;
@@ -1375,7 +1396,7 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
                 perfs_IO  << "not measured (total running time too short <10s)" << std::endl;
               else
                 perfs_IO <<  std::left <<std::setw(number_width) << allreduce_peak_perf << std::endl;
-              perfs_IO <<  std::left <<std::setw(text_width+10) << "Network maximum bandwidth on all processors: "  <<  std::left <<std::setw(number_width) << max_bandwidth * 1.e-6 << "MB/s"  << std::endl ;
+              perfs_IO <<  std::left <<std::setw(text_width+10) << "Network maximum bandwidth on all processors: "  <<  std::left <<std::setw(number_width) << fmt("%4.1f GB/s",max_bandwidth * 1.e-9) << std::endl ;
               if (nb_ts>0)
                 perfs_IO <<  std::left <<std::setw(text_width+10) << "Total network traffic: " <<  std::left <<std::setw(number_width) << static_cast<double>(comm_sendrecv_q) * Process::nproc() / nb_ts * 1e-6 << "MB/time step"  << std::endl;
               else
