@@ -47,20 +47,23 @@ void Paroi_hyd_base_VEF::init_lois_paroi_()
     }
 }
 
-DoubleTab& Paroi_hyd_base_VEF::corriger_derivee_impl(DoubleTab& d) const
+DoubleTab& Paroi_hyd_base_VEF::corriger_derivee_impl(DoubleTab& tab_d) const
 {
   if (flag_face_keps_imposee_)
     {
-      int size = d.dimension_tot(0);
+      int size = tab_d.dimension_tot(0);
       assert(size == face_keps_imposee_.size_array());
-      for (int face = 0; face < size; face++)
-        {
-          if (face_keps_imposee_(face) != -2)
-            {
-              d(face, 0) = 0;
-              d(face, 1) = 0;
-            }
-        }
+      CIntArrView face_keps_imposee = static_cast<const ArrOfInt&>(face_keps_imposee_).view_ro();
+      DoubleTabView d = tab_d.view_rw();
+      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(0, size), KOKKOS_LAMBDA(const int face)
+      {
+        if (face_keps_imposee(face) != -2)
+          {
+            d(face, 0) = 0;
+            d(face, 1) = 0;
+          }
+      });
+      end_gpu_timer(__KERNEL_NAME__);
     }
-  return d;
+  return tab_d;
 }
