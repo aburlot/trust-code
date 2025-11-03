@@ -1055,6 +1055,7 @@
  Reorienter_triangles Reorienter_triangles_32_64 Reorienter_triangles.h
  Resoudre|Solve Resoudre Resoudre.h
  Reynolds_maille_Champ_Face Reynolds_maille_Champ_Face Reynolds_maille_Champ_Face.h
+ Robin_VEF Robin_VEF Robin_VEF.h
  Rotation Rotation Rotation.h
  Rotationnel_Champ_Face Rotationnel_Champ_Face Rotationnel_Champ_Face.h
  Rotationnel_Champ_P1NC Rotationnel_Champ_P1NC Rotationnel_Champ_P1NC.h
