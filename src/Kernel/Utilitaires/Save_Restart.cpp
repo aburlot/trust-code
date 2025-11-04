@@ -635,17 +635,19 @@ int Save_Restart::sauver() const
           TRUST_2_PDI pdi_interface;
 
           // if a file with the same name already exists, delete it and create a new one
-          int nb_proc = Process::nproc();
-          pdi_interface.TRUST_start_sharing("nb_proc", &nb_proc);
+          int non_const_sr = simple_restart_;
+          pdi_interface.TRUST_start_sharing("simple_sauvegarde", &non_const_sr);
           std::string event = "init_" + pb_base_->le_nom().getString();
           pdi_interface.trigger(event);
           pdi_interface.stop_sharing_last_variable();
 
           // format information
           int version = version_format_PDI();
-          int non_const_sr = simple_restart_;
+          int nb_proc = Process::nproc();
+          int nb_nodes = PE_Groups::get_node_group().get_number_of_nodes();
           pdi_interface.write("version", &version);
-          pdi_interface.write("simple_sauvegarde", &non_const_sr);
+          pdi_interface.write("nb_nodes", &nb_nodes);
+          pdi_interface.write("nb_proc", &nb_proc);
 
           ficsauv_created_ = true;
         }

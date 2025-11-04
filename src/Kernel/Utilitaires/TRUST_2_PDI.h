@@ -99,6 +99,7 @@ public:
                          "node",&comm, PDI_OUT,
                          "master", &masterComm, PDI_OUT,
                          nullptr);
+
       }
 #endif /* MPI_ */
 #endif /* HAS_PDI */

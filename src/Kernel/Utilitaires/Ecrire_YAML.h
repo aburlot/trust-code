@@ -141,6 +141,7 @@ private:
   // ==============================================================
   void write_data_for_restart(int pb_i, std::string& text);
   void write_fields_types_for_restart(int pb_i, std::string& text);
+  void write_restart_check(const std::string& fname, std::string& text);
 
   // ==============================================================
   // Private methods useful to write generic structures

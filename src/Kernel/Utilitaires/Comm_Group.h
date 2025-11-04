@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2024, CEA
+* Copyright (c) 2025, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -70,6 +70,10 @@ public:
   inline int rank() const;
   inline int nproc() const;
 
+  inline int get_node_id() const;
+  inline int get_number_of_nodes() const;
+
+
   // Veut-on faire des verifications supplementaires sur les communications ?
   // Ces verifications impliquent des communications en plus, ce qui modifie
   // le deroulement du programme. C'est donc un mecanisme separe des "assert".
@@ -117,6 +121,12 @@ protected:
   void               init_group_node(int nproc, int loc_rank, int glob_rank);
   void               init_group_trio(int nproc, int rank);
   friend class PE_Groups;
+
+  // ToDo gather that in a derived Comm_Group_MPI_Node class ?
+  // id of my node among all the other nodes
+  int node_id_  = -1;
+  // total number of nodes
+  int nb_nodes_ = -1;
 
 private:
   static int check_enabled_;
@@ -182,5 +192,19 @@ inline int Comm_Group::nproc() const
   assert(nproc_ >= 0);
   return nproc_;
 }
+
+/*! @brief Retrieve ID of my numa node
+ *
+ */
+inline int Comm_Group::get_node_id() const
+{
+  return node_id_;
+}
+
+inline int Comm_Group::get_number_of_nodes() const
+{
+  return nb_nodes_;
+}
+
 
 #endif

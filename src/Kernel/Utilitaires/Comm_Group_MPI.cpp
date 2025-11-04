@@ -764,7 +764,7 @@ void Comm_Group_MPI::init_comm_on_numa_node()
   const MPI_Comm& current_mpi_comm  = cg.mpi_comm_;
   int current_rank = cg.rank();
   mpi_error(MPI_Comm_split_type(current_mpi_comm, MPI_COMM_TYPE_SHARED, current_rank, MPI_INFO_NULL, &mpi_comm_));
-  MPI_Comm_group(mpi_comm_, &mpi_group_);
+  mpi_error(MPI_Comm_group(mpi_comm_, &mpi_group_));
 
   True_int loc_rank;
   True_int nbproc;
@@ -772,6 +772,24 @@ void Comm_Group_MPI::init_comm_on_numa_node()
   mpi_error(MPI_Comm_rank(mpi_comm_, &loc_rank));
 
   Comm_Group::init_group_node(nbproc, loc_rank, current_rank);
+
+  // Getting rank of my node among all the other nodes:
+  // we create a temporary communicator which gathers all masters of each node group
+  // so that the rank of my node is the rank of my master inside this temporary communicator
+  int master = loc_rank==0 ? 0 : MPI_UNDEFINED;
+  MPI_Comm tmp;
+  mpi_error(MPI_Comm_split(current_mpi_comm, master, current_rank, &tmp));
+  if(tmp != MPI_COMM_NULL)
+    {
+      mpi_error(MPI_Comm_rank(tmp, &node_id_));
+      mpi_error(MPI_Comm_size(tmp, &nb_nodes_));
+    }
+  // each master broadcasts id and size to their group
+  mpi_error(MPI_Bcast(&node_id_, 1,  MPI_INT, 0, mpi_comm_));
+  mpi_error(MPI_Bcast(&nb_nodes_, 1,  MPI_INT, 0, mpi_comm_));
+
+  if (tmp!= MPI_COMM_NULL)
+    mpi_error(MPI_Comm_free(&tmp));
 
 }
 
@@ -798,36 +816,6 @@ void Comm_Group_MPI::init_comm_on_node_master()
   int world_rank = ref_cast(Comm_Group_MPI, PE_Groups::current_group()).rank();
   True_int loc_rank = cg.rank() == 0 ? 0 : -1;
   Comm_Group::init_group_node(1, loc_rank, world_rank);
-}
-
-/*! @brief Retrieve ID of my numa node
- *
- */
-int Comm_Group_MPI::get_node_id() const
-{
-  // get rank of my node among all the other nodes:
-  // we create a temporary communicator which gathers all masters of each node group
-  // so that the rank of my node is the rank of my master inside this temporary communicator
-  int node_id = -1;
-
-  const Comm_Group_MPI& cg_world = ref_cast(Comm_Group_MPI, PE_Groups::current_group());
-  const MPI_Comm& mpi_world = cg_world.mpi_comm_;
-  int rank_in_world = cg_world.rank();
-  const Comm_Group_MPI& cg_node = ref_cast(Comm_Group_MPI, PE_Groups::get_node_group());
-  const MPI_Comm& mpi_node = cg_node.mpi_comm_;
-  int rank_in_node = cg_node.rank();
-
-  int master = rank_in_node==0 ? 0 : MPI_UNDEFINED;
-  MPI_Comm tmp;
-  MPI_Comm_split(mpi_world, master, rank_in_world, &tmp);
-  if(tmp != MPI_COMM_NULL)
-    MPI_Comm_rank(tmp, &node_id);
-  // each master broadcasts id to their group
-  mpi_error(MPI_Bcast(&node_id, 1,  MPI_INT, 0, mpi_node));
-  if (tmp!= MPI_COMM_NULL)
-    MPI_Comm_free(&tmp);
-
-  return node_id;
 }
 
 void Comm_Group_MPI::internal_collective(const int *x, int *resu, int nx, const Collective_Op *op, int nop, int level) const

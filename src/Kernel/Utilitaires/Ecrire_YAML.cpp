@@ -95,7 +95,10 @@ void Ecrire_YAML::write_checkpoint_restart_file(int save, const std::string& yam
           write_fields_types_for_checkpoint(i_pb, text);
         }
       else
-        write_data_for_restart(i_pb, text);
+        {
+          write_restart_check(pbs_[i_pb].filename, text);
+          write_data_for_restart(i_pb, text);
+        }
       write_format(save, pbs_[i_pb].filename, text);
     }
 
@@ -114,9 +117,30 @@ void Ecrire_YAML::write_format(int save, const std::string& fname, std::string& 
   std::string IO = save ? "write:" : "read:";
   begin_bloc(IO, text);
   write_impl_dataset("format_sauvegarde/version", "version", text);
-  write_impl_dataset("format_sauvegarde/simple_sauvegarde", "simple_sauvegarde", text);
-  if(!save) // for checkpoint, nb_proc is written during a special event to trigger the opening of backup file
-    write_impl_dataset("format_sauvegarde/nb_proc", "nb_proc", text);
+  if(save)
+    {
+      write_impl_dataset("format_sauvegarde/nb_nodes", "nb_nodes", text);
+      write_impl_dataset("format_sauvegarde/nb_proc", "nb_proc", text);
+    }
+  end_bloc();
+  end_bloc();
+}
+
+/*! @brief Writes the block in the YAML file that will ensure the restart can be done given the configuration of the checkpoint
+ */
+void Ecrire_YAML::write_restart_check(const std::string& fname, std::string& text)
+{
+  std::string config = "- file: " + fname;
+
+  begin_bloc(config, text);
+  std::string event = "on_event: ReadPrevConfiguration";
+  add_line(event, text);
+  if (Process::nproc() > 1)
+    add_line("communicator: $MPI_COMM_SELF", text);
+
+  begin_bloc("read:", text);
+  write_impl_dataset("format_sauvegarde/nb_nodes", "nb_nodes", text);
+  write_impl_dataset("format_sauvegarde/nb_proc", "nb_proc", text);
   end_bloc();
   end_bloc();
 }
@@ -173,7 +197,7 @@ void Ecrire_YAML::write_file_initialization(int pb_i, std::string& text)
 
   // we need to dump a single variable with PDI for the collision policy to work
   begin_bloc("write:", text);
-  write_impl_dataset("format_sauvegarde/nb_proc", "nb_proc", text);
+  write_impl_dataset("format_sauvegarde/simple_sauvegarde", "simple_sauvegarde", text);
   end_bloc();
   end_bloc();
 }
@@ -398,7 +422,10 @@ void Ecrire_YAML::declare_metadata(int save, std::string& text)
     }
 
   add_line("# metadata regarding parallelism", text);
+  add_line("# total number of processors for this simulation", text);
   add_line("nb_proc : int", text);
+  add_line("# total number of nodes for this simulation", text);
+  add_line("nb_nodes : int", text);
   if(Process::is_parallel())
     {
       add_line("# MPI communicator for my group", text);

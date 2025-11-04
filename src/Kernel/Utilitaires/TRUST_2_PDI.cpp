@@ -109,18 +109,30 @@ void TRUST_2_PDI::get_type(const Nom& name, Nom& type)
  */
 void TRUST_2_PDI::prepareRestart(int& last_iteration, double& tinit, int resume_last_time)
 {
-  // Check that we have the same number of procs used for checkpoint
-  if(Process::node_master()) // if I'm the master of my node (no need for everyone to read)
+  // Check that we have the same number of procs and same number of nodes used for checkpoint
+  int configOk = 0;
+  if(Process::je_suis_maitre()) // if I'm the master (no need for everyone to read)
     {
-      int nb_proc = -1;
-      read("nb_proc", &nb_proc);
-      if(nb_proc != Process::nproc())
+      int nb_proc = Process::nproc();
+      int nb_nodes = PE_Groups::get_node_group().get_number_of_nodes();
+
+      int prev_nb_proc = -1;
+      int prev_nb_nodes = -1;
+#ifdef HAS_PDI
+      PDI_multi_expose("ReadPrevConfiguration", "nb_proc", &prev_nb_proc, PDI_INOUT, "nb_nodes", &prev_nb_nodes, PDI_INOUT, nullptr);
+#endif
+      configOk = nb_proc == prev_nb_proc && nb_nodes == prev_nb_nodes;
+      if(!configOk)
         {
-          Cerr << "TRUST_2_PDI::prepareRestart():: PDI Restart Error ! The backup file has been generated with " << nb_proc << " processors, whereas the current computation is launched with "
-               << Process::nproc() << " processors. With PDI, you need to restart your computation with the same number of processors used for previous computation" << finl;
-          Process::exit();
+          Cerr << "TRUST_2_PDI::prepareRestart():: PDI Restart Error !" << finl;
+          Cerr << "The backup file has been generated with " << prev_nb_proc << " processors, on " << prev_nb_nodes << " nodes." << finl;
+          Cerr << "The current computation is launched with " << nb_proc << " processors on " << nb_nodes << " nodes." << finl;
+          Cerr << "With PDI, you need to restart your computation with the same configuration (ie same number of processors and same number of nodes) used for previous computation." << finl;
         }
     }
+  envoyer_broadcast(configOk,0);
+  if(!configOk)
+    Process::exit();
 
   // Get time scheme information
   int nb_sauv = -1;
