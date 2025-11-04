@@ -23,6 +23,7 @@ c63b5e52939e795ba8d26e35d767a843  Miniforge/local_channel/linux-64/brotli-bin-1.
 b6d90276c5aee9b4407dd94eb0cd40a8  Miniforge/local_channel/linux-64/cairo-1.18.0-hbb29018_2.conda
 fc8302679ce2d68307de499d01236928  Miniforge/local_channel/linux-64/cmake-3.30.3-hf9cb763_0.conda
 6b9f9141c247bdd61a2d6d37e0a8b530  Miniforge/local_channel/linux-64/contourpy-1.3.0-py312h68727a3_1.conda
+f21d3916ebe56e6bd02388fefba141af  Miniforge/local_channel/linux-64/cython-3.1.4-py312h7c45ced_2.conda
 ecfff944ba3960ecb334b9a2663d708d  Miniforge/local_channel/linux-64/dbus-1.13.6-h5008d03_3.tar.bz2
 f89b813bd9fe5ae6e3b7d17e17801f68  Miniforge/local_channel/linux-64/debugpy-1.8.5-py312h2ec8cdc_1.conda
 6595440079bed734b113de44ffd3cd0a  Miniforge/local_channel/linux-64/expat-2.6.3-h5888daf_0.conda

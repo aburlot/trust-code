@@ -799,7 +799,7 @@ unset PYTHONPATH # We get a warning from conda if we do not unset this variable
 model=`uname -m`
 system=`uname -s` && [ "$system" = Darwin ] && system=MacOSX
 # we add ncurses and libffi to overcome an issue with vi on Ub20 if env_for_python.sh loaded
-pkgs="pyqt nomkl numpy matplotlib swig cmake scipy sympy libgd pandas bison psutil `[ "$TRUST_DISABLE_JUPYTER" != 1 ] && echo jupyter pandoc` pydantic"
+pkgs="pyqt nomkl numpy matplotlib swig cmake scipy sympy libgd pandas bison psutil `[ "$TRUST_DISABLE_JUPYTER" != 1 ] && echo jupyter pandoc` pydantic cython"
 local_channel="-c file://$TRUST_ROOT/externalpackages/Miniforge/local_channel --override-channels"
 [ "$model" = aarch64 ] && local_channel="" && pkgs="nomkl numpy matplotlib swig cmake scipy sympy libgd pandas bison psutil `[ "$TRUST_DISABLE_JUPYTER" != 1 ] && echo jupyter pandoc`" && [ -d /ccc ] && pkgs="" # Pas internet au CCRT
 
@@ -1765,7 +1765,7 @@ then
    for pkg in $pkgs
    do
      echo "Installing $pkg ..."
-     cmd="env MPICH_CC=gcc OMPI_CC=gcc MPICC=$TRUST_cc TMPDIR=$TRUST_TMP $TRUST_ROOT/exec/python/bin/pip install $TRUST_ROOT/externalpackages/pip/$pkg*.gz 1>$TRUST_ROOT/exec/conda_python.log 2>&1"
+     cmd="env MPICH_CC=gcc OMPI_CC=gcc MPICC=$TRUST_cc TMPDIR=$TRUST_TMP $TRUST_ROOT/exec/python/bin/pip install $TRUST_ROOT/externalpackages/pip/$pkg*.gz --no-build-isolation --no-cache-dir 1>$TRUST_ROOT/exec/conda_python.log 2>&1"
      eval $cmd
      if [ $? != 0 ]
      then
