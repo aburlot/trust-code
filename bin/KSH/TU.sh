@@ -9,7 +9,7 @@ then
 elif [ $2 = "-its" ]
 then
    # Iterations solver
-   awk '/Iterations/ && /solveur/ {val=$NF} /Average number of iteration of the linear solver per call/ {val=$NF} END {print val}' $TU 
+   awk '/Iterations/ && /solveur/ {val=$NF} /Average number of iteration of the linear solver per call/ {val=$NF} END {print val}' $TU
 else
    echo "Option $2 unknown"
    exit -1
