@@ -17,8 +17,8 @@ check()
       echo "Creating new reference $TU_REF"
       exit
    fi 
-   ref=`awk '/Secondes/ && /pas de temps/ {print $NF}' $TU_REF`
-   new=`awk '/Secondes/ && /pas de temps/ {print $NF}' $TU`
+   ref=`TU.sh $TU_REF -dt`
+   new=`TU.sh $TU     -dt`
    echo $ref $new | awk '// {if (($2-$1)/($1+$2)>0.05) {exit 1}}' # On verifie qu'on ne depasse pas +5% de la performance
    err=$?
    if [ $err = 1 ]

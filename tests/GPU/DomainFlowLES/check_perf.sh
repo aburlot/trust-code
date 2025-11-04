@@ -18,14 +18,14 @@ check()
       echo "Creating new reference $TU_REF"
       exit
    fi 
-   ref=`awk '/Secondes/ && /pas de temps/ {print $NF}' $TU_REF`
-   new=`awk '/Secondes/ && /pas de temps/ {print $NF}' $TU`
+   ref=`TU.sh $TU_REF -dt`
+   new=`TU.sh $TU     -dt`
    echo $ref $new | awk '// {if (2*($2-$1)/($1+$2)>0.05) {exit 1}}' # On verifie qu'on ne depasse pas +5% de la performance
    err=$?
    ecart=`echo $ref $new | awk '// {printf("%2.1f\n",200*($2-$1)/($1+$2))}'`
    if [ $err = 1 ]
    then
-      sdiff $TU_REF $TU
+      sdiff -w 200 $TU_REF $TU
       echo "=========================================="
       echo "Performance is KO ($ecart%) for $1 on $2 !"
       echo "=========================================="
@@ -36,8 +36,8 @@ check()
          echo "Performance is improved so $TU_REF is updated !" && cp $TU $TU_REF
       else
          # Non regression faiblement testee sur le nombre d'iterations des solveurs
-         its_ref=`awk '/Iterations/ && /solveur/ {print $NF}' $TU_REF`
-         its_new=`awk '/Iterations/ && /solveur/ {print $NF}' $TU`
+         its_ref=`TU.sh $TU_REF -its`
+         its_new=`TU.sh $TU     -its`
          [ $its_ref != $its_new ] && echo "Solver convergence is different ($its_ref != $its_new) ! Possible regression..." && exit -1
       fi
    fi
