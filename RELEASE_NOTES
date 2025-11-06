@@ -1,5 +1,7 @@
-XX/XX/25 (TRUST) I/O          : Checkpoint/restart mecanism for different partition (.xyz format) disabled by default. Add "EcritureLectureSpecial 1" into datafile to enable it          
+XX/XX/25 (TRUST) I/O          : Checkpoint/restart mecanism for different partition (.xyz format) disabled by default. Add "EcritureLectureSpecial 1" into datafile to enable it
+XX/XX/25 (TRUST) GPU          : Fine tune AMG solver with AmgX for Nvidia and output more infos about GAMG preconditioner          
 XX/XX/25 (TRUST) GPU          : Fix huge launch of kernels during parallel calculation which degraded performance with possible slowdown
+XX/XX/25 (TRUST) GPU          : Features available: periodic BC for EF_stab, Champ_fonc_fonction_txyz_morceaux, Extraire_Domaine and Extraire_Surface
 XX/XX/25 (TRUST) GPU          : AMD rocALUTION solvers are removed
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
