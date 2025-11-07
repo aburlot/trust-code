@@ -384,11 +384,11 @@ void Perf_counters::Impl::check_begin(Counter& c, int counter_lvl, time_point t)
       if (c.is_running_)
         Process::exit("The counter that you are trying to start is already running:" + c.description_);
       /*
-      if (last_opened_counter_->is_comm_)
-        Process::exit("The last open_counter is a communication counter, you should close the communication counter first:" + last_opened_counter_->description_);
-      if (last_opened_counter_->is_gpu_)
-        Process::exit("The last open_counter is a gpu counter, you should close the gpu counter first:" + last_opened_counter_->description_);
-      */
+        if (last_opened_counter_->is_comm_)
+          Process::exit("The last open_counter is a communication counter, you should close the communication counter first:" + last_opened_counter_->description_);
+        if (last_opened_counter_->is_gpu_)
+          Process::exit("The last open_counter is a gpu counter, you should close the gpu counter first:" + last_opened_counter_->description_);
+       */
       int expected_lvl = last_opened_counter_->level_ +1;
       if (c.is_comm_)
         {
@@ -1181,7 +1181,7 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
           file_header  << spaces<<message << std::endl;
           file_header << line_sep_cpu << std::endl;
           file_header << std::left << std::setw(text_width)<<"Total time of the start-up: " <<  std::left <<std::setw(number_width) << c_total_time.total_time_.count() << std::endl;
-          //file_header << std::left << std::setw(text_width)<< "Percent of untracked time during computation start-up: "<<  std::left <<std::setw(number_width) << total_untracked_time/total_time << std::endl;
+          file_header << std::left << std::setw(text_width)<< "Percent of untracked time during computation start-up: "<<  std::left <<std::setw(number_width) << total_untracked_time/total_time << std::endl;
         }
       else if (message == "Time loop statistics")
         {
@@ -1205,8 +1205,7 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
           file_header <<  std::left <<std::setw(text_width) <<  "Number of time steps: " <<  std::left <<std::setw(number_width) << nb_ts << std::endl;
           file_header <<  std::left <<std::setw(text_width) << "Average time per time step: " <<  std::left <<std::setw(number_width) << c_total_time.total_time_.count()/nb_ts << endl;
           file_header <<  std::left <<std::setw(text_width) << "Standard deviation between time steps: " <<  std::left <<std::setw(number_width) << std::sqrt(c_timeloop.var_time_per_step_) << std::endl;
-          if (nb_steps_elapsed_>0)
-            file_header <<  std::left <<std::setw(text_width) << "Time elapsed in the skipped time steps: " <<  std::left <<std::setw(number_width) << time_skipped_ts_.count() <<std::endl << std::endl;
+          file_header <<  std::left <<std::setw(text_width) << "Time elapsed in the skipped time steps: " <<  std::left <<std::setw(number_width) << time_skipped_ts_.count() <<std::endl << std::endl;
           if (Process::is_parallel())
             file_header <<  std::left <<std::setw(text_width) << "Percent of total time spend in communication: " <<  std::left <<std::setw(number_width) << 100* total_comm_time / total_time << std::endl;
         }
@@ -1255,28 +1254,12 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
               perfs_TU <<std::endl   << std::left <<std::setw(counter_description_width) << "Untracked time" << separator << std::setw(time_per_step_width) << total_untracked_time_ts + total_untracked_time << separator << std::setprecision(3) <<  std::setw(percent_loop_time_width) << 100* (total_untracked_time_ts/time_tl + total_untracked_time/total_time) << separator <<std::endl <<std::endl ;
             }
         }
-      int tmp = c_system_solver.count_;
-      if (tmp > 0)
-        {
-          perfs_TU << std::endl;
-          if (!(message=="Time loop statistics"))
-            {
-              if (nb_ts>0)
-                perfs_TU <<  std::left <<std::setw(text_width) << "Number of calls to the linear solver per time step: " <<  std::left <<std::setw(number_width) << static_cast<double>(tmp) / nb_ts << std::endl;
-              else
-                perfs_TU <<  std::left <<std::setw(text_width) << "Number of call to the linear solver: " <<  std::left <<std::setw(number_width) << tmp << std::endl;
-            }
-          avg_solv_time = avg_solv_time / tmp;
-          perfs_TU <<  std::left <<std::setw(text_width) << "Average number of iteration of the linear solver per call: " <<  std::left <<std::setw(number_width) <<  nb_it_per_solver_calls << std::endl;
-          perfs_TU <<  std::left <<std::setw(text_width) << "Average time of the resolution of the linear problem per call: " <<  std::left <<std::setw(number_width) << avg_solv_time << std::endl  << std::endl;
-        }
       if (max_virtual_swap_c>0)
         {
           if (message=="Time loop statistics")
-            perfs_TU <<  std::left <<std::setw(text_width) << "Total number of virtual exchanges (echange_espace_virtuel):" <<  std::left <<std::setw(number_width) << max_virtual_swap_c << std::endl;
+            perfs_TU <<  std::left <<std::setw(text_width) << "Total number of virtual exchanges:" <<  std::left <<std::setw(number_width) << max_virtual_swap_c << std::endl;
           else
             perfs_TU <<  std::left <<std::setw(text_width) << "Number of virtual exchanges:" <<  std::left <<std::setw(number_width) << max_virtual_swap_c << std::endl;
-
         }
       if (min_max_avg_sd_t_q_c_allreduce_comm[2][1]>0 && nb_ts>0)
         {
@@ -1288,6 +1271,21 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
               perfs_TU << " Warning: number of MPI allreduce calls per time step is high. Contact TRUST team to run massive parallel calculations" << std::endl;
               perfs_TU << line_sep_cpu<< std::endl;
             }
+        }
+      int tmp = c_system_solver.count_;
+      if (tmp > 0)
+        {
+          perfs_TU << std::endl;
+          avg_solv_time = avg_solv_time / tmp;
+          if (!(message=="Time loop statistics"))
+            {
+              if (nb_ts>0)
+                perfs_TU <<  std::left <<std::setw(text_width) << "Number of calls to the linear solver per time step: " <<  std::left <<std::setw(number_width) << static_cast<double>(tmp) / nb_ts << std::endl;
+              else
+                perfs_TU <<  std::left <<std::setw(text_width) << "Number of call to the linear solver: " <<  std::left <<std::setw(number_width) << tmp << std::endl;
+              perfs_TU <<  std::left <<std::setw(text_width) << "Average time of the resolution of the linear problem per call: " <<  std::left <<std::setw(number_width) << avg_solv_time << std::endl;
+            }
+          perfs_TU <<  std::left <<std::setw(text_width) << "Average number of iteration of the linear solver per call: " <<  std::left <<std::setw(number_width) <<  nb_it_per_solver_calls << std::endl << std::endl;
         }
       // GPU part of the TU :
       auto compute_percent_and_write_tabular_line = [& perfs_GPU, & nb_ts, & time_tl, &separator] (const Counter& c_, const std::string str)

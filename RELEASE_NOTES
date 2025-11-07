@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+07/11/25 (TRUST) Change       : Counters printed in the .TU files and their API have changed. Details regarding those changes can be found in the TRUST online documentation or in the validation form located in $TRUST_ROOT/Validation/Rapports_automatiques/Verification/HowTo/Post_treatment_performance/
+06/11/25 (TRUST) GPU          : Optimize the diffusion Kernel in VEF
 31/10/25 (TRUST) Fix          : New formulation for the PolyMAC convection operator and correction of the expression for unstructured meshes
 28/10/25 (TRUST) New feature  : Add a Robin Boundary condition Available for NS equation in VEF discretization.
 27/10/25 (TRUST) Fix          : Stability time-step computation is now evaluated correctly for the convective operator of PolyMAC.
