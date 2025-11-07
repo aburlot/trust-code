@@ -234,10 +234,10 @@ void Op_Diff_VEF_Face::ajouter_cas_scalaire(const DoubleTab& tab_inconnue,
           const double coeff = COEFF_STEFAN_BOLTZMANN;
           const bool has_emissivity = la_cl_paroi.has_emissivite();
           CDoubleArrView surface = domaine_VEF.face_surfaces().view_ro();
-          CDoubleArrView text = static_cast<const ArrOfDouble&>(la_cl_paroi.text()).view_ro();
-          CDoubleArrView himp = static_cast<const ArrOfDouble&>(la_cl_paroi.himp()).view_ro();
+          CDoubleArrView text = static_cast<const ArrOfDouble&>(la_cl_paroi.tab_T_ext()).view_ro();
+          CDoubleArrView himp = static_cast<const ArrOfDouble&>(la_cl_paroi.tab_h_imp()).view_ro();
           CDoubleArrView eps;
-          if (has_emissivity) eps = static_cast<const ArrOfDouble&>(la_cl_paroi.eps()).view_ro();
+          if (has_emissivity) eps = static_cast<const ArrOfDouble&>(la_cl_paroi.tab_emissivite()).view_ro();
           CDoubleArrView inconnue = static_cast<const ArrOfDouble&>(tab_inconnue).view_ro();
           DoubleArrView resu = static_cast<ArrOfDouble&>(tab_resu).view_rw();
           DoubleArrView flux_bords = static_cast<ArrOfDouble&>(tab_flux_bords).view_wo();
@@ -927,9 +927,9 @@ void Op_Diff_VEF_Face::ajouter_contribution(const DoubleTab& tab_transporte, Mat
           const double coeff = COEFF_STEFAN_BOLTZMANN;
           const bool has_emissivity = la_cl_paroi.has_emissivite();
           CDoubleArrView inconnue = static_cast<const ArrOfDouble&>(equation().inconnue().valeurs()).view_ro();
-          CDoubleArrView himp = static_cast<const ArrOfDouble&>(la_cl_paroi.himp()).view_ro();
+          CDoubleArrView himp = static_cast<const ArrOfDouble&>(la_cl_paroi.tab_h_imp()).view_ro();
           CDoubleArrView eps;
-          if (has_emissivity) eps = static_cast<const ArrOfDouble&>(la_cl_paroi.eps()).view_ro();
+          if (has_emissivity) eps = static_cast<const ArrOfDouble&>(la_cl_paroi.tab_emissivite()).view_ro();
           DoubleArrView h_impose = static_cast<ArrOfDouble&>(tab_h_impose).view_wo();
           Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(ndeb, nfin), KOKKOS_LAMBDA(const int face)
           {

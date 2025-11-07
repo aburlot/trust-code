@@ -443,20 +443,24 @@ void Op_Dift_VEF_Face_Gen<DERIVED_T>::modifie_pour_cl_gen(const DoubleTab& tab_i
 
       if (sub_type(Echange_externe_impose, la_cl.valeur()))
         {
-          ToDo_Kokkos("critical"); // Implement la_cl_paroi.T_ext() and la_cl_paroi.h_imp() !
           const Echange_externe_impose& la_cl_paroi = ref_cast(Echange_externe_impose, la_cl.valeur());
-          const ArrOfDouble& face_surfaces = domaine_VEF.face_surfaces();
-          //const DoubleTab& T_ext = la_cl_paroi.T_ext();
-          //const DoubleTab& h_imp = la_cl_paroi.h_imp();
-          for (int face = ndeb; face < nfin; face++)
+          CDoubleTabView h_imp = la_cl_paroi.tab_h_imp().view_ro();
+          CDoubleTabView T_ext = la_cl_paroi.tab_T_ext().view_ro();
+          CDoubleArrView face_surfaces = domaine_VEF.face_surfaces().view_ro();
+          CDoubleTabView inconnue = tab_inconnue.view_ro();
+          DoubleTabView flux_bords = tab_flux_bords.view_wo();
+          DoubleTabView resu = tab_resu.view_rw();
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(ndeb, nfin), KOKKOS_LAMBDA(const int face)
+          {
             for (int nc = 0; nc < nb_comp; nc++)
               {
-                const double flux = la_cl_paroi.h_imp(face - ndeb, nc) *
-                                    (la_cl_paroi.T_ext(face - ndeb, nc) - tab_inconnue(face, nc)) * face_surfaces(face);
-                if (is_STAB) tab_resu(face, nc) -= flux;
-                else tab_resu(face, nc) += flux;
-                tab_flux_bords(face, nc) = flux;
+                const double flux = h_imp(face - ndeb, nc) * (T_ext(face - ndeb, nc) - inconnue(face, nc)) * face_surfaces(face);
+                if (is_STAB) resu(face, nc) -= flux;
+                else resu(face, nc) += flux;
+                flux_bords(face, nc) = flux;
               }
+          });
+          end_gpu_timer(__KERNEL_NAME__);
         }
 
       if (sub_type(Neumann_homogene, la_cl.valeur()) || sub_type(Symetrie, la_cl.valeur()) || sub_type(Neumann_sortie_libre, la_cl.valeur()))

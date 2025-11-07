@@ -255,7 +255,7 @@ void Echange_impose_base::associer_fr_dis_base(const Frontiere_dis_base& fr)
   Cond_lim_base::associer_fr_dis_base(fr);
 }
 
-const DoubleTab& Echange_impose_base::text(double temps) const
+const DoubleTab& Echange_impose_base::tab_T_ext(double temps) const
 {
   if (temps==DMAXFLOAT) temps = le_champ_front->get_temps_defaut();
   const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());
@@ -281,7 +281,7 @@ const DoubleTab& Echange_impose_base::text(double temps) const
   return text_;
 }
 
-const DoubleTab& Echange_impose_base::himp(double temps) const
+const DoubleTab& Echange_impose_base::tab_h_imp(double temps) const
 {
   if (temps==DMAXFLOAT) temps = le_champ_front->get_temps_defaut();
   const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());
@@ -307,7 +307,7 @@ const DoubleTab& Echange_impose_base::himp(double temps) const
   return himp_;
 }
 
-const DoubleTab& Echange_impose_base::eps(double temps) const
+const DoubleTab& Echange_impose_base::tab_emissivite(double temps) const
 {
   if (temps==DMAXFLOAT) temps = le_champ_front->get_temps_defaut();
   const Front_VF& le_bord = ref_cast(Front_VF, frontiere_dis());

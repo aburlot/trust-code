@@ -45,9 +45,9 @@ public:
   inline bool has_emissivite() const { return emissivite_.non_nul(); }
   inline bool has_h_imp() const { return h_imp_.non_nul(); }
 
-  const DoubleTab& text(double temps=DMAXFLOAT) const;
-  const DoubleTab& himp(double temps=DMAXFLOAT) const;
-  const DoubleTab& eps(double temps=DMAXFLOAT) const;
+  const DoubleTab& tab_T_ext(double temps=DMAXFLOAT) const;
+  const DoubleTab& tab_h_imp(double temps=DMAXFLOAT) const;
+  const DoubleTab& tab_emissivite(double temps=DMAXFLOAT) const;
   virtual double T_ext(int num) const;
   virtual double T_ext(int num,int k) const;
   virtual double h_imp(int num) const;
