@@ -482,7 +482,7 @@ void Op_Dift_VEF_Face_Gen<DERIVED_T>::modifie_pour_cl_gen(const DoubleTab& tab_i
  * ***************************
  */
 template <typename DERIVED_T> template <Type_Champ _TYPE_, bool _IS_STAB_, bool _IS_RANS_>
-void Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_contribution_bord_gen(const DoubleTab& transporte, Matrice_Morse& matrice, const DoubleTab& nu,
+void Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_contribution_bord_gen(const DoubleTab& transporte, Matrice_Morse& tab_matrice, const DoubleTab& nu,
                                                                     const DoubleTab& nu_turb, const DoubleVect& porosite_eventuelle) const
 {
   // On traite les faces bord
@@ -498,22 +498,28 @@ void Op_Dift_VEF_Face_Gen<DERIVED_T>::ajouter_contribution_bord_gen(const Double
       const Front_VF& le_bord = ref_cast(Front_VF, la_cl->frontiere_dis());
 
       if (sub_type(Periodique, la_cl.valeur()))
-        ajouter_bord_perio_gen__<_TYPE_, Type_Schema::IMPLICITE, _IS_STAB_, _IS_RANS_>(n_bord, transporte, nullptr, &matrice, nu, nu_turb, porosite_eventuelle);
+        ajouter_bord_perio_gen__<_TYPE_, Type_Schema::IMPLICITE, _IS_STAB_, _IS_RANS_>(n_bord, transporte, nullptr, &tab_matrice, nu, nu_turb, porosite_eventuelle);
       else // pas perio
         {
           if (sub_type(Scalaire_impose_paroi, la_cl.valeur())) // CL Temperature imposee
-            ajouter_bord_scalaire_impose_gen__<_TYPE_, Type_Schema::IMPLICITE, _IS_STAB_>(n_bord, transporte, nullptr, &matrice, nu, nu_turb, porosite_eventuelle);
+            ajouter_bord_scalaire_impose_gen__<_TYPE_, Type_Schema::IMPLICITE, _IS_STAB_>(n_bord, transporte, nullptr, &tab_matrice, nu, nu_turb, porosite_eventuelle);
           else if (sub_type(Echange_externe_impose, la_cl.valeur()) && nb_comp < 2) // XXX : plus tard pour multi inco aussi ...
             {
               const Echange_externe_impose& la_cl_paroi = ref_cast(Echange_externe_impose, la_cl.valeur());
               const int ndeb = le_bord.num_premiere_face(), nfin = ndeb + le_bord.nb_faces();
-              ToDo_Kokkos("critical");
-              for (int face = ndeb; face < nfin; face++)
-                matrice(face, face) += la_cl_paroi.h_imp(face - ndeb) * domaine_VEF.face_surfaces(face);
+              Matrice_Morse_View matrice;
+              matrice.set(tab_matrice);
+              CDoubleTabView h_imp = la_cl_paroi.tab_h_imp().view_ro();
+              CDoubleArrView face_surfaces = domaine_VEF.face_surfaces().view_ro();
+              Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), Kokkos::RangePolicy<>(ndeb, nfin), KOKKOS_LAMBDA(const int face)
+              {
+                matrice.add(face, face, h_imp(face - ndeb, 0) * face_surfaces(face));
+              });
+              end_gpu_timer(__KERNEL_NAME__);
             }
 
           // A pas oublier !
-          ajouter_bord_gen__<_TYPE_, Type_Schema::IMPLICITE, _IS_STAB_, _IS_RANS_>(n_bord, transporte, nullptr, &matrice, nu, nu_turb, porosite_eventuelle);
+          ajouter_bord_gen__<_TYPE_, Type_Schema::IMPLICITE, _IS_STAB_, _IS_RANS_>(n_bord, transporte, nullptr, &tab_matrice, nu, nu_turb, porosite_eventuelle);
         }
     }
 }
