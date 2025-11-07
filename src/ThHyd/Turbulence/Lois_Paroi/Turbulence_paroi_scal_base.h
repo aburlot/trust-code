@@ -105,7 +105,8 @@ protected:
   mutable int nb_impr_ = 0, nb_impr0_ = 0;                        // Compteur d'impression
   int calcul_ldp_en_flux_impose_; // flag defenissant si on utilise la ldp en flux impose 0 par defaut
   double Prdt_sur_kappa_;         // Constante dans la loi de paroi
-  inline double T_plus(double y_plus, double Pr);
+  KOKKOS_INLINE_FUNCTION
+  double T_plus(double y_plus, double Pr, double Prdt_sur_kappa);
 
   DoubleVects equivalent_distance_;
   // tableau des distances equivalentes sur chaque bord
@@ -136,11 +137,12 @@ private:
 // avec Kader:
 // sous-couche conductrice : T+=Pr y+
 // domaine logarithmique : T+=2.12*ln(y+)+Beta
-inline double Turbulence_paroi_scal_base::T_plus(double y_plus, double Pr)
+KOKKOS_INLINE_FUNCTION
+double Turbulence_paroi_scal_base::T_plus(double y_plus, double Pr, double Prdt_sur_kappa)
 {
   double Gamma = (0.01 * pow(Pr * y_plus, 4.)) / (1. + 5. * pow(Pr, 3.) * y_plus);
-  double Beta = pow(3.85 * pow(Pr, 1. / 3.) - 1.3, 2.) + Prdt_sur_kappa_ * log(Pr);
-  return Pr * y_plus * exp(-Gamma) + (Prdt_sur_kappa_ * log(1. + y_plus) + Beta) * exp(-1. / (Gamma + 1e-20));
+  double Beta = pow(3.85 * pow(Pr, 1. / 3.) - 1.3, 2.) + Prdt_sur_kappa * log(Pr);
+  return Pr * y_plus * exp(-Gamma) + (Prdt_sur_kappa * log(1. + y_plus) + Beta) * exp(-1. / (Gamma + 1e-20));
 }
 
 /*! @brief Associe un modele de turbulence a l'objet.
