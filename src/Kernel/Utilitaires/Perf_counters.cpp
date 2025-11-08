@@ -1337,8 +1337,9 @@ void Perf_counters::Impl::print_global_TU(const std::string& message)
           ratio_copy += compute_percent_and_write_tabular_line(c_fromdevice,"Copy device to host: ");
           double ratio_comm = 100.0 * (total_comm_time)/time_tl;
           double ratio_allocfree = compute_percent_and_write_tabular_line(c_allocfree,"Alloc/Free on device: ");
-          //double ratio_cpu = 100 * cpu_time/time_tl;
-          double ratio_cpu = 100 - ratio_gpu - ratio_copy - ratio_allocfree - ratio_comm;
+          double ratio_cpu = 100 * cpu_time/time_tl;
+          // PL: I prefer this formulae:
+          ratio_cpu = 100 - ratio_gpu - ratio_copy - ratio_allocfree - ratio_comm;
           perfs_GPU << std::setprecision(2) << "GPU: " << ratio_gpu << "% Copy H<->D: " << ratio_copy << "% Alloc/free: " << ratio_allocfree << "% Comm: "<< ratio_comm << "% CPU & I/O: " << ratio_cpu <<"%"<<std::endl;
           if (ratio_gpu<50)
             {
