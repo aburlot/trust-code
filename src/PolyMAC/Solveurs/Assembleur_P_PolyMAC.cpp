@@ -63,7 +63,7 @@ int Assembleur_P_PolyMAC::assembler_mat(Matrice& la_matrice, const DoubleVect& d
   const DoubleVect& fs = domaine.face_surfaces(), &pf = mon_equation->milieu().porosite_face(), &pe = mon_equation->milieu().porosite_elem(), &ve = domaine.volumes();
   const Champ_Face_PolyMAC& ch = ref_cast(Champ_Face_PolyMAC, mon_equation->inconnue());
   int i, j, k, e, f, fb, n_f, ne = domaine.nb_elem(), ne_tot = domaine.nb_elem_tot(), nf = domaine.nb_faces(), nf_tot = domaine.nb_faces_tot(), na_tot =
-                                                                                                                          dimension < 3 ? domaine.domaine().nb_som_tot() : domaine.domaine().nb_aretes_tot(), infoo;
+                                                                                                                          dimension < 3 ? domaine.domaine().nb_som_tot() : domaine.domaine().nb_aretes_tot(), infoo=-1;
   domaine.init_m2(), ch.fcl();
 
   DoubleTrav W(e_f.dimension(1), e_f.dimension(1)), W0(e_f.dimension(1), e_f.dimension(1));

@@ -830,7 +830,7 @@ void Couplage_Parietal_PolyMAC_helper::ajouter_blocs(matrices_t matrices, Double
 
 
                   /* resolution -> DEGLSY */
-                  int nw = -1, rk, infoo;
+                  int nw = -1, rk=-1, infoo=-1;
                   F77NAME(dgelsy)(&nl, &nc, &un, &C(0, 0, 0), &nl, &Y(0, 0), &n_m, &piv(0), &eps_g, &rk, &W(0), &nw, &infoo);
 
                   W.resize(nw = (int) (std::lrint(W(0))));
@@ -927,7 +927,7 @@ void Couplage_Parietal_PolyMAC_helper::ajouter_blocs(matrices_t matrices, Double
                             for (int d = 0; d < D; d++)
                               Y(n, d, d) = 1.;
 
-                          int nw = -1, rk, infoo;
+                          int nw = -1, rk=-1, infoo=-1;
 
                           F77NAME(dgelsy)(&D, &n_ef, &D, &C(0, 0, 0), &D, &Y(0, 0, 0), &n_m, &piv(0), &eps_g, &rk, &W(0), &nw, &infoo);
 
@@ -1215,7 +1215,7 @@ void Couplage_Parietal_PolyMAC_helper::ajouter_blocs(matrices_t matrices, Double
                         }
                     }
                   /* resolution(s) -> DGELSY */
-                  int nw = -1, rk, infoo;
+                  int nw = -1, rk=-1, infoo=-1;
 
                   F77NAME(dgelsy)(&t_eq, &t_eq, &t_ec, &A(0, 0, 0), &t_eq, &B(0, 0, 0), &t_eq, &piv(0), &eps, &rk, &W(0), &nw, &infoo);
 
@@ -1293,7 +1293,7 @@ void Couplage_Parietal_PolyMAC_helper::ajouter_blocs(matrices_t matrices, Double
                     }
 
               /* v.p. la plus petite : DSYEV */
-              int nw = -1, infoo;
+              int nw = -1, infoo=-1;
               F77NAME(DSYEV)("N", "U", &t_e, &A(0, 0, 0), &t_e, S.addr(), &W(0), &nw, &infoo);
 
               nw = (int) (std::lrint(W(0)));

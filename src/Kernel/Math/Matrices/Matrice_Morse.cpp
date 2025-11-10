@@ -1033,7 +1033,7 @@ Matrice_Morse operator+(const Matrice_Morse& A , const Matrice_Morse& B )
   int nrow=A.nb_lignes();
   int ncol=A.nb_colonnes();
   int job=1;
-  int ierr;
+  int ierr=-1;
   IntVect iw(ncol);
   Matrice_Morse C;
   // PL: avant de dimensionner a nzmax on verifie si A et B n'ont pas la meme structure par hasard...

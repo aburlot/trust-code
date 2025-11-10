@@ -221,8 +221,8 @@ void Domaine_PolyMAC_P0::fgrad(int N, int is_p, const Conds_lim& cls, const IntT
   const DoubleTab& nf = face_normales(), &xs = domaine().coord_sommets(), &vfd = volumes_entrelaces_dir();
   const DoubleVect& fs = face_surfaces(), &vf = volumes_entrelaces();
   const Static_Int_Lists& s_e = som_elem();
-  int i, i_s, j, k, l, e, f, s, sb, n_f, n_m, n_ef, n_e, n_eb, m, n, ne_tot = nb_elem_tot(), sgn, nw, infoo, d, db,
-                                                                     D = dimension, rk, nl, nc, un = 1, il, ok, essai;
+  int i, i_s, j, k, l, e, f, s, sb, n_f, n_m, n_ef, n_e, n_eb, m, n, ne_tot = nb_elem_tot(), sgn, nw, infoo=-1, d, db,
+                                                                     D = dimension, rk=-1, nl, nc, un = 1, il, ok, essai;
 
   unsigned long ll;
 

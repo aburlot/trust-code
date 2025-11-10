@@ -323,7 +323,7 @@ void Champ_Face_PolyMAC_P0::init_ve2() const
             }
 
           /* x de norme L2 minimale par dgels */
-          int nw = -1, rank;
+          int nw = -1, rank=-1;
 
           F77NAME(dgelsy)(&nl, &nc, &un, &A(0, 0), &nl, &B(0), &nc, &pvt(0), &eps, &rank, &W(0), &nw, &infoo);
 

@@ -58,7 +58,7 @@ static inline DoubleTab transp(DoubleTab a)
  */
 static inline double kersol(const DoubleTab& M, DoubleTab& b, double eps, DoubleTab *P, DoubleTab& x, DoubleTab& S)
 {
-  int i, nk, m = M.dimension(0), n = M.dimension(1), k = std::min(m, n), l = std::max(m, n), w = 5 * l, info, iP, jP;
+  int i, nk, m = M.dimension(0), n = M.dimension(1), k = std::min(m, n), l = std::max(m, n), w = 5 * l, info=-1, iP, jP;
   double res2 = 0;
   char a = 'A';
   //lapack en mode Fortran -> on decompose en fait Mt!!
