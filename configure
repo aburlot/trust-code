@@ -647,10 +647,12 @@ do
    elif [ "${1#-openmp}" != "$1" ]
    then
       export TRUST_USE_OPENMP=1
+      [ "$TRUST_USE_KOKKOS_OPENMP" = 1 ] && echo "Error, using -openmp and -kokkos_openmp is not possible." && exit 255
 
    elif [ "${1#-kokkos_openmp}" != "$1" ]
    then
       export TRUST_USE_KOKKOS_OPENMP=1
+      [ "$TRUST_USE_OPENMP" = 1 ] && echo "Error, using -openmp and -kokkos_openmp is not possible." && exit 255
 
    elif [ "${1#-kokkos_simd}" != "$1" ]
    then
