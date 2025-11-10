@@ -31,7 +31,6 @@ do
             size=`echo $size | awk '{gsub("x"," ",$0);print $0}'`
             if [ -f $ROOT/OpenMP_Iterateur.data ]
             then
-               [ $version = gpu ] && [ "$TRUST_USE_ROCM" = 1 ] && cp $ROOT/OpenMP_Iterateur_BENCH_rocALUTION.data $jdd.data 
                [ $version = gpu ] && [ "$TRUST_USE_CUDA" = 1 ] && cp $ROOT/OpenMP_Iterateur_BENCH_AmgX.data $jdd.data       
                [ $version = cpu ] && cp $ROOT/OpenMP_Iterateur_BENCH_PETSc.data $jdd.data
             else

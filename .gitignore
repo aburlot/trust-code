@@ -99,7 +99,6 @@ doc/tmp_files
 
 # Various
 Outils/VisIt/visit-install3_3_2
-ThirdPart/src/LIBROCALUTION/rocALUTION/
 Outils/valgrind/configure.help
 Outils/Gmsh/fltk/
 

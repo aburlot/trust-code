@@ -1,5 +1,6 @@
 #!/bin/bash
 # Teste rapidement tous les preconds rocALUTION implementes qui fonctionnent (du plus rapide au plus lent sur le cas GPU4)
+# 10/11/2025 : rocALUTION n'est plus installee dans TRUST
 
 check()
 {

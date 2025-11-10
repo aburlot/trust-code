@@ -11,8 +11,6 @@ cudss,libcudss-linux-x86_64-0.6.0.5_cuda12-archive.tar.xz,,RB,"?",https://docs.n
 ccache,ccache-3.1.4.tar.gz,outil,GF,GPL,https://github.com/ccache/ccache,https://github.com/ccache/ccache/releases/download/v3.1.4/ccache-3.1.4.tar.gz,
 ccache,ccache-4.8.2-linux-x86_64.tar.gz,outil,PL,GPL,https://github.com/ccache/ccache,https://github.com/ccache/ccache/releases/download/v4.8.2/ccache-4.8.2-linux-x86_64.tar.xz,
 ccache,ccache-4.8.2-darwin.tar.gz,outil,PL,GPL,https://github.com/ccache/ccache,https://github.com/ccache/ccache/releases/download/v4.8.2/ccache-4.8.2-darwin.tar.gz,
-rocALUTION,rocALUTION-f72a3919b52b64.tar.gz,,PL,"MIT License",https://rocalution.readthedocs.io/en/master/,https://github.com/ROCmSoftwarePlatform/rocALUTION,
-rocALUTION,rocm-cmake-master.zip,,PL,"MIT License",https://github.com/RadeonOpenCompute/rocm-cmake/blob/develop/README.md,https://github.com/RadeonOpenCompute/rocm-cmake,
 MPI,openmpi-4.1.6.tar.gz,,PL,BSD,https://www.open-mpi.org/,https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.6.tar.gz,
 MPI,openmpi-5.0.5.tar.gz,,PL,BSD,https://www.open-mpi.org/,https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.5.tar.gz,
 MPI,mpich-3.2.tar.gz,,SV,"BSD-like license",https://www.mpich.org/,http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz,"pour la licence, verifiez. j'ai tire l'info de http://lists.mpich.org/pipermail/discuss/2014-October/003306.html"
@@ -61,7 +59,7 @@ petsc,magma-2.7.1.tar.gz,,PL,,,https://bitbucket.org/icl/magma/get/16ae283407366
 petsc,STRUMPACK_8.0.0.tar.gz,,PL,,,https://github.com/pghysels/STRUMPACK/archive/v8.0.0.tar.gz,
 petsc,zfp-1.0.1.tar.gz,,PL,"BSD 3",,https://github.com/LLNL/zfp/releases/download/1.0.1/zfp-1.0.1.tar.gz,
 petsc,slate-v2023.06.00.tgz,,PL,,,https://github.com/icl-utk-edu/slate/releases/download/v2023.06.00/slate-2023.06.00.tar.gz,
-petsc,kokkos-kernels-4.6.01.tar.gz,,PL,"Apache License v2.0 with LLVM Exceptions",git://https://github.com/kokkos/kokkos-kernels.git,https://github.com/kokkos/kokkos-kernels/archive/4.6.01.tar.gz,
+petsc,kokkos-kernels-4.7.00.tar.gz,,PL,"Apache License v2.0 with LLVM Exceptions",git://https://github.com/kokkos/kokkos-kernels.git,https://github.com/kokkos/kokkos-kernels/archive/4.7.00.tar.gz,
 PDI,pdi-1.9.0.tar.gz,,AK,BSD 3-Clause License,https://github.com/pdidev/pdi,https://github.com/pdidev/pdi/archive/refs/tags/1.9.0.tar.gz,
 AmgX,AmgXWrapper_331eba32db693528749bd2c46158073079d80972.tar.gz,,PL,MIT,https://github.com/barbagroup/AmgXWrapper
 AmgX,nvc_get_devices.tgz,,GF,LGPL,http://files.salome-platform.org,http://downloads.sourceforge.net/project/trust-platform/1.7.3/extra/nvc_get_devices.tgz,

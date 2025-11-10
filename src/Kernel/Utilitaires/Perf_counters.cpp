@@ -288,7 +288,7 @@ private:
   duration time_skipped_ts_=duration::zero();       ///< the duration in seconds of the cache. If cache is too long, use function set_three_first_steps_elapsed in oder to include the stats of the cache in your stats
   Counter* last_opened_counter_=nullptr;   ///< pointer to the last opened counter. Each counter has a parent attribute, which also give the pointer of the counter open before them.
 #ifdef TRUST_USE_GPU
-  int nb_steps_elapsed_=1;  ///< On GPU, the first time step is not repreentative: a lot of H->D copies occur yet
+  int nb_steps_elapsed_=1;  ///< On GPU, the first time step is not representative: a lot of H->D copies occur yet
 #else
   int nb_steps_elapsed_=0;  ///< By default, we consider that the two first time steps are used to file the cache, so they are not taken into account in the stats.
 #endif
