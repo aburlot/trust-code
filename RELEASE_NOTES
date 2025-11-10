@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------------------------
 Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
+12/11/25 (TRUST) Bug fix      : Restart with PDI must be done wih the same number of MPI nodes as the checkpoint.
 10/11/25 (TRUST) I/O          : Checkpoint/restart mechanism for different partition (.xyz format) disabled by default. Add "EcritureLectureSpecial 1" into datafile to enable it
 10/11/25 (TRUST) GPU          : Fine tune AMG solver with AmgX for Nvidia and output more infos about GAMG preconditioner
 10/11/25 (TRUST) GPU          : Fix huge launch of kernels during parallel calculation which degraded performance with possible slowdown
