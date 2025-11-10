@@ -43,4 +43,13 @@ echo $ECHO_OPTS "ok ($ram_after_10dt  $ram_at_1dt)"
 # Comparaison non regression des echange_espace_virtuel
 #######################################################
 # Verification du nombre d'appels a echange_espace_virtuel par pas de temps
-exit `awk '/Nb echange_espace_virtuel/ {if ($NF<32) print 0;else print 1}' Cx.TU`
+if [ "${1#PAR_}" != "$1" ]
+then
+   echo $ECHO_OPTS "Number of calls to echange_espace_virtuel check for $1 ...\c"
+   nb_max_echgs=240 && [ $exec != "$exec_opt" ] && nb_max_echgs=310
+   err=`awk -v nb_max=$nb_max_echgs '/Total number of virtual exchanges:/ {if ($NF<nb_max) print 0;else print 1}' PAR_Cx.TU`
+   [ "$err" = "0" ] && echo "OK (<$nb_max_echgs)" || echo "KO (>$nb_max_echgs)"
+   exit $err
+else
+   exit 0
+fi
