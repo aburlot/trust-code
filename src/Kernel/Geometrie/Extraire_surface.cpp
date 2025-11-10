@@ -259,7 +259,7 @@ void Extraire_surface::extraire_surface_without_cleaning(Domaine& domaine_surfac
     if (marq[fac] == 1)
       {
         int nb = indices(fac);
-        double normal[3], normal_b[3], point0b[3], point1b[3], point2b[3];
+        double normal[3] = {0., 0., 0.} , normal_b[3], point0b[3], point1b[3], point2b[3];
         int el1 = face_voisin(fac, 0);
         if (el1 == -1) el1 = face_voisin(fac, 1);
         if (marq_elem(el1) != 1)
