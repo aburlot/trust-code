@@ -98,11 +98,10 @@ public :
 
   inline int getmaxVar()     { return maxvar; }
   inline int getNbVar()      { return ivar; }
-  inline std::string& getString() { return *str; }
+  inline std::string& getString() { return str; }
   inline void setString(const std::string& s)
   {
-    delete str;
-    str = new std::string(s);
+    str = s;
   }
   void addCst(const Constante& cst);
 
@@ -160,7 +159,7 @@ protected:
 
   PNode* root;                      // Liste chainee de PNode
   std::vector<PNodePod> PNodes;     // Vecteur de PNodePod
-  std::string* str;
+  std::string str;
   ArrOfDouble les_var;
   Noms les_var_names;
   LIST(Constante) les_cst;

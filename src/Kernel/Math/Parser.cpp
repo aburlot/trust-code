@@ -27,7 +27,7 @@ Parser::Parser()
   init_parser();
   state=0;
   root=nullptr;
-  str= new std::string("0");
+  str = "0";
   impuls_tn = -1.;
   impuls_T = 1.;
   impuls_t0 = 0.;
@@ -42,7 +42,7 @@ Parser::Parser(std::string& s, int n)
   init_parser();
   state=0;
   root=nullptr;
-  str= new std::string(s);
+  str = s;
   impuls_tn = -1.;
   impuls_T = 1.;
   impuls_t0 = 0.;
@@ -55,7 +55,7 @@ void Parser::set(const Parser& p)
   init_parser();
   state=p.state;
   root=nullptr;
-  str= new std::string(*p.str);
+  str = p.str;
   impuls_tn = p.impuls_tn;
   impuls_T = p.impuls_T;
   impuls_t0 = p.impuls_t0;
@@ -111,7 +111,6 @@ void destroy(PNode* p)
 Parser::~Parser()
 {
   if (root !=nullptr) destroy(root);
-  delete str;
 }
 
 void Parser::setNbVar(int nvar)
@@ -127,10 +126,10 @@ void Parser::parseString()
   if (root!=nullptr) destroy(root);
   PSTACK(PNode) st_ob(20);
   STACK(int) st_op(20);
-  StringTokenizer tok(*str);
+  StringTokenizer tok(str);
   if (!tok.check_GRP())
     {
-      Cerr << "Expression " << *str << " does not contain the same number of opening and closing parenthesis." << finl;
+      Cerr << "Expression " << str << " does not contain the same number of opening and closing parenthesis." << finl;
       Process::exit();
     }
   state = 0;
@@ -291,7 +290,7 @@ void Parser::parserState0(StringTokenizer* tokenizer, PSTACK(PNode)* ob, STACK(i
               else
                 {
                   Cerr << "Error in Parser::parserState0 during interpretation of the following string :\n ";
-                  Cerr << *str << "\n";
+                  Cerr << str << "\n";
                   Cerr << " identifier " << func << " unknown " << finl;
                   // permet d avoir 0 erreur valgrind avec cppunit
                   root=(PNode*) *(ob->getBase());
@@ -378,7 +377,7 @@ void Parser::parserState1(StringTokenizer* tokenizer, PSTACK(PNode)* ob, STACK(i
               else
                 {
                   Cerr << "Error in Parser::parserState1 during interpretation of the following string :\n ";
-                  Cerr << *str << "\n";
+                  Cerr << str << "\n";
                   Cerr << " identifier " << func << " unknown !! " << finl;
                   Cerr << "List of known var "<<finl;
                   for (auto name : les_var_names)
