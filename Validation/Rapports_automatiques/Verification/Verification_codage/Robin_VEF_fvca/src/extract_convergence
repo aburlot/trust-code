@@ -1,0 +1,8 @@
+for M in $list_dis
+do
+    cat $M/*/conv_p | awk '{print $1,$2,$3}'| sort -g> $M/conv_glob_p
+    cat $M/*/conv_v | awk '{print $1,$2,$3}'| sort -g> $M/conv_glob_v
+    cat $M/*/conv_divu | awk '{print $1,$2,$3}'| sort -g> $M/conv_glob_divu
+    # cat $M/*/conv_gradu | awk '{print $1,$2,$3}'| sort -g> $M/conv_glob_gradu_carre
+
+done

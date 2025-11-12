@@ -1,0 +1,29 @@
+current_dir=$(pwd)
+parent_dir=$(dirname $(dirname $(dirname "$current_dir")))
+parent_name=$(basename "$parent_dir")
+# errgu="../../../../py/${parent_name}.py"
+
+
+# avoid gradient computing
+# visit -cli -s "$errgu" -nowin
+
+tot=`grep "Temps total" $1.TU | awk '{printf("%f ", $NF)}' | awk '{print ($1+$2)}'`
+h=`awk '/Average cell size <h>=/ {print $NF}' $1.err`
+
+# Function to get the line with the maximum second column where line number > 5
+get_max_line() {
+    local file=$1
+    awk 'NR > 5 {print $0, NR} {max = ($2 > max) ? $2 : max} END {for (i=6; i<=NR; i++) if ($2 == max) print $0}' $file | head -1 | awk '{print $2}'
+}
+                                            # last line
+resp=`get_max_line $1_ERRP_ELEM.son`        # resp=`tail -1 $1_ERRP_ELEM.son | awk '{print $2}'`
+resv=`get_max_line $1_ERRU.son`             # resv=`tail -1 $1_ERRU.son | awk '{print $2}'`
+resdiv=`get_max_line $1_ERRDIVU.son`        # resdiv=`tail -1 $1_ERRDIVU.son | awk '{print $2}'`
+# resgrad=`get_max_line jdd_ERR_GRADU.dat`
+
+echo $h $resp $tot > conv_p
+echo $h $resv $tot > conv_v
+echo $h $resdiv $tot > conv_divu
+# echo $h $resgrad $tot > conv_gradu_carre
+
+
