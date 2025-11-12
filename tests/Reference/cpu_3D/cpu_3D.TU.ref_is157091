@@ -2,51 +2,53 @@
 
 This is the global file for tracking performance in TRUST. It stores aggregated quantities.
 More detailed statistics can be found in the cpu_3D_csv.TU file
-A jupyter notebook giving detailed information about performance measurement can be found in:
- $TRUST_ROOT/Validation/Rapports_automatiques/Verification/HowTo/
-For time loop, only level 1 counters statistics are printed in this file by default
+For time loop, only standard counters of level 1 are printed alongside your custom counters
 Time is given in seconds
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                               Context of the computation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Date:     21-07-2025 -- 10:19:17
+Date:     12-11-2025 -- 10:51:22
 OS:       is157091__Linux__x86_64__5.11.12-300.fc34.x86_64__#1 SMP Wed Apr 7 16:31:13 UTC 2021
 CPU:      Model name:  AMD Ryzen Threadripper PRO 5975WX 32-Cores ; Thread(s) per core:  2
 GPU:      No GPU was used for the computation
 Nb procs: 1
+TRUST version: 1.9.7_beta
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                            Computation start-up statistics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Total time of the start-up:                                                0.527044       
-Percent of untracked time during computation start-up:                     7.60848e-07    
+Total time of the start-up:                                                0.498305       
+Percent of untracked time during computation start-up:                     9.03062e-07    
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                                  Time loop statistics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Total time:                                                                0.860066       
+Total time of the time loop:                                               0.91871        
 Number of time steps:                                                      3              
-Average time per time step:                                                0.286689       
-Standard deviation between time steps:                                     0.0745684      
+Skipped time steps:                                                        0              
+Average time per time step:                                                0.306237       
+Standard deviation between time steps:                                     0.00790353     
 Time elapsed in the skipped time steps:                                    0              
 
 
 Standard counter description             | Time/step       | % loop time | Call(s)/step   
 ------------------------------------------------------------------------------------------
-Convection operator                      | 0.0624985       | 21.8        | 2              
-Diffusion operator                       | 0.01737763      | 6.06        | 2              
-Source_terms                             | 0.001432309     | 0.5         | 1              
-Gradient operator                        | 0.004026413     | 1.4         | 2              
-Divergence operator                      | 0.003052232     | 1.06        | 2              
-Update ::mettre_a_jour                   | 0.002174219     | 0.758       | 1              
-Computation of the time step dt          | 0.003256568     | 1.14        | 4              
+Convection operator                      | 0.0659965       | 21.6        | 2              
+Diffusion operator                       | 0.02017051      |  6.6        | 2              
+Gradient operator                        | 0.004045922     |  1.3        | 2              
+Divergence operator                      | 0.0032397       |  1.1        | 2              
+Source terms                             | 0.001526237     |  0.5        | 1              
+Update ::mettre_a_jour                   | 0.002216282     |  0.7        | 1              
+Computation of the time step dt          | 0.00341454      |  1.1        | 4              
+Post-treatment operations                | 0.00127914      |  0.4        | 1              
+Other operations                         | 0.204348        | 66.7        | 
 
-Untracked time                           | 2.7411e-05      | 0.00319     | 
+Untracked time                           | 2.05e-05        | 0.00223     | 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                               Post-resolution statistics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Time of the post-resolution:                                               0.0016653      
+Time of the post-resolution:                                               0.00205806     
 
-Total time for the whole computation                                       1.38878        
+Total time for the whole computation                                       1.41907        
 

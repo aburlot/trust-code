@@ -7,29 +7,13 @@ check()
       if [ $ligne = "dt" ]
       then
          # Time per step
-         ref=`awk '/Average time per time step:/ {print $NF}' $1.TU.ref_$2`
-         if [ -z "$ref" ]
-         then
-            ref=`awk '/Secondes/ && /pas de temps/ {print $NF}' $1.TU.ref_$2`
-         fi
-         new=`awk '/Average time per time step:/ {print $NF}' $1.TU`
-         if [ -z "$new" ]
-         then
-            new=`awk '/Secondes/ && /pas de temps/ {print $NF}' $1.TU`
-         fi
+         ref=`TU.sh $1.TU.ref_$2 -dt`
+         new=`TU.sh $1.TU -dt`
       elif [ $ligne = "total" ]
       then
          # Total time
-         ref=`awk '/Total time for the whole computation/ {print $NF}' $1.TU.ref_$2`
-         if [ -z "$ref" ]
-         then
-            ref=`awk '/Temps total/ {t+=$NF} END {print t}' $1.TU.ref_$2`
-         fi
-         new=`awk '/Total time for the whole computation/ {print $NF}' $1.TU`
-         if [ -z "$new" ]
-         then
-            new=`awk '/Temps total/ {t+=$NF} END {print t}' $1.TU`
-         fi
+         ref=`TU.sh $1.TU.ref_$2 -total`
+         new=`TU.sh $1.TU -total`
       fi
       echo $ref $new | awk '// {err=2*($2-$1)/($1+$2);OK=(err>0.05?0:(err>-0.025?1:2));exit OK}' # On verifie qu'on ne depasse pas +5% de la performance
       OK=$?
@@ -51,13 +35,14 @@ check()
       then
          if [ "$project_directory" != "" ]
          then
-            cp `pwd`/$1.TU `find $project_directory/tests/Reference -name $1.TU.ref_$2`
+            cp `pwd`/$1.TU `find $project_directory/tests -name $1.TU.ref_$2`
          else
-            cp `pwd`/$1.TU `find $TRUST_ROOT/tests/Reference -name $1.TU.ref_$2`
+            cp `pwd`/$1.TU `find $TRUST_ROOT/tests -name $1.TU.ref_$2`
          fi
          echo "$1.TU.ref_$2" updated !      
       fi
       [ $OK = 0 ] && exit -1
+      exit 0
    done   
 }
 # ToDo: prevoir dans le script trust un lock avant le lancement

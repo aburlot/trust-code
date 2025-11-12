@@ -1,4 +1,4 @@
 #!/bin/bash
 [ -f PAR_$1.stop ] && lscpu
-compare_TU $1
+compare_TU $1 || exit -1
 exit 0
