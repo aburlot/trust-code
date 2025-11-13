@@ -44,6 +44,9 @@ if (APPLE)
   # Necessary for MAC, otherwise system python detected when finding package Python3
   find_package(PythonInterp 3 REQUIRED)  # Make sure to find TRUST Python first (even if not technically needed) ...
   find_package(PythonLibs 3 REQUIRED)    # ... so that TRUST Python libs are found too.
+
+  # force modern FindPython3 to reuse the same interpreter
+  set(Python3_EXECUTABLE "${PYTHON_EXECUTABLE}" CACHE FILEPATH "Python 3 interpreter (TRUST)" FORCE)
 endif()
 
 find_package(Python3 COMPONENTS Interpreter Development.Module  REQUIRED)  # Make sure to find TRUST Python first (even if not technically needed) ...
