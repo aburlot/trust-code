@@ -1046,18 +1046,20 @@ def executeCommand(cmd, verbose=False, nonRegression=False):
     _runCommand(cmd, verbose)
     os.chdir(ORIGIN_DIRECTORY)
 
-def extraitCoupe(data_file, probe_name, time=None, verbose=False):
+def extraitCoupe(data_file, probe_name, time=None, verbose=False, directory=None):
     """ execute script extrait_coupe of $TRUST_ROOT/bin 
     Parameters
     ----------
-
+    directory: str
     data_file: str
     probe_name: str
     verbose: bool
     time: value or 'all' or nothing
     """
-
-    cmd = "extrait_coupe " + data_file + " " + probe_name
+    cmd = ""
+    if dir:
+        cmd = "cd " + directory + " && "
+    cmd += " extrait_coupe " + data_file + " " + probe_name
     if time:
         cmd+=" " + str(time)
     executeCommand(cmd, verbose)
