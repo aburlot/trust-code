@@ -74,7 +74,7 @@ analyse_fichier_colonne()
          then
             let egal=$egal+1
          else
-            echo error with files ${seq_output}
+            echo error with files ${seq_output}, check ${PWD}/compare_${seq_output}.log
             cat compare_${seq_output}.log
          fi
       done
