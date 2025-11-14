@@ -41,6 +41,11 @@ fi
 
 test_execution()
 {
+    if [ "$TRUST_SKIP_PREREQUISITE_TEST" != "" ]
+    then
+       echo "Warning: Testing rerequisite $nom_prerequis skipped, You may have issue when linking baltik executable..."
+       return
+    fi
     test_dep=test_dep_$nom_prerequis
     mkdir $test_dep
     cd $test_dep
@@ -121,6 +126,7 @@ install_arch()
     
     [ $status -eq 0 ] && [ "$DEBUG_COMPIL" = "" ] && rm -rf prov
     echo "To keep the prov dir, set DEBUG_COMPIL to 1"
+    echo "To skip test_execution, set TRUST_SKIP_PREREQUISITE_TEST to 1"
     status_tot=$status
     export status_tot
 }
@@ -130,20 +136,20 @@ install_arch()
 
 ###   on regarde si on peut faire le test
 # PL: on desactive le test pour les compilateurs exotiques (eg: nvc++)
-[ "$TRUST_CC_BASE_EXTP" = "" ] && test_execution 
+[ "$TRUST_CC_BASE_EXTP" != "" ] && TRUST_SKIP_PREREQUISITE_TEST=1
+test_execution
 
 echo $status_tot
 
 
 
-[ "$status_tot" -eq "0" ] && exit 0
+[ "$status_tot" = "0" ] && exit 0
 
 ## on tente l'installation
 install_arch $archive $destination $nom_prerequis
 
-## on regarde si on peut faire le test
-# PL: on desactive le test pour les compilateurs exotiques (eg: nvc++)
-[ "$TRUST_CC_BASE_EXTP" = "" ] && test_execution
+###   on regarde si on peut faire le test
+test_execution
 echo "status test a la fin " $status_tot
-
+[ "$status_tot" != "0" ] && echo "To skip test_execution (may be useful on clusters), set TRUST_SKIP_PREREQUISITE_TEST to 1"
 exit $status_tot
