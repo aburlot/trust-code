@@ -227,6 +227,11 @@ is_link_or_double_link()
 
 add_test_case_from_validation()
 {
+   if [ "$TRUST_SKIP_SCAN_FORMS" = "1" ]
+   then
+      echo "Warning: looking for new test cases extracted from the validation database skipped"
+      return
+   fi
    check_all_forms_file="$Rapports_auto_root/Validation/Rapports_automatiques/.check_of_all_validation_forms"
    if [ -f $check_all_forms_file ] && [ "`find $Rapports_auto_root/Validation/Rapports_automatiques -newer $check_all_forms_file 2>/dev/null | grep -v build | grep -v ppms | grep -v '.log'`" = "" ]
    then
@@ -239,7 +244,8 @@ add_test_case_from_validation()
    FICHES=`mktemp_`
    let NB_FICHES=0
    echo " "
-   echo "Looking for new test cases extracted from the validation database. Please wait..."
+   echo "Looking for new test cases extracted from the validation database (if you want to skip this step, export TRUST_SKIP_SCAN_FORMS=1)."
+   echo "Please wait..."
    for DIRECTORY in Validation Verification
    do
       # Le test sur l'existence du repertoire est important car
