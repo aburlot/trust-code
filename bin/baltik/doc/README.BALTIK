@@ -1,7 +1,7 @@
 
 -------------------------------
 1. What is baltik
-2. Informations
+2. Information
 3. What is a baltik project ?
 4. The project.cfg file
 5. The '[description]' mandatory section
@@ -11,6 +11,8 @@
 9. tests
 10. '[dependencies]' optionnal section
 11. '[prerequisiteNN]' optionnal section
+12. Available environment variables
+13. Display BALTIK version if different than TRUST_VERSION
 
 -------------------------------
 
@@ -27,7 +29,7 @@ code.
 
 
 ==================================================
-2. Informations
+2. Information
 ==================================================
 
 A diffusion list is dedicated to baltik framework. You can subscribe
@@ -270,6 +272,8 @@ Here are listed the most importants :
 - exec_opt : path to the optimized executable (if built) ;
 - exec_debug : path to the debug executable (if built) ;
 - exec : current version of the executable used when running "trust" command ;
+- project_name : the name of your project
+- project_version : the version of your project
 - [SubProjectName]_project_directory : root directory of all sub projects associated to your baltik.
 
 For example if project.cfg contains following lines :
@@ -280,6 +284,14 @@ MathKernel: ./MathKernel
 Then, environment variables "MathKernel_project_directory" will be created.
 
 
+==========================================================
+13. Display BALTIK version if different than TRUST_VERSION
+==========================================================
+You can add in the src/TRUST_Fixes of your BALTIK a file (mask) named:
+Baltik_Version.h
+in which you define both variables
+#define BALTIK_VERSION "X.Y.Z"
+#define BALTIK_NAME "The Name of Your Baltik"
 
 
 
