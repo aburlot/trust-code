@@ -1057,7 +1057,7 @@ def extraitCoupe(data_file, probe_name, time=None, verbose=False, directory=None
     time: value or 'all' or nothing
     """
     cmd = ""
-    if dir:
+    if directory:
         cmd = "cd " + directory + " && "
     cmd += " extrait_coupe " + data_file + " " + probe_name
     if time:

@@ -1,4 +1,0 @@
-#!/bin/bash
-jdd=$1.data
-extrait_coupe base INLET all
-
