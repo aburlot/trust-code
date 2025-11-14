@@ -1,0 +1,60 @@
+dimension 2
+
+Domaine dom
+
+Mailler dom
+{
+Pave Upstream
+        {
+        Origine 0. 0.33333
+        Nombre_de_noeuds 39 14
+        Longueurs 4. 0.66667
+        ytanh_taille_premiere_maille 0.007
+        ytanh_dilatation 1
+        # xtanh_taille_premiere_maille 0.007
+        xtanh_dilatation -1 #
+        }
+        {
+        Bord Inlet      X = 0.          0.33333 <= Y <= 1.
+        Bord Top1       Y = 1.          0.      <= X <= 4.
+        Bord Bottom1    Y = 0.33333     0.      <= X <= 4.
+        } ,
+Pave TopDownstream
+        {
+        Origine 4. 0.33333
+        Nombre_de_noeuds 153 14
+        Longueurs 16. 0.66667
+        ytanh_taille_premiere_maille 0.007
+        ytanh_dilatation 1
+        xtanh_taille_premiere_maille 0.007
+        xtanh_dilatation 1
+        }
+        {
+        Bord Top2       Y = 1           4.      <= X <= 20.
+        Bord Outlet1    X = 20.         0.33333 <= Y <= 1.
+        } ,
+Pave BottomDownstream
+        {
+        Origine 4. 0.
+        Nombre_de_noeuds 153 14
+        Longueurs 16. 0.33333
+        ytanh_taille_premiere_maille 0.007
+        ytanh_dilatation 0
+        xtanh_taille_premiere_maille 0.007
+        xtanh_dilatation 1
+        }
+        {
+        Bord Step       X = 4.          0.      <= Y <= 0.33333
+        Bord Outlet2    X = 20.         0.      <= Y <= 0.33333
+        Bord Bottom2    Y = 0.          4.      <= X <= 20.
+        }
+}
+
+Regroupebord dom Top { Top1 Top2 }
+Regroupebord dom Bottom { Bottom1 Bottom2 }
+Regroupebord dom Outlet { Outlet1 Outlet2 }
+
+postraiter_domaine {
+    domaine dom
+    format lml
+}
