@@ -117,7 +117,7 @@ class MilieuModifier(TRUSTParser):
         # Find associate - NB: only one associate supported
         mil.assPb = self.findAssociate(mil.name)
         if mil.assPb == -1:
-            raise ValueError("WHAAAT? No medium association found for milieu %s ..." % mil.name)
+            print("WHAAAT? No medium association found for milieu %s ..." % mil.name)
         # Read associated pb
         pb = self.tabToken[self.getNext(mil.assPb, 1)]
         if pb not in self.problems:

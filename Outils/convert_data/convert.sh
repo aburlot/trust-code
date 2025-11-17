@@ -52,7 +52,21 @@ python $conv_chf $ze_d/after_liremed.data $ze_d/after_chf.data  || ( cp $ze_d/af
 
 echo ""
 echo ""
+plaques_file=`grep -io 'plaques_in_file .*' $1 | awk '{print $2}'`
+if [ "$plaques_file" != "" ] && [ -f $plaques_file ]
+then
+   plaques_file_new=${plaques_file}.new
+   echo "*** Converting $plaques_file file to $plaques_file_new ..."
+   python $conv_chf "$plaques_file" $plaques_file_new || (cp $plaques_file $plaques_file_new && sth_done=0) 
+   sed -i "s/$plaques_file/$plaques_file_new/" $ze_d/after_chf.data
+else
+   echo "no plaques_in_file datafile read in $1"
+fi
 
+
+
+echo ""
+echo ""
 if [ "$sth_done" = "1" ]; then
     cp $ze_d/after_chf.data "$1".new
     echo "=> All done! File '$1.new' has been written."
