@@ -246,7 +246,7 @@ Entree& Equation_base::readOn(Entree& is)
   Param param(que_suis_je());
   set_param(param);
   Nom expr_equation_non_resolue="0";
-  param.ajouter("disable_equation_residual",&disable_equation_residual_); // XD attr disable_equation_residual chaine disable_equation_residual 1 The equation residual will not be used for the problem residual used when checking time convergence or computing dynamic time-step
+  param.ajouter("disable_equation_residual",&disable_equation_residual_); // XD attr disable_equation_residual entier disable_equation_residual 1 The equation residual will not be used for the problem residual used when checking time convergence or computing dynamic time-step
   equation_non_resolue_.setString(expr_equation_non_resolue);
   param.lire_avec_accolades_depuis(is);
   matrice_init = 0;

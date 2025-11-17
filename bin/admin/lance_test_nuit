@@ -4094,7 +4094,7 @@ then
    echo " " >> $MESSAGES_NUIT
    echo "To unsubscribe from this list, send an e-mail to $TRUST_MAIL " >> $MESSAGES_NUIT
 else
-   ALL_DEVELOPERS_TRUST_MAIL=$TRUST_MAIL" "$TMA_PROJECT_LEADER" "$triocfd_PROJECT_LEADER" "$genepi3_PROJECT_LEADER" "$trust_team_members
+   ALL_DEVELOPERS_TRUST_MAIL=$TRUST_MAIL" "$TMA_PROJECT_LEADER" "$triocfd_PROJECT_LEADER" "$genepi3_PROJECT_LEADER" "$other_PROJECT_LEADERS
 fi
 
 #####################################
