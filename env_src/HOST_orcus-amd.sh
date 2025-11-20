@@ -11,6 +11,9 @@ define_modules_config()
    env=$TRUST_ROOT/env/machine.env
    # Initialisation de l environnement module $MODULE_PATH
    echo "source /etc/profile.d/modules.sh " >> $env
+   # Pour orcus, on skip le test des prerequis (type FFTW pour triocfd)
+   echo "echo \"on orcus, TRUST sets TRUST_SKIP_PREREQUISITE_TEST=1\""
+   echo "export TRUST_SKIP_PREREQUISITE_TEST=1" >> $env
    # Load modules
    gnu=1 # On continue a garder intel/intelmpi meme si aocc/hpcx plus scalable (voir avec AG)
    if [ "$TRUST_USE_CUDA" = 1 ]
