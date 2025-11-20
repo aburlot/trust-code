@@ -234,6 +234,52 @@ class Graph:
 
         ## On ajoute des titres
         self.subplot.set(xlabel=self.x_label, ylabel=self.y_label)
+    
+    def addErrorBar(self, x, y, yerr=None, xerr=None, marker="-", label=None, title=None, xIndice=None, yIndice=None, **kwargs):
+        """
+
+        Method to add a curve to the plot from a point probe.
+
+        Parameters
+        ---------
+        x : float array
+            x coordinates.
+        y : float array
+            data to plot.
+        xerr, yerr : float or array-like, shape(N,) or shape(2, N), optional
+
+        marker : str
+            symbol of the ploted line (default="-")
+        label : str
+            label of the curve.
+        title : str
+            title of the curve.
+        xIndice : int
+            first coordinates of the subplot list
+        yIndice : int
+            second coordinates of the subplot list
+        kwargs : dictionary
+            additional properties available in matplotlib.pyplot.plot
+
+        """
+        if not xIndice is None:
+            self.xIndice = xIndice
+        if not yIndice is None:
+            self.yIndice = yIndice
+
+        if self.title is None:
+            self.addPlot(self.coordonee(), title)
+        else:
+            self.addPlot(self.coordonee())
+
+        ### On plot les données ###
+        self.subplot.errorbar(x, y, xerr, yerr, marker=marker, label=label, **kwargs)
+
+        if label:
+            self.subplot.legend()
+
+        ## On ajoute des titres
+        self.subplot.set(xlabel=self.x_label, ylabel=self.y_label)
 
     def addPlot(self, coordonee, title=None):
         """
