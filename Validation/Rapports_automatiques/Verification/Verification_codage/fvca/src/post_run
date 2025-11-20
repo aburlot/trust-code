@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tot=`grep "Total time of the time loop:" $1.TU | awk '{printf("%f ", $NF)}' | awk '{print ($1+$2)}'`
+tot=`TU.sh $1.TU -total`
 nu=`awk '/Order of the PETSc matrix/ {N=$7} END {print N}' $1.out`
 resp=`tail -1 $1_ERRP.son | awk '{print $2}'`
 resv=`tail -1 $1_ERRV.son | awk '{print $2}'`
