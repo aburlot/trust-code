@@ -112,7 +112,7 @@ class FileAccumulator(object):
         And from ERROR_ELEM_ELEM_DOM returns ('ERROR_ELEM', 'ELEM', 'DOM')
         """
         a = name.split("_")
-        if a[-1] == "dual":
+        if a[-1] == "dual" or a[-1] == "magnitude":
             a = a[:-1]
         # Find localisation:
         idx = -1
@@ -129,6 +129,7 @@ class FileAccumulator(object):
             raise ValueError("Invalid field name: %s" % name)
         loc = a[idx]
         var, dom = "_".join(a[:idx]), "_".join(a[idx + 1 :])
+
         return var, loc, dom
 
     @classmethod
@@ -221,7 +222,6 @@ class FileAccumulator(object):
             # Extract base directory for all other subfiles that will be read from LATA db:
             drs = file.split("/")
             baseDir = "."
-            # print(var)
             if not var is None:
                 var = var.upper()  # Variable name is always upper case in LATA file name and records
             if len(drs) > 1:
