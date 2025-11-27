@@ -1463,6 +1463,7 @@ then
    echo "NOT executed"
    [ -f run_Etudes.log ] && cp run_Etudes.log $REP_NUIT/.
 fi
+[ -f run_Etudes.log ] && cat run_Etudes.log > $REP_NUIT/run_Etudes.log
 echo "<--- End at "`date '+%H:%M:%S %d/%m'`
 
 #####################################

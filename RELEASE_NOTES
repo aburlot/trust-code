@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------------------------
-Release notes version 1.9.7_beta : Enhancements, modifications and corrected bugs since version 1.9.6 :
+Release notes version 1.9.7 : Enhancements, modifications and corrected bugs since version 1.9.6 :
 --------------------------------------------------------------------------------------------------
 12/11/25 (TRUST) Bug fix      : Restart with PDI must be done wih the same number of MPI nodes as the checkpoint.
 10/11/25 (TRUST) I/O          : Checkpoint/restart mechanism for different partition (.xyz format) disabled by default. Add "EcritureLectureSpecial 1" into datafile to enable it

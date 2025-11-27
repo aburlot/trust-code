@@ -1,5 +1,5 @@
 -------------------------------------------------------------
-Developer notes version 1.9.7_beta : Changes since version 1.9.6 :
+Developer notes version 1.9.7 : Changes since version 1.9.6 :
 -------------------------------------------------------------
 21/11/25 (TRUST) NR Tests     : When running make ctest_MODE in TRUST or Baltiks, possible to add ctest options. For example:  'export CTEST_OPTS="$CTEST_OPTS --test-load $TRUST_NB_PHYSICAL_CORES"' adds ctest test load threshold.
 17/11/25 (TRUST) NR Tests     : if TRUST_SKIP_SCAN_FORMS env variable exported to 1, the scan of validation forms is skipped

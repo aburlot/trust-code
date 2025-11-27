@@ -6,23 +6,23 @@ This software is **OpenSource ([BSD license](https://github.com/cea-trust-platfo
 
 You can visit **[TRUST website](https://cea-trust-platform.github.io/)**
 
-# **How to install TRUST-1.9.6 version ?**
+# **How to install TRUST-1.9.7 version ?**
 
 ### **First method (git configuration)**
 
 ```bash
 # Check out the sources for TRUST
-git clone https://github.com/cea-trust-platform/trust-code.git TRUST-1.9.6
+git clone https://github.com/cea-trust-platform/trust-code.git TRUST-1.9.7
 # Move to the cloned TRUST folder
-cd TRUST-1.9.6
+cd TRUST-1.9.7
 # Download the required external packages
-wget ftp://ftp.cea.fr/pub/TRUST/externalpackages/externalpackages-1.9.6.tar
+wget ftp://ftp.cea.fr/pub/TRUST/externalpackages/externalpackages-1.9.7.tar
 # or:
-# curl ftp://ftp.cea.fr/pub/TRUST/externalpackages/externalpackages-1.9.6.tar > externalpackages-1.9.6.tar
+# curl ftp://ftp.cea.fr/pub/TRUST/externalpackages/externalpackages-1.9.7.tar > externalpackages-1.9.7.tar
 # or:
-# wget "https://drive.usercontent.google.com/download?id=1LAbrUO0at7eN_nwg28F92SF4SS_Qw4K5&export=download&authuser=4&confirm=t" -O externalpackages-1.9.6.tar
+# wget "https://drive.usercontent.google.com/download?id=1LAbrUO0at7eN_nwg28F92SF4SS_Qw4K5&export=download&authuser=4&confirm=t" -O externalpackages-1.9.7.tar
 # Unzip the downloaded external packages folder
-tar xf externalpackages-1.9.6.tar
+tar xf externalpackages-1.9.7.tar
 # Have a look at the available configuration options
 ./configure -help
 # Execute the configure script with your selected options
@@ -43,13 +43,13 @@ type mpicxx
 
 ```bash
 # Download the sources for TRUST
-wget ftp://ftp.cea.fr/pub/TRUST/TRUST/Version1.9.6/TRUST-1.9.6.tar.gz
+wget ftp://ftp.cea.fr/pub/TRUST/TRUST/Version1.9.7/TRUST-1.9.7.tar.gz
 # or:
-# curl ftp://ftp.cea.fr/pub/TRUST/TRUST/Version1.9.6/TRUST-1.9.6.tar.gz > TRUST-1.9.6.tar.gz
+# curl ftp://ftp.cea.fr/pub/TRUST/TRUST/Version1.9.7/TRUST-1.9.7.tar.gz > TRUST-1.9.7.tar.gz
 # Unzip the downloaded folder
-tar xzf TRUST-1.9.6.tar.gz
+tar xzf TRUST-1.9.7.tar.gz
 # Move to the unziped TRUST folder
-cd TRUST-1.9.6
+cd TRUST-1.9.7
 # Execute the configure script with your selected options
 ./configure $OPTIONS
 ```
