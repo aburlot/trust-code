@@ -20,7 +20,7 @@ wget ftp://ftp.cea.fr/pub/TRUST/externalpackages/externalpackages-1.9.7.tar
 # or:
 # curl ftp://ftp.cea.fr/pub/TRUST/externalpackages/externalpackages-1.9.7.tar > externalpackages-1.9.7.tar
 # or:
-# wget "https://drive.usercontent.google.com/download?id=1LAbrUO0at7eN_nwg28F92SF4SS_Qw4K5&export=download&authuser=4&confirm=t" -O externalpackages-1.9.7.tar
+# wget "https://drive.usercontent.google.com/download?id=1PsGqQTlWg_5p4d7xQP-L4lVoBCwepur2&export=download&authuser=4&confirm=t" -O externalpackages-1.9.7.tar
 # Unzip the downloaded external packages folder
 tar xf externalpackages-1.9.7.tar
 # Have a look at the available configuration options
