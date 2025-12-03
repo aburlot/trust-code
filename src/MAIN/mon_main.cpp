@@ -1,5 +1,5 @@
 /****************************************************************************
-* Copyright (c) 2025, CEA
+* Copyright (c) 2026, CEA
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -418,7 +418,7 @@ void mon_main::dowork(const Nom& nom_du_cas)
   Cout<< " *     | |    | ) \\ \\__ | (___) | /\\____) |    | |     *  " << finl;
   Cout<< " *     )_(    |/   \\__/ (_______) \\_______)    )_(     *   " << finl;
   Cout<< " *                                                     *     " << finl;
-  Cout<< " *                  version : " << TRUST_VERSION << "               *     "  << finl;
+  Cout<< " *                  version : " << TRUST_VERSION << "                    *     "  << finl;
   Cout<< " *                                                     *     " << finl;
 #ifdef BALTIK_VERSION
   Cout<< " *           Using " << BALTIK_NAME << " version : " << BALTIK_VERSION << "             *" << finl;

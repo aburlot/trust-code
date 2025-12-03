@@ -1526,7 +1526,7 @@ void Perf_counters::Impl::stop_counters_impl()
       Counter* c = last_opened_counter_;
       c->time_alone_ += t_stop -c->last_open_time_alone_;
       c->last_open_time_alone_ = time_point();
-      while (c!=nullptr)
+      while (c!=nullptr && c->level_ >= 0) // do not stop highest level counter
         {
           time_elapsed_before_stop= t_stop -c->last_open_time_;
           if (time_loop_ )
@@ -1550,7 +1550,7 @@ void Perf_counters::Impl::restart_counters_impl()
     {
       Counter* c = last_opened_counter_;
       c->last_open_time_alone_ = t_restart;
-      while (c !=nullptr )
+      while (c !=nullptr && c->level_ >= 0) // do not touch top level counter
         {
           c->last_open_time_ = t_restart;
           if (time_loop_)
@@ -1563,7 +1563,8 @@ void Perf_counters::Impl::restart_counters_impl()
 
 void Perf_counters::Impl::reset_counters_impl()
 {
-  for (int i =0 ; i< static_cast<int>(STD_COUNTERS::NB_OF_STD_COUNTER); i++)
+  // Reset all counters excpet the highest level one, hence starting the loop at 1:
+  for (int i = 1 ; i< static_cast<int>(STD_COUNTERS::NB_OF_STD_COUNTER); i++)
     {
       Counter& c = *std_counters_[i];
       c.reset();
@@ -1737,12 +1738,19 @@ void Perf_counters::Impl::print_TU_files_impl(const std::string& message)
   if(!Objet_U::disable_TU)
     {
       //Process::barrier();
-      stop_counters_impl();
+      stop_counters_impl();  // will stop everything except highest level counter
+
+      // Also stop and update highest level counter
       Counter& c_time = get_counter(STD_COUNTERS::total_execution_time);
+      auto time_elapsed_before_stop= now() - c_time.last_open_time_;
+      c_time.total_time_ += time_elapsed_before_stop;
+
       computation_time_ += c_time.total_time_;
       print_global_TU(message);
       print_performance_to_csv(message);
       reset_counters_impl();
+      // Also reset highest level counter:
+      c_time.reset();
       counters_stop_=false;
     }
 }
